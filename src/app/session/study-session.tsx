@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import type { InterviewQuestion, Topic, DifficultyLevel } from "../../content/questions";
-import { difficultyOptions, questionHasTopic } from "../../content/question-search";
+import { difficultyOptions, fromSearchParams, questionHasTopic } from "../../content/question-search";
 import { AnswerContent } from "../answer-content";
 import { AnswerDisclosure, QuestionControls } from "../question-controls";
 
@@ -13,16 +13,18 @@ type SessionSelection = { topic: string; difficulty: DifficultyLevel | "" };
 export function StudySession({ questions, topics }: { questions: InterviewQuestion[]; topics: Topic[] }) {
   const [selection, setSelection] = useState<SessionSelection>({ topic: "", difficulty: "" });
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [ready, setReady] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const difficulty = params.get("difficulty");
-    setSelection({
-      topic: params.get("topic") ?? "",
-      difficulty: difficulty === "Junior" || difficulty === "Mid" || difficulty === "Senior" ? difficulty : "",
-    });
-    setReady(true);
+    function syncFromUrl() {
+      const parsed = fromSearchParams(new URLSearchParams(window.location.search));
+      setSelection({ topic: parsed.topic, difficulty: parsed.difficulty });
+    }
+    syncFromUrl();
+    setIsHydrated(true);
+
+    window.addEventListener("popstate", syncFromUrl);
+    return () => window.removeEventListener("popstate", syncFromUrl);
   }, []);
 
   const selectedTopic = topics.find((candidate) => candidate.slug === selection.topic || candidate.id === selection.topic);
@@ -42,7 +44,7 @@ export function StudySession({ questions, topics }: { questions: InterviewQuesti
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
   }
 
-  if (!ready) return <section className="shell section"><p>جاري تجهيز الجلسة...</p></section>;
+  if (!isHydrated) return <section className="shell section"><p>جاري تجهيز الجلسة...</p></section>;
 
   return (
     <section className="shell section">

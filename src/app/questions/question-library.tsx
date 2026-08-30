@@ -21,8 +21,17 @@ export function QuestionLibrary({ questions, topics }: { questions: SearchableQu
   const [saved, setSaved] = useState<SavedQuestions>({});
 
   useEffect(() => {
-    setFilters({ ...emptyFilters, ...fromSearchParams(new URLSearchParams(window.location.search)) });
+    function syncFromUrl() {
+      setFilters((current) => ({
+        ...current,
+        ...fromSearchParams(new URLSearchParams(window.location.search)),
+      }));
+    }
+    syncFromUrl();
     setSaved(getSavedQuestions(localStorage));
+
+    window.addEventListener("popstate", syncFromUrl);
+    return () => window.removeEventListener("popstate", syncFromUrl);
   }, []);
 
   function updateFilters(update: Partial<LibraryFilters>) {

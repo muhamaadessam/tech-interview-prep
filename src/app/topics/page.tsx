@@ -17,7 +17,7 @@ export default function TopicsPage() {
           const count = questions.filter((question) => question.topicIds.includes(topic.id)).length;
           const track = tracks.find(({ id }) => id === topic.trackId);
           return (
-            <Link key={topic.id} className="card card-link" href="/questions">
+            <Link key={topic.id} className="card card-link" href={`/questions?topic=${topic.slug}`}>
               <div className="meta"><span className="chip">{track?.name}</span></div>
               <h2 dir="ltr">{topic.name}</h2>
               <p>{count} سؤال متاح للمراجعة حاليًا.</p>

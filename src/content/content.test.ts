@@ -3,10 +3,11 @@ import test from "node:test";
 
 import { questions, validateQuestions } from "./questions.ts";
 
-test("the public question catalogue accepts the permanent Dart question", () => {
+test("the public question catalogue accepts the permanent Dart questions", () => {
   assert.doesNotThrow(() => validateQuestions(questions));
-  assert.equal(questions.length, 1);
+  assert.equal(questions.length, 2);
   assert.equal(questions[0]?.slug, "final-vs-const-in-dart");
+  assert.equal(questions[1]?.slug, "var-vs-dynamic-in-dart");
 });
 
 test("the public question catalogue rejects missing data and duplicate identity", () => {

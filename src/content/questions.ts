@@ -68,9 +68,41 @@ const point = Point(1, 2);`,
     ],
     lastReviewedAt: "2026-08-30",
   },
+  {
+    id: "dart-002",
+    slug: "var-vs-dynamic-in-dart",
+    trackId: "flutter",
+    topicIds: ["dart"],
+    difficulty: "Junior",
+    question: "ما الفرق بين var و dynamic في Dart؟",
+    shortAnswer:
+      "var تحدد نوع المتغير مرة واحدة وقت الترجمة بالاستنتاج (Type Inference)، بينما dynamic تُلغي فحص الأنواع وقت الترجمة وتسمح بتغيير نوع القيمة وقت التشغيل.",
+    explanation:
+      "عند استخدام var مع تعيين قيمة أولية، يستنتج Dart نوع المتغير ولا يمكنك تعيين قيمة من نوع آخر لاحقًا. أما dynamic فتخبر المترجم بتقبل أي نوع وأي استدعاء ميثود، ويتأجل التحقق من صحة الاستدعاء إلى وقت التشغيل مما قد يسبب Runtime Errors إذا لم تكن الميثود موجودة.",
+    codeExample: `var name = "Dart"; // type is String
+// name = 123; // Error: A value of type 'int' can't be assigned to 'String'
+
+dynamic value = "Dart";
+value = 123; // Allowed`,
+    commonMistakes: [
+      "اعتبار var تماثل dynamic؛ var تنشئ متغيرًا محدد النوع بعد الاستنتاج.",
+      "الإفراط في استخدام dynamic مما يفقدك حماية نظام الأنواع Strong Type System في Dart.",
+    ],
+    followUpQuestions: [
+      "متى يكون استخدام dynamic مطلوبًا بالفعل؟",
+      "ما الفرق بين Object و dynamic في Dart؟",
+    ],
+    sources: [
+      {
+        title: "Dart language — Types",
+        url: "https://dart.dev/language/types",
+      },
+    ],
+    lastReviewedAt: "2026-08-30",
+  },
 ];
 
-const requiredText = [
+const requiredQuestionFields = [
   "id",
   "slug",
   "trackId",
@@ -87,7 +119,7 @@ export function validateQuestions(interviewQuestions: InterviewQuestion[]): void
 
   for (const question of interviewQuestions) {
     if (
-      requiredText.some((field) => !question[field]?.trim()) ||
+      requiredQuestionFields.some((field) => !question[field]?.trim()) ||
       question.topicIds.length === 0 ||
       question.sources.length === 0 ||
       question.sources.some((source) => !source.title.trim() || !source.url.trim())

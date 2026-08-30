@@ -13,8 +13,9 @@ const emptyFilters: LibraryFilters = {
 };
 
 test("library search matches question text and short answers", () => {
-  assert.equal(filterQuestions(questions, { ...emptyFilters, search: "وقت الترجمة" }, {}, topics).length, 1);
-  assert.equal(filterQuestions(questions, { ...emptyFilters, search: "final" }, {}, topics).length, 1);
+  assert.equal(filterQuestions(questions, { ...emptyFilters, search: "وقت الترجمة" }, {}, topics).length, 2);
+  assert.equal(filterQuestions(questions, { ...emptyFilters, search: "const" }, {}, topics).length, 1);
+  assert.equal(filterQuestions(questions, { ...emptyFilters, search: "dynamic" }, {}, topics).length, 1);
   assert.equal(filterQuestions(questions, { ...emptyFilters, search: "not found" }, {}, topics).length, 0);
 });
 
@@ -24,7 +25,7 @@ test("library filters combine with local progress and favorite state", () => {
 
   assert.equal(filterQuestions(questions, filters, saved, topics).length, 1);
   assert.equal(filterQuestions(questions, { ...filters, progress: "reviewing" }, saved, topics).length, 0);
-  assert.equal(filterQuestions(questions, { ...emptyFilters, progress: "not-started" }, {}, topics).length, 1);
+  assert.equal(filterQuestions(questions, { ...emptyFilters, progress: "not-started" }, {}, topics).length, 2);
 });
 
 test("shareable query params omit personal progress and favorites", () => {
