@@ -67,7 +67,7 @@ export function FullInterview({ questions, topics }: { questions: InterviewQuest
   if (!isHydrated) return <section className="shell section"><p>جاري تجهيز المقابلة...</p></section>;
 
   return (
-    <section className="shell section">
+    <section className="shell section interview-page">
       <header className="page-header">
         <Link className="text-link" href="/questions">← مكتبة الأسئلة</Link>
         <span className="eyebrow">مقابلة Flutter كاملة</span>
@@ -77,7 +77,7 @@ export function FullInterview({ questions, topics }: { questions: InterviewQuest
 
       <div className="interview-builder">
         <fieldset className="topic-picker">
-          <legend>اختار الموضوعات</legend>
+          <legend>اختار الموضوعات <span className="topic-count">{selection.topicValues.length} مختارة</span></legend>
           <div className="topic-options">
             {topics.map((topic) => (
               <label key={topic.id}>
@@ -91,13 +91,13 @@ export function FullInterview({ questions, topics }: { questions: InterviewQuest
             ))}
           </div>
         </fieldset>
-        <label>
+        <label className="interview-level">
           مستوى المقابلة
           <select value={selection.difficulty} onChange={(event) => updateSelection({ difficulty: event.target.value as InterviewSelection["difficulty"] })}>
             <option value="">اختار المستوى</option>
             {difficultyOptions.map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}
           </select>
-          <span className="filter-hint">Junior: Junior فقط · Mid: Junior وMid · Senior: كل المستويات</span>
+          <span className="filter-hint">المستوى المختار يشمل كل المستويات الأقل منه.</span>
         </label>
       </div>
 

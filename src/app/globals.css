@@ -233,12 +233,15 @@ h3 { line-height: 1.45; }
 .session-question h2 { margin-block: 12px 20px; }
 .session-navigation { display: flex; justify-content: space-between; gap: 12px; margin-block-start: 18px; }
 .interview-builder { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; align-items: start; margin-block-end: 28px; }
-.interview-builder > label { display: grid; gap: 6px; color: var(--muted); font-weight: 800; }
+.interview-page .page-header { padding-block-start: 44px; }
+.interview-builder > label { display: grid; gap: 6px; min-height: 100%; padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); color: var(--muted); font-weight: 800; }
 .interview-builder select { width: 100%; min-height: 44px; padding-inline: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
 .topic-picker { margin: 0; padding: 16px; border: 1px solid var(--border); border-radius: 16px; }
 .topic-picker legend { padding-inline: 6px; color: var(--text); font-weight: 800; }
+.topic-count { margin-inline-start: 8px; color: var(--brand-strong); font-size: .8rem; font-weight: 700; }
 .topic-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 12px; }
-.topic-options label { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; cursor: pointer; }
+.topic-options label { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; padding-inline: 8px; border-radius: 8px; cursor: pointer; }
+.topic-options label:hover, .topic-options label:focus-within { background: var(--surface-soft); }
 .button:disabled { cursor: not-allowed; opacity: .48; transform: none; }
 
 :where(a, button, input, select):focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
