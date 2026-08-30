@@ -26,6 +26,22 @@ Copy `.env.example` to `.env.local` and fill in the Clerk and Supabase public
 values. The static catalogue must continue to work when these values are empty so local
 content development does not depend on production credentials.
 
+## Catalogue migration and seed
+
+The schema lives in `supabase/migrations/20260830000000_catalogue.sql`. Generate
+the repeatable import from the checked-in catalogue with:
+
+```sh
+npm run supabase:seed
+npm run supabase:seed:check
+```
+
+Apply the migration and generated `supabase/seed.sql` with the Supabase CLI from
+an authenticated environment. The seed preserves every existing question id and
+slug, imports both `ar` and `en` locale rows, and publishes revision 1. Content
+changes after the initial import must create a new revision instead of mutating a
+published revision.
+
 ## Acceptance checks
 
 - Anonymous catalogue reads work with RLS enabled.

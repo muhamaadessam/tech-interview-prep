@@ -10,6 +10,8 @@
     "dev": "next dev",
     "build": "next build && node scripts/fix-locale-html.mjs",
     "typecheck": "tsc --noEmit",
+    "supabase:seed": "node --experimental-strip-types scripts/generate-supabase-seed.ts",
+    "supabase:seed:check": "node --experimental-strip-types scripts/generate-supabase-seed.ts --check",
     "test": "node --experimental-strip-types --test src/content/content.test.ts src/content/question-search.test.ts src/study/progress.test.ts",
     "test:e2e": "playwright test"
   },
