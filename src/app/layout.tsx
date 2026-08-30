@@ -30,6 +30,7 @@ const links = [
   ["الرئيسية", "/"],
   ["الموضوعات", "/topics"],
   ["مكتبة الأسئلة", "/questions"],
+  ["مقابلة كاملة", "/interview"],
   ["تقدمي", "/progress"],
 ] as const;
 

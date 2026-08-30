@@ -92,5 +92,15 @@ test.describe("Discovery, study session, and progress journey", () => {
     await prevButton.click();
     await expect(page.getByText(/سؤال 1 من \d+/)).toBeVisible();
     await expect(firstSessionQuestion).toHaveText("ما الفرق بين final و const في Dart؟");
+
+    // 6. Full interview: multiple topics and inclusive difficulty
+    await page.goto("/interview");
+    await expect(page.getByRole("heading", { name: "ابنِ انترفيو شامل" })).toBeVisible();
+    await page.getByRole("checkbox", { name: "Dart" }).check();
+    await page.getByRole("checkbox", { name: "OOP" }).check();
+    await page.getByLabel("مستوى المقابلة").selectOption("Senior");
+    await expect(page).toHaveURL(/topics=dart(?:%2C|,)oop&difficulty=Senior/);
+    await expect(page.getByText(/سؤال 1 من \d+/)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText("ما الفرق بين final و const في Dart؟");
   });
 });

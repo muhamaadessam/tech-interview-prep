@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { topics } from "./questions.ts";
-import { filterQuestions, toSearchParams, type LibraryFilters, type SearchableQuestion } from "./question-search.ts";
+import { filterInterviewQuestions, filterQuestions, toSearchParams, type LibraryFilters, type SearchableQuestion } from "./question-search.ts";
 
 const emptyFilters: LibraryFilters = {
   search: "",
@@ -35,4 +35,21 @@ test("library filters combine with local progress and favorite state", () => {
 test("shareable query params omit personal progress and favorites", () => {
   const params = toSearchParams({ ...emptyFilters, search: "final", topic: "dart", difficulty: "Junior", progress: "mastered", favoriteOnly: true });
   assert.equal(params.toString(), "search=final&topic=dart&difficulty=Junior");
+});
+
+test("full interview filters multiple topics and includes lower difficulty levels", () => {
+  const fixtures: SearchableQuestion[] = [
+    ...searchFixtures,
+    { id: "fixture-003", slug: "fixture-three", topicIds: ["oop"], difficulty: "Mid", question: "What is a class?", shortAnswer: "A type." },
+    { id: "fixture-004", slug: "fixture-four", topicIds: ["solid"], difficulty: "Senior", question: "What is DIP?", shortAnswer: "Depend on abstractions." },
+  ];
+
+  assert.deepEqual(
+    filterInterviewQuestions(fixtures, ["dart", "oop"], "Mid", topics).map(({ id }) => id),
+    ["fixture-001", "fixture-002", "fixture-003"],
+  );
+  assert.deepEqual(
+    filterInterviewQuestions(fixtures, ["oop", "solid"], "Senior", topics).map(({ id }) => id),
+    ["fixture-003", "fixture-004"],
+  );
 });

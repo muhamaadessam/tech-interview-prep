@@ -12,6 +12,7 @@ export type LibraryFilters = {
 export type SearchableQuestion = Pick<InterviewQuestion, "id" | "slug" | "topicIds" | "difficulty" | "question" | "shortAnswer">;
 
 export const difficultyOptions: DifficultyLevel[] = ["Junior", "Mid", "Senior"];
+const difficultyRank: Record<DifficultyLevel, number> = { Junior: 1, Mid: 2, Senior: 3 };
 
 export function questionHasTopic(question: SearchableQuestion, topicValue: string, availableTopics: Pick<Topic, "id" | "slug">[]): boolean {
   return availableTopics.some((topic) => question.topicIds.includes(topic.id) && (topic.slug === topicValue || topic.id === topicValue));
@@ -34,6 +35,18 @@ export function filterQuestions(
     const matchesFavorite = !filters.favoriteOnly || savedQuestion?.favorite === true;
     return matchesSearch && matchesTopic && matchesDifficulty && matchesProgress && matchesFavorite;
   });
+}
+
+export function filterInterviewQuestions<T extends SearchableQuestion>(
+  interviewQuestions: T[],
+  topicValues: string[],
+  difficulty: DifficultyLevel,
+  availableTopics: Pick<Topic, "id" | "slug">[],
+): T[] {
+  return interviewQuestions.filter((question) =>
+    topicValues.some((topicValue) => questionHasTopic(question, topicValue, availableTopics)) &&
+    difficultyRank[question.difficulty] <= difficultyRank[difficulty],
+  );
 }
 
 export function toSearchParams(filters: LibraryFilters): URLSearchParams {
