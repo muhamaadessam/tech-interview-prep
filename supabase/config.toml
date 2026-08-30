@@ -187,6 +187,9 @@ password_requirements = ""
 enabled = true
 domain = "driven-pipefish-724.clerk.accounts.dev"
 
+[functions.submit-question]
+verify_jwt = false
+
 # Configure passkey sign-ins.
 # [auth.passkey]
 # enabled = false

@@ -241,6 +241,24 @@ h3 { line-height: 1.45; }
 .topic-options label:hover, .topic-options label:focus-within { background: var(--surface-soft); }
 .button:disabled { cursor: not-allowed; opacity: .48; transform: none; }
 
+.submission-form { display: grid; gap: 22px; max-width: 860px; padding: 24px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); }
+.submission-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.submission-grid > label, .submission-topics { display: grid; gap: 7px; color: var(--muted); font-weight: 800; }
+.submission-grid input, .submission-grid select, .submission-grid textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
+.submission-grid textarea { min-height: 120px; resize: vertical; }
+.submission-grid input:focus-visible, .submission-grid select:focus-visible, .submission-grid textarea:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand) 45%, transparent); outline-offset: 1px; }
+.submission-grid > label:not(:nth-child(1)):not(:nth-child(6)), .submission-topics { grid-column: 1 / -1; }
+.submission-topics { margin: 0; padding: 16px; border: 1px solid var(--border); border-radius: 16px; }
+.submission-topics legend { padding-inline: 6px; color: var(--text); }
+.field-hint { color: var(--muted); font-size: .82rem; font-weight: 500; }
+.consent-checkbox { display: flex; align-items: center; gap: 8px; color: var(--text); font-weight: 700; cursor: pointer; }
+.consent-checkbox input { width: 18px; height: 18px; }
+.form-status, .form-success, .form-error { margin: 0; padding: 12px 14px; border-radius: 10px; }
+.form-status { background: var(--surface-soft); color: var(--brand-strong); }
+.form-success { background: #eaf8ef; color: #146c3a; }
+.form-error { background: #fff1f0; color: #a32116; }
+.text-button { border: 0; background: transparent; color: inherit; font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
+
 :where(a, button, input, select):focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
 
 .footer { display: flex; justify-content: space-between; gap: 24px; padding-block: 28px; border-top: 1px solid var(--border); color: var(--muted); font-size: .9rem; }
@@ -255,6 +273,8 @@ h3 { line-height: 1.45; }
   .library-filters, .session-filters { grid-template-columns: 1fr; }
   .interview-builder { grid-template-columns: 1fr; }
   .topic-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .submission-grid { grid-template-columns: 1fr; }
+  .submission-grid > label, .submission-topics { grid-column: auto !important; }
   .library-toolbar { align-items: flex-start; flex-direction: column; }
   .section-header, .footer, .reset-panel { align-items: flex-start; flex-direction: column; }
   .progress-summary { align-items: flex-start; flex-direction: column; }

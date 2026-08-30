@@ -16,9 +16,12 @@ The browser only receives the public Supabase URL and two publishable keys.
    `https://muhamaadessam.github.io/tech-interview-prep`.
 3. Configure Clerk's native Supabase integration before enabling RLS policies that
    depend on the signed-in Clerk user.
-4. Store the GitHub App id, installation id, private key, repository owner, and
-   repository name as Edge Function secrets. The GitHub App only needs Issues:
-   write for this repository.
+4. Store these Edge Function secrets: `CLERK_SECRET_KEY`,
+   `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY`,
+   `GITHUB_REPOSITORY_OWNER`, and `GITHUB_REPOSITORY_NAME`. The GitHub App only
+   needs Issues: write for this repository.
+   Also set `CLERK_JWKS_URL` and `CLERK_JWT_ISSUER` to the same Clerk instance;
+   these are required for function-side JWT verification.
 
 ## Local configuration
 
@@ -53,7 +56,18 @@ To apply the local project configuration, link once and push the migrations:
 supabase link --project-ref aptxrianhyxvdjnuyruo
 supabase db push
 supabase db query --file supabase/seed.sql
+supabase functions deploy submit-question
 ```
+
+The `submit-question` function performs its own Clerk JWT verification (the
+Supabase gateway is configured not to validate this third-party token) and
+checks the confirmed email,
+enforces the five-per-day limit and cooldown, validates existing taxonomy, stores
+the Submission and its first revision, then creates a GitHub Issue with the fixed
+`community-submission` and `needs-review` labels. Missing GitHub/Clerk secrets
+leave retries in the `failed` state without exposing privileged values.
+Submission revisions and rate-limit counters are service-role-only tables; the
+browser can read only its own Submission rows.
 
 ## Acceptance checks
 
