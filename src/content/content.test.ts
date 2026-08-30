@@ -189,6 +189,29 @@ test("the Testing topic contains its planned question set", () => {
   for (const slug of expected) assert.ok(actual.has(slug), `missing Testing question: ${slug}`);
 });
 
+test("the Performance and Async & Isolates topics contain their planned question sets", () => {
+  const expected = {
+    performance: [
+      "profiling-before-performance-optimization",
+      "frame-budget-and-jank-diagnosis",
+      "lazy-list-builders-and-large-collections",
+      "avoiding-expensive-work-in-build",
+      "image-memory-and-render-cost",
+    ],
+    "async-isolates": [
+      "dart-event-loop-and-microtasks",
+      "async-await-and-futures-in-dart",
+      "streams-and-multiple-async-values",
+      "isolates-for-cpu-bound-work",
+    ],
+  } as const;
+  for (const [topic, slugs] of Object.entries(expected)) {
+    const actual = new Set(questions.filter((question) => question.topicIds.includes(topic)).map((question) => question.slug));
+    assert.equal(actual.size, slugs.length, `${topic} question count changed`);
+    for (const slug of slugs) assert.ok(actual.has(slug), `missing ${topic} question: ${slug}`);
+  }
+});
+
 test("the catalogue keeps official HTTPS sources and real review dates", () => {
   for (const question of questions) {
     assert.equal(new Date(`${question.lastReviewedAt}T00:00:00Z`).toISOString().slice(0, 10), question.lastReviewedAt);
