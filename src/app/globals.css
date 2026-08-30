@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
 :root {
   color-scheme: light;
   --background: #f6f9fc;
@@ -47,7 +49,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--text);
-  font-family: Tahoma, Arial, sans-serif;
+  font-family: "IBM Plex Sans Arabic", system-ui, sans-serif;
   line-height: 1.75;
 }
 
@@ -93,6 +95,7 @@ a { color: inherit; }
   align-items: center;
   gap: 10px;
   color: var(--text);
+  font-family: "Space Grotesk", "IBM Plex Sans Arabic", sans-serif;
   font-weight: 800;
   text-decoration: none;
 }
@@ -133,6 +136,7 @@ a { color: inherit; }
 }
 
 h1, h2, h3, p { margin-block-start: 0; }
+h1, h2, h3 { font-weight: 700; }
 h1 { max-width: 760px; margin-block: 18px 20px; font-size: clamp(2.25rem, 6vw, 4.6rem); line-height: 1.15; letter-spacing: -.035em; }
 h2 { font-size: clamp(1.55rem, 3vw, 2.2rem); line-height: 1.35; }
 h3 { line-height: 1.45; }
