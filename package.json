@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && node scripts/fix-locale-html.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test src/content/content.test.ts src/content/question-search.test.ts src/study/progress.test.ts",
     "test:e2e": "playwright test"
