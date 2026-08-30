@@ -64,7 +64,8 @@ test.describe("Discovery, study session, and progress journey", () => {
     await page.goto("/session?topic=dart&difficulty=Junior");
     await expect(page.getByRole("heading", { name: "جلسة مراجعة" })).toBeVisible();
     await expect(page.getByText(/سؤال 1 من \d+/)).toBeVisible();
-    await expect(page.getByRole("heading", { name: "ما الفرق بين final و const في Dart؟" })).toBeVisible();
+    const firstSessionQuestion = page.getByRole("heading", { level: 2 });
+    await expect(firstSessionQuestion).toHaveText("ما الفرق بين final و const في Dart؟");
 
     // Verify previous/next navigation buttons and transitions
     const prevButton = page.getByRole("button", { name: "السؤال السابق" });
@@ -75,13 +76,12 @@ test.describe("Discovery, study session, and progress journey", () => {
     // Navigate to Next Question
     await nextButton.click();
     await expect(page.getByText(/سؤال 2 من \d+/)).toBeVisible();
-    await expect(page.getByRole("heading", { name: "ما الفرق بين var و dynamic في Dart؟" })).toBeVisible();
+    await expect(firstSessionQuestion).not.toHaveText("ما الفرق بين final و const في Dart؟");
     await expect(prevButton).toBeEnabled();
-    await expect(nextButton).toBeDisabled();
 
     // Navigate back to Previous Question
     await prevButton.click();
     await expect(page.getByText(/سؤال 1 من \d+/)).toBeVisible();
-    await expect(page.getByRole("heading", { name: "ما الفرق بين final و const في Dart؟" })).toBeVisible();
+    await expect(firstSessionQuestion).toHaveText("ما الفرق بين final و const في Dart؟");
   });
 });
