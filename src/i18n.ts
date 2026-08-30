@@ -5,6 +5,7 @@ export const locales: Locale[] = ["ar", "en"];
 
 export const messages = {
   ar: {
+    brandName: "تحضير المقابلات التقنية",
     home: "الرئيسية", topics: "الموضوعات", questions: "مكتبة الأسئلة", interview: "مقابلة كاملة", progress: "تقدمي",
     skip: "انتقل إلى المحتوى", theme: "تغيير المظهر", dark: "◐ الوضع الداكن", light: "☀ الوضع الفاتح",
     libraryEyebrow: "مكتبة الأسئلة", libraryTitle: "مكتبة الأسئلة", libraryDescription: "راجع السؤال، جاوب بصوتك، وبعدها افتح التفاصيل وقارن إجابتك بشرح مدعوم بالمصدر الرسمي.",
@@ -17,6 +18,7 @@ export const messages = {
     backLibrary: "← مكتبة الأسئلة", lastReviewed: "آخر مراجعة", staleReview: "راجع الإجابة من المصدر قبل الانترفيو لو مر وقت طويل على التاريخ ده.", progressLegend: "تقدم السؤال", favorite: "حفظ في المفضلة", saved: "تم حفظ التقدم على هذا الجهاز", reveal: "اكشف الإجابة", hide: "اخفِ الإجابة", shortAnswer: "الإجابة المختصرة", explanation: "الشرح", code: "مثال بالكود", mistakes: "أخطاء شائعة", followUps: "أسئلة متابعة", sources: "المصادر", notFound: "السؤال غير موجود", footer: "محتوى عربي أصلي بمراجع رسمية.", language: "English",
   },
   en: {
+    brandName: "Tech Interview Prep",
     home: "Home", topics: "Topics", questions: "Question Library", interview: "Full Interview", progress: "Progress",
     skip: "Skip to content", theme: "Change theme", dark: "◐ Dark mode", light: "☀ Light mode",
     libraryEyebrow: "Question library", libraryTitle: "Question library", libraryDescription: "Answer out loud, open the details, and compare your reasoning with an answer backed by official sources.",

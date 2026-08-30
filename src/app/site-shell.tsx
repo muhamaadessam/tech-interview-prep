@@ -54,9 +54,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <a className="skip-link" href="#main-content">{copy.skip}</a>
       <header className="site-header">
         <nav className="shell nav" aria-label={locale === "ar" ? "التنقل الرئيسي" : "Main navigation"}>
-          <Link className="brand" href={localizedHref(locale)} aria-label={`Tech Interview Prep — ${copy.home}`}>
+          <Link className="brand" href={localizedHref(locale)} aria-label={`${copy.brandName} — ${copy.home}`}>
             <BrandLogo />
-            <span dir="ltr">Tech Interview Prep</span>
+            <span dir={locale === "ar" ? "rtl" : "ltr"}>{copy.brandName}</span>
           </Link>
           <div className="nav-links">
             {paths.map(([key, path]) => <Link key={path} href={localizedHref(locale, path)}>{copy[key]}</Link>)}
