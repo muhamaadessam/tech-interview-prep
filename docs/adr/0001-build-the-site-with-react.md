@@ -1,3 +1,3 @@
-# Build the site with React and TypeScript
+# Build a statically exported Next.js site
 
-The product teaches Flutter but is a content-focused website, so we will build it with React and TypeScript rather than Flutter Web. Interview content and learner progress will stay local in the first version, avoiding a backend or CMS until synchronization or non-developer content editing is actually needed.
+The product teaches Flutter but is a public, content-focused website, so we will build it with Next.js and TypeScript rather than Flutter Web. Every question will be generated as a static page and deployed to GitHub Pages; interview content and learner progress will stay local, avoiding a server, database, or CMS until synchronization or non-developer content editing is actually needed.
