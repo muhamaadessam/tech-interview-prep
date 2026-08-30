@@ -183,6 +183,10 @@ minimum_password_length = 6
 # are: `letters_digits`, `lower_upper_letters_digits`, `lower_upper_letters_digits_symbols`
 password_requirements = ""
 
+[auth.third_party.clerk]
+enabled = true
+domain = "driven-pipefish-724.clerk.accounts.dev"
+
 # Configure passkey sign-ins.
 # [auth.passkey]
 # enabled = false
@@ -354,12 +358,6 @@ enabled = false
 enabled = false
 # user_pool_id = "my-user-pool-id"
 # user_pool_region = "us-east-1"
-
-# Use Clerk as a third-party provider alongside Supabase Auth.
-[auth.third_party.clerk]
-enabled = false
-# Obtain from https://clerk.com/setup/supabase
-# domain = "example.clerk.accounts.dev"
 
 # OAuth server configuration
 [auth.oauth_server]

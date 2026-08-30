@@ -14,8 +14,8 @@ The browser only receives the public Supabase URL and two publishable keys.
 2. Configure Google and email/password providers in Clerk. Allow these exact
    origins: `http://localhost:3000` and
    `https://muhamaadessam.github.io/tech-interview-prep`.
-3. Configure Clerk's JWT template / Supabase third-party auth integration before
-   enabling RLS policies that depend on the signed-in Clerk user.
+3. Configure Clerk's native Supabase integration before enabling RLS policies that
+   depend on the signed-in Clerk user.
 4. Store the GitHub App id, installation id, private key, repository owner, and
    repository name as Edge Function secrets. The GitHub App only needs Issues:
    write for this repository.
@@ -41,6 +41,19 @@ an authenticated environment. The seed preserves every existing question id and
 slug, imports both `ar` and `en` locale rows, and publishes revision 1. Content
 changes after the initial import must create a new revision instead of mutating a
 published revision.
+
+The browser sync path requests the current Clerk session token through the native
+Supabase Third-Party Auth integration and uses only the public Supabase URL and
+publishable key. Keep moderator roles server-controlled through `account_roles` or
+Clerk metadata; never grant browser clients write access to that table.
+
+To apply the local project configuration, link once and push the migrations:
+
+```sh
+supabase link --project-ref aptxrianhyxvdjnuyruo
+supabase db push
+supabase db query --file supabase/seed.sql
+```
 
 ## Acceptance checks
 

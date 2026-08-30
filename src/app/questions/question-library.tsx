@@ -30,13 +30,18 @@ export function QuestionLibrary({ questions, topics, locale = "ar" }: { question
       }));
     }
     syncFromUrl();
-    setSaved(getSavedQuestions(localStorage));
+    const syncSaved = () => setSaved(getSavedQuestions(localStorage));
+    syncSaved();
 
     window.addEventListener("popstate", syncFromUrl);
     window.addEventListener("urlchange", syncFromUrl);
+    window.addEventListener("study-state-merged", syncSaved);
+    window.addEventListener("study-state-change", syncSaved);
     return () => {
       window.removeEventListener("popstate", syncFromUrl);
       window.removeEventListener("urlchange", syncFromUrl);
+      window.removeEventListener("study-state-merged", syncSaved);
+      window.removeEventListener("study-state-change", syncSaved);
     };
   }, []);
 

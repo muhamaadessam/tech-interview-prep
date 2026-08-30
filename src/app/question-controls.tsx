@@ -17,13 +17,19 @@ export function QuestionControls({ questionId, locale = "ar" }: { questionId: st
   const [saveStatus, setSaveStatus] = useState("");
 
   useEffect(() => {
-    const saved = getSavedQuestions(localStorage)[questionId];
-    setQuestionState(saved ?? defaultQuestionState);
+    const load = () => {
+      const saved = getSavedQuestions(localStorage)[questionId];
+      setQuestionState(saved ?? defaultQuestionState);
+    };
+    load();
+    window.addEventListener("study-state-merged", load);
+    return () => window.removeEventListener("study-state-merged", load);
   }, [questionId]);
 
   function update(patch: Partial<SavedQuestionState>) {
     saveQuestionState(localStorage, questionId, patch);
     setQuestionState((current) => ({ ...current, ...patch }));
+    window.dispatchEvent(new Event("study-state-change"));
     setSaveStatus(messages[locale].saved);
   }
 

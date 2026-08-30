@@ -17,12 +17,18 @@ export function ProgressDashboard({ questions, locale = "ar" }: { questions: Que
   ];
   const [data, setData] = useState<SavedQuestions>({});
 
-  useEffect(() => setData(getSavedQuestions(localStorage)), []);
+  useEffect(() => {
+    const load = () => setData(getSavedQuestions(localStorage));
+    load();
+    window.addEventListener("study-state-merged", load);
+    return () => window.removeEventListener("study-state-merged", load);
+  }, []);
 
   function reset() {
     if (!window.confirm(copy.resetConfirm)) return;
     resetSavedQuestions(localStorage);
     setData({});
+    window.dispatchEvent(new Event("study-state-change"));
   }
 
   return (
