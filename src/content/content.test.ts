@@ -80,6 +80,22 @@ test("the Flutter Fundamentals topic contains its planned question set", () => {
   ]) assert.ok(slugs.has(slug), `missing Flutter Fundamentals question: ${slug}`);
 });
 
+test("the Widgets topic contains its planned question set", () => {
+  const slugs = new Set(questions.filter((question) => question.topicIds.includes("widgets")).map((question) => question.slug));
+  for (const slug of [
+    "statelesswidget-and-build",
+    "statefulwidget-state-lifecycle",
+    "buildcontext-scope-and-inherited-widgets",
+    "keys-and-widget-identity",
+    "flutter-constraints-go-down-sizes-go-up",
+    "composition-vs-inheritance-in-flutter",
+    "const-widgets-and-rebuild-cost",
+    "setstate-and-rebuild-scope",
+    "didchangedependencies-and-inheritedwidget",
+    "globalkey-tradeoffs",
+  ]) assert.ok(slugs.has(slug), `missing Widgets question: ${slug}`);
+});
+
 test("the catalogue keeps official HTTPS sources and real review dates", () => {
   for (const question of questions) {
     assert.equal(new Date(`${question.lastReviewedAt}T00:00:00Z`).toISOString().slice(0, 10), question.lastReviewedAt);
