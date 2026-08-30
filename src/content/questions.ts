@@ -286,7 +286,7 @@ final count = "42".toSafeInt();`,
     slug: "async-await-and-futures-in-dart",
     trackId: "flutter",
     difficulty: "Mid",
-    topicIds: ["dart", "async-isolates"],
+    topicIds: ["dart"],
     question: "إزاي async و await بيتعاملوا مع Future في Dart؟",
     shortAnswer: "الدالة async ترجع Future، وawait ينتظر اكتمال Future داخل الدالة من غير حجز خيط التنفيذ، مع تمرير النتيجة أو الخطأ بشكل واضح.",
     explanation: "Future يمثل نتيجة قد تصل لاحقًا. await يوقف استكمال الدالة الحالية حتى تكتمل العملية، لكنه لا يحول العملية إلى synchronous ولا يجمّد event loop. تعامل مع الأخطاء باستخدام try/catch، وتأكد أن كل Future مهم إما awaited أو تتم إدارته صراحة.",
@@ -356,7 +356,7 @@ final candidate = Candidate("Mona");`,
     id: "oop-003",
     slug: "composition-vs-inheritance-in-flutter",
     trackId: "flutter",
-    topicIds: ["oop", "widgets"],
+    topicIds: ["oop"],
     difficulty: "Mid",
     question: "إمتى تختار composition بدل inheritance في كود Flutter؟",
     shortAnswer: "اختر composition عندما تجمع سلوكيات مستقلة وتريد تغييرها أو اختبارها، واستخدم inheritance لعلاقة is-a مستقرة وواضحة.",
@@ -546,7 +546,7 @@ String buildCard(CardRenderer renderer) => renderer.render();`,
     id: "solid-005",
     slug: "dependency-inversion-in-flutter",
     trackId: "flutter",
-    topicIds: ["solid", "architecture"],
+    topicIds: ["solid"],
     difficulty: "Senior",
     question: "ما المقصود بـ Dependency Inversion Principle في تطبيق Flutter؟",
     shortAnswer: "الطبقات الأعلى تعتمد على contracts مستقرة، بينما تفاصيل مثل HTTP أو التخزين تطبق هذه العقود وتُحقن من الخارج.",
@@ -571,7 +571,7 @@ class ProfileController {
     id: "solid-006",
     slug: "solid-boundaries-in-flutter-widgets",
     trackId: "flutter",
-    topicIds: ["solid", "architecture"],
+    topicIds: ["solid"],
     difficulty: "Senior",
     question: "إزاي نستخدم مبادئ SOLID من غير ما نحمّل Widget مسؤوليات زائدة؟",
     shortAnswer: "خلّي Widget ينسق rendering والتفاعل، ومرّر state أو callbacks واضحة بدل جعلها تقرأ الشبكة وتقرر قواعد المجال.",
@@ -588,7 +588,7 @@ class ProfileController {
     id: "solid-007",
     slug: "when-not-to-apply-solid",
     trackId: "flutter",
-    topicIds: ["solid", "architecture"],
+    topicIds: ["solid"],
     difficulty: "Junior",
     question: "هل لازم نطبق كل مبادئ SOLID في كل جزء من تطبيق Flutter؟",
     shortAnswer: "لا؛ استخدم المبدأ عندما يقلل تكلفة تغيير أو اختبار حقيقية، وإلا قد تضيف indirection وتعقيدًا بلا عائد.",
@@ -1353,7 +1353,7 @@ Navigator.of(context).pop();`,
     id: "net-006",
     slug: "service-repository-network-boundaries",
     trackId: "flutter",
-    topicIds: ["networking", "architecture"],
+    topicIds: ["networking"],
     difficulty: "Senior",
     question: "إيه الفرق بين network service وrepository في architecture؟",
     shortAnswer: "service يتعامل مع transport وserialization، بينما repository ينسق مصدر البيانات ويعرض contract domain مناسبًا لباقي التطبيق.",
@@ -1413,7 +1413,7 @@ Navigator.of(context).pop();`,
     id: "arch-007",
     slug: "testing-architecture-seams",
     trackId: "flutter",
-    topicIds: ["architecture", "testing"],
+    topicIds: ["architecture"],
     difficulty: "Mid",
     question: "إزاي تختار architecture seams التي تجعل الاختبار أعلى قيمة؟",
     shortAnswer: "افصل boundary حول قواعد أو I/O يتغير أو يفشل، ثم اختبر السلوك من خلال contract بدل تفاصيل implementation.",
@@ -1626,6 +1626,104 @@ Navigator.of(context).pop();`,
     sources: [{ title: "Dart docs — Isolates", url: "https://dart.dev/language/isolates" }],
     lastReviewedAt: "2026-08-30",
   },
+  {
+    id: "async-005",
+    slug: "future-wait-concurrency-and-failure",
+    trackId: "flutter",
+    topicIds: ["async-isolates"],
+    difficulty: "Mid",
+    question: "إزاي تستخدم Future.wait بأمان مع أكثر من عملية async؟",
+    shortAnswer: "أنشئ أو ابدأ الـFutures المطلوبة ثم مرّرها إلى Future.wait لتجميع النتائج، مع تحديد سياسة الخطأ وعدم تشغيل عمليات تعتمد على ترتيب سابق.",
+    explanation: "Future.wait ينتظر Futures الموجودة ولا يبدأ العمل بنفسه؛ استخدمه عندما لا توجد dependency بين الطلبات، ثم تعامل مع أول خطأ والموارد التي بدأت بالفعل. لا تستخدمه لتوازي CPU-bound work؛ Future scheduling لا يخلق isolate جديدًا.",
+    commonMistakes: ["تشغيل عمليات تعتمد على نتيجة سابقة داخل Future.wait.", "اعتبار فشل Future.wait إلغاءً تلقائيًا لكل العمليات الأخرى."],
+    followUpQuestions: ["متى تفضّل تنفيذ العمليات بالتتابع؟"],
+    sources: [{ title: "Dart API — Future.wait", url: "https://api.dart.dev/dart-async/Future/wait.html" }],
+    lastReviewedAt: "2026-08-30",
+  },
+  {
+    id: "widgets-011",
+    slug: "builder-child-and-rebuild-boundaries",
+    trackId: "flutter",
+    topicIds: ["widgets"],
+    difficulty: "Senior",
+    question: "إزاي تستخدم child parameter في Builder لتقليل rebuild؟",
+    shortAnswer: "ضع subtree الثابت في child خارج builder، ومرّره كما هو؛ عند استدعاء builder يعاد الجزء الذي يعتمد على القيمة فقط.",
+    explanation: "النمط مفيد مع AnimatedBuilder أو ValueListenableBuilder عندما يكون جزء من الشجرة لا يعتمد على القيمة المتغيرة. لا تستخدمه قبل فهم dependency أو كبديل لقياس rebuild الحقيقي.",
+    commonMistakes: ["إنشاء child داخل builder فتضيع الفائدة.", "افتراض أن child يمنع كل layout أو paint work في الشجرة."],
+    followUpQuestions: ["ما الفرق بين rebuild وlayout وpaint عند تقييم هذا التحسين؟"],
+    sources: [{ title: "Flutter API — AnimatedBuilder", url: "https://api.flutter.dev/flutter/widgets/AnimatedBuilder-class.html" }],
+    lastReviewedAt: "2026-08-30",
+  },
+  {
+    id: "arch-001",
+    slug: "domain-model-location-in-flutter-architecture",
+    trackId: "flutter",
+    topicIds: ["architecture"],
+    difficulty: "Mid",
+    question: "فين تحط domain models في هيكل مشروع Flutter؟",
+    shortAnswer: "ضع domain models في طبقة domain عندما تستخدمها data وUI، وافصلها عن API models حتى يظل شكل التطبيق مستقلًا عن transport.",
+    explanation: "دليل Flutter يضع models تحت domain، بينما repositories تحول البيانات الخام إلى الشكل الذي تحتاجه view models. لا تضع DTOs الخارجية في واجهة المستخدم لمجرد أنها جاهزة.",
+    commonMistakes: ["وضع model الخاص بالـAPI كعقد UI دائم.", "نسخ model في كل طبقة بلا mapping أو سبب واضح."],
+    followUpQuestions: ["متى يكون model مشترك بين data وUI مناسبًا؟"],
+    sources: [{ title: "Flutter docs — Architecture case study", url: "https://docs.flutter.dev/app-architecture/case-study" }],
+    lastReviewedAt: "2026-08-30",
+  },
+  {
+    id: "arch-003",
+    slug: "repositories-and-view-model-dependency-direction",
+    trackId: "flutter",
+    topicIds: ["architecture"],
+    difficulty: "Senior",
+    question: "إزاي يكون اتجاه الاعتماد بين repository وview model في Flutter؟",
+    shortAnswer: "view model يستهلك repository، والـrepository يخرج domain data؛ لا تجعل repositories تعتمد على بعضها أو تعرف تفاصيل الـUI.",
+    explanation: "هذا الاتجاه يحافظ على source of truth في repository ويترك تنسيق UI للـview model. إذا احتجت دمج مصدرين، ضعه في view model أو domain layer بدل cycle بين repositories.",
+    commonMistakes: ["استدعاء view model من repository.", "جعل repository يقرأ repository آخر بلا boundary واضحة."],
+    followUpQuestions: ["متى يكون use-case أنسب من دمج البيانات داخل view model؟"],
+    sources: [{ title: "Flutter docs — Guide to app architecture", url: "https://docs.flutter.dev/app-architecture/guide" }],
+    lastReviewedAt: "2026-08-30",
+  },
+  {
+    id: "arch-005",
+    slug: "optional-domain-layer-and-use-cases",
+    trackId: "flutter",
+    topicIds: ["architecture"],
+    difficulty: "Senior",
+    question: "إمتى تضيف domain layer أو use-case في Flutter؟",
+    shortAnswer: "أضفها عندما تدمج بيانات من repositories، أو تصبح business logic معقدة، أو تحتاج إعادة استخدام المنطق بين view models.",
+    explanation: "الـdomain layer اختيارية في دليل Flutter؛ إضافتها دائمًا تزيد classes وcognitive load. ابدأ من view model ثم استخرج use-case عندما يظهر أحد هذه الأسباب بوضوح.",
+    commonMistakes: ["إنشاء use-case لكل getter بسيط.", "وضع logic معقد في view لمجرد أن الوصول إلى البيانات سهل."],
+    followUpQuestions: ["ما trade-off لاستخدام use-cases دائمًا؟"],
+    sources: [{ title: "Flutter docs — Optional domain layer", url: "https://docs.flutter.dev/app-architecture/guide#optional-domain-layer" }],
+    lastReviewedAt: "2026-08-30",
+  },
+  {
+    id: "arch-006",
+    slug: "feature-vs-type-package-structure",
+    trackId: "flutter",
+    topicIds: ["architecture"],
+    difficulty: "Junior",
+    question: "تنظّم ملفات Flutter حسب الـfeature ولا حسب نوع الكلاس؟",
+    shortAnswer: "الاختيار يعتمد على ownership؛ دليل Flutter يجمع UI حسب feature ويجمع data repositories وservices حسب النوع لأنها مشتركة بين features.",
+    explanation: "التنظيم المختلط يوازن سهولة اكتشاف feature مع إعادة استخدام طبقة البيانات. لا تعتبر folder shape architecture كاملة؛ يجب أن تعكس boundaries والاعتماد الفعلي.",
+    commonMistakes: ["نسخ كل repository داخل كل feature بلا سبب.", "تجميع كل الملفات حسب النوع حتى تضيع feature كاملة بين مجلدات كثيرة."],
+    followUpQuestions: ["متى يصبح تنظيم feature أفضل لفريق كبير؟"],
+    sources: [{ title: "Flutter docs — Architecture case study package structure", url: "https://docs.flutter.dev/app-architecture/case-study#package-structure" }],
+    lastReviewedAt: "2026-08-30",
+  },
+  {
+    id: "test-006",
+    slug: "golden-tests-for-visual-regressions",
+    trackId: "flutter",
+    topicIds: ["testing"],
+    difficulty: "Mid",
+    question: "متى تستخدم golden test في Flutter؟",
+    shortAnswer: "استخدمه لمقارنة rendering مع صورة مرجعية واكتشاف تغييرات بصرية مقصودة أو غير مقصودة، مع تثبيت البيئة التي تؤثر على الصورة.",
+    explanation: "golden test مناسب لمكونات UI ذات contract بصري، لكنه حساس للخطوط والplatform وpixel ratio. حدّث golden فقط بعد مراجعة التغيير، ولا تجعله بديلًا عن اختبار السلوك والتفاعل.",
+    commonMistakes: ["قبول snapshot جديد تلقائيًا لإخفاء regression.", "استخدام golden لكل الشاشة مع اعتماد غير ثابت على network أو الوقت."],
+    followUpQuestions: ["كيف تجعل golden tests أقل flaky عبر البيئات؟"],
+    sources: [{ title: "Flutter API — matchesGoldenFile", url: "https://api.flutter.dev/flutter/flutter_test/matchesGoldenFile.html" }],
+    lastReviewedAt: "2026-08-30",
+  },
 ];
 
 const requiredQuestionFields = [
@@ -1638,6 +1736,25 @@ const requiredQuestionFields = [
   "explanation",
   "lastReviewedAt",
 ] as const;
+
+export const productionTopicCounts = {
+  dart: 12,
+  oop: 8,
+  solid: 8,
+  "flutter-fundamentals": 10,
+  widgets: 10,
+  "state-management": 10,
+  navigation: 5,
+  networking: 7,
+  "local-storage": 5,
+  "platform-integration": 2,
+  architecture: 8,
+  testing: 6,
+  performance: 5,
+  "async-isolates": 4,
+} as const;
+
+const approvedSourceHosts = new Set(["dart.dev", "api.dart.dev", "docs.flutter.dev", "api.flutter.dev", "blog.cleancoder.com", "www.rfc-editor.org"]);
 
 export function validateQuestions(interviewQuestions: InterviewQuestion[]): void {
   const ids = new Set<string>();
@@ -1668,7 +1785,29 @@ export function validateQuestions(interviewQuestions: InterviewQuestion[]): void
   }
 }
 
+export function validateProductionCatalogue(interviewQuestions: InterviewQuestion[] = questions): void {
+  validateQuestions(interviewQuestions);
+  if (interviewQuestions.length !== 100) throw new Error(`Production catalogue must contain exactly 100 questions; found ${interviewQuestions.length}`);
+  for (const [topicId, expectedCount] of Object.entries(productionTopicCounts)) {
+    const actualCount = interviewQuestions.filter((question) => question.topicIds.includes(topicId)).length;
+    if (actualCount !== expectedCount) throw new Error(`Topic ${topicId} must contain exactly ${expectedCount} questions; found ${actualCount}`);
+  }
+  for (const question of interviewQuestions) {
+    if (!["Junior", "Mid", "Senior"].includes(question.difficulty)) throw new Error(`Question ${question.id} has an invalid difficulty`);
+    const reviewDate = new Date(`${question.lastReviewedAt}T00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(question.lastReviewedAt) || Number.isNaN(reviewDate.getTime()) || reviewDate.toISOString().slice(0, 10) !== question.lastReviewedAt) {
+      throw new Error(`Question ${question.id} has an invalid review date`);
+    }
+    for (const source of question.sources) {
+      let url: URL;
+      try { url = new URL(source.url); } catch { throw new Error(`Question ${question.id} has an invalid source URL`); }
+      if (url.protocol !== "https:" || !approvedSourceHosts.has(url.hostname)) throw new Error(`Question ${question.id} has an unapproved source URL`);
+    }
+  }
+}
+
 validateQuestions(questions);
+validateProductionCatalogue();
 
 export function getQuestion(slug: string): InterviewQuestion | undefined {
   return questions.find((question) => question.slug === slug);

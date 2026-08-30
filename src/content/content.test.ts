@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { questions, validateQuestions } from "./questions.ts";
+import { questions, validateProductionCatalogue, validateQuestions } from "./questions.ts";
 
 test("the public question catalogue accepts the permanent Dart questions", () => {
   assert.doesNotThrow(() => validateQuestions(questions));
@@ -29,6 +29,17 @@ test("the public question catalogue accepts the permanent Dart questions", () =>
     assert.ok(question.explanation);
     assert.match(question.lastReviewedAt, /^\d{4}-\d{2}-\d{2}$/);
   }
+});
+
+test("production validation enforces the 100-question topic distribution", () => {
+  assert.doesNotThrow(() => validateProductionCatalogue());
+  assert.throws(() => validateProductionCatalogue(questions.slice(0, -1)), /exactly 100 questions/);
+  const wrongDistribution = questions.map((question, index) => index === 0 ? { ...question, topicIds: ["oop"] } : question);
+  assert.throws(() => validateProductionCatalogue(wrongDistribution), /Topic dart must contain exactly 12/);
+  assert.throws(() => validateProductionCatalogue(questions.map((question, index) => index === 0 ? { ...question, difficulty: "Expert" as never } : question)), /invalid difficulty/);
+  assert.throws(() => validateProductionCatalogue(questions.map((question, index) => index === 0 ? { ...question, lastReviewedAt: "2026-99-99" } : question)), /invalid review date/);
+  assert.throws(() => validateProductionCatalogue(questions.map((question, index) => index === 0 ? { ...question, lastReviewedAt: "2026-02-30" } : question)), /invalid review date/);
+  assert.throws(() => validateProductionCatalogue(questions.map((question, index) => index === 0 ? { ...question, sources: [{ title: "bad", url: "http://example.com" }] } : question)), /unapproved source URL/);
 });
 
 test("the public question catalogue rejects missing data and duplicate identity", () => {
@@ -88,7 +99,7 @@ test("the Widgets topic contains its planned question set", () => {
     "buildcontext-scope-and-inherited-widgets",
     "keys-and-widget-identity",
     "flutter-constraints-go-down-sizes-go-up",
-    "composition-vs-inheritance-in-flutter",
+    "builder-child-and-rebuild-boundaries",
     "const-widgets-and-rebuild-cost",
     "setstate-and-rebuild-scope",
     "didchangedependencies-and-inheritedwidget",
@@ -165,10 +176,10 @@ test("the Architecture topic contains its planned question set", () => {
     "dependency-injection-in-flutter",
     "testing-architecture-seams",
     "feature-boundaries-and-folder-organization",
-    "dependency-inversion-in-flutter",
-    "solid-boundaries-in-flutter-widgets",
-    "when-not-to-apply-solid",
-    "service-repository-network-boundaries",
+    "domain-model-location-in-flutter-architecture",
+    "repositories-and-view-model-dependency-direction",
+    "optional-domain-layer-and-use-cases",
+    "feature-vs-type-package-structure",
   ];
   const actual = new Set(questions.filter((question) => question.topicIds.includes("architecture")).map((question) => question.slug));
   assert.equal(actual.size, expected.length);
@@ -182,7 +193,7 @@ test("the Testing topic contains its planned question set", () => {
     "integration-tests-for-critical-flows",
     "fakes-mocks-and-test-doubles",
     "deterministic-and-reliable-flutter-tests",
-    "testing-architecture-seams",
+    "golden-tests-for-visual-regressions",
   ];
   const actual = new Set(questions.filter((question) => question.topicIds.includes("testing")).map((question) => question.slug));
   assert.equal(actual.size, expected.length);
@@ -200,7 +211,7 @@ test("the Performance and Async & Isolates topics contain their planned question
     ],
     "async-isolates": [
       "dart-event-loop-and-microtasks",
-      "async-await-and-futures-in-dart",
+      "future-wait-concurrency-and-failure",
       "streams-and-multiple-async-values",
       "isolates-for-cpu-bound-work",
     ],
