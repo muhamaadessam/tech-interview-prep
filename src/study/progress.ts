@@ -1,18 +1,23 @@
 export type QuestionProgress = "not-started" | "reviewing" | "mastered";
 
-export type QuestionStudy = {
+export type SavedQuestionState = {
   progress: QuestionProgress;
   favorite: boolean;
 };
 
-export type StudyData = Record<string, QuestionStudy>;
+export type SavedQuestions = Record<string, SavedQuestionState>;
+
+export const defaultQuestionState: SavedQuestionState = {
+  progress: "not-started",
+  favorite: false,
+};
 
 type StudyStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
-const storageKey = "tech-interview-prep:study:v1";
+const storageKey = "tech-interview-prep:questions:v1";
 const progressValues: QuestionProgress[] = ["not-started", "reviewing", "mastered"];
 
-export function getStudyData(storage: Pick<StudyStorage, "getItem">): StudyData {
+export function getSavedQuestions(storage: Pick<StudyStorage, "getItem">): SavedQuestions {
   try {
     const parsed: unknown = JSON.parse(storage.getItem(storageKey) ?? "{}");
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
@@ -21,8 +26,8 @@ export function getStudyData(storage: Pick<StudyStorage, "getItem">): StudyData 
       Object.entries(parsed).filter(([, value]) =>
         !!value &&
         typeof value === "object" &&
-        progressValues.includes((value as QuestionStudy).progress) &&
-        typeof (value as QuestionStudy).favorite === "boolean",
+        progressValues.includes((value as SavedQuestionState).progress) &&
+        typeof (value as SavedQuestionState).favorite === "boolean",
       ),
     );
   } catch {
@@ -30,13 +35,13 @@ export function getStudyData(storage: Pick<StudyStorage, "getItem">): StudyData 
   }
 }
 
-export function saveQuestionStudy(
+export function saveQuestionState(
   storage: Pick<StudyStorage, "getItem" | "setItem">,
   questionId: string,
-  update: Partial<QuestionStudy>,
+  update: Partial<SavedQuestionState>,
 ): void {
-  const data = getStudyData(storage);
-  const current = data[questionId] ?? { progress: "not-started", favorite: false };
+  const data = getSavedQuestions(storage);
+  const current = data[questionId] ?? defaultQuestionState;
   data[questionId] = {
     ...current,
     ...update,
@@ -49,7 +54,7 @@ export function saveQuestionStudy(
   }
 }
 
-export function resetStudyData(storage: Pick<StudyStorage, "removeItem">): void {
+export function resetSavedQuestions(storage: Pick<StudyStorage, "removeItem">): void {
   try {
     storage.removeItem(storageKey);
   } catch {

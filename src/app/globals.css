@@ -171,9 +171,9 @@ h3 { line-height: 1.45; }
 
 .question-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; padding-block-end: 72px; }
 .question-body { padding: clamp(24px, 5vw, 48px); }
-.study-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
-.study-controls fieldset { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; }
-.study-controls label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.question-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.question-controls fieldset { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; }
+.question-controls label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .favorite-control { font-weight: 800; }
 .answer { margin-block: 32px 0; border-inline-start: 4px solid var(--brand); background: var(--surface-soft); }
 .answer-toggle { width: 100%; padding: 18px 22px; border: 0; background: transparent; color: var(--brand-strong); font: inherit; font-weight: 800; text-align: start; cursor: pointer; }

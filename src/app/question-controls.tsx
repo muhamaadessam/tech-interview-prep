@@ -3,10 +3,11 @@
 import { useEffect, useState, type ReactNode } from "react";
 
 import {
-  getStudyData,
+  defaultQuestionState,
+  getSavedQuestions,
   type QuestionProgress,
-  type QuestionStudy,
-  saveQuestionStudy,
+  type SavedQuestionState,
+  saveQuestionState,
 } from "../study/progress";
 
 const progressOptions: { value: QuestionProgress; label: string }[] = [
@@ -15,21 +16,21 @@ const progressOptions: { value: QuestionProgress; label: string }[] = [
   { value: "mastered", label: "متقن" },
 ];
 
-export function QuestionStudyControls({ questionId }: { questionId: string }) {
-  const [study, setStudy] = useState<QuestionStudy>({ progress: "not-started", favorite: false });
+export function QuestionControls({ questionId }: { questionId: string }) {
+  const [questionState, setQuestionState] = useState<SavedQuestionState>(defaultQuestionState);
 
   useEffect(() => {
-    const saved = getStudyData(localStorage)[questionId];
-    if (saved) setStudy(saved);
+    const saved = getSavedQuestions(localStorage)[questionId];
+    if (saved) setQuestionState(saved);
   }, [questionId]);
 
-  function update(patch: Partial<QuestionStudy>) {
-    saveQuestionStudy(localStorage, questionId, patch);
-    setStudy((current) => ({ ...current, ...patch }));
+  function update(patch: Partial<SavedQuestionState>) {
+    saveQuestionState(localStorage, questionId, patch);
+    setQuestionState((current) => ({ ...current, ...patch }));
   }
 
   return (
-    <div className="study-controls">
+    <div className="question-controls">
       <fieldset>
         <legend>تقدم السؤال</legend>
         {progressOptions.map((option) => (
@@ -38,7 +39,7 @@ export function QuestionStudyControls({ questionId }: { questionId: string }) {
               type="radio"
               name={`progress-${questionId}`}
               value={option.value}
-              checked={study.progress === option.value}
+              checked={questionState.progress === option.value}
               onChange={() => update({ progress: option.value })}
             />
             {option.label}
@@ -48,7 +49,7 @@ export function QuestionStudyControls({ questionId }: { questionId: string }) {
       <label className="favorite-control">
         <input
           type="checkbox"
-          checked={study.favorite}
+          checked={questionState.favorite}
           onChange={(event) => update({ favorite: event.target.checked })}
         />
         حفظ في المفضلة

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getQuestion, getQuestionTopics, questions } from "../../../content/questions";
-import { AnswerDisclosure, QuestionStudyControls } from "../../question-study-controls";
+import { AnswerDisclosure, QuestionControls } from "../../question-controls";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -36,7 +36,7 @@ export default async function QuestionDetailsPage({ params }: Props) {
       </header>
       <div className="question-layout">
         <article className="question-body">
-          <QuestionStudyControls questionId={question.id} />
+          <QuestionControls questionId={question.id} />
           <AnswerDisclosure>
             <h2>الإجابة المختصرة</h2>
             <p>{question.shortAnswer}</p>

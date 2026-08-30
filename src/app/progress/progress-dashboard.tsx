@@ -3,24 +3,24 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { getStudyData, resetStudyData, type StudyData } from "../../study/progress";
+import { getSavedQuestions, resetSavedQuestions, type SavedQuestions } from "../../study/progress";
 
 type QuestionSummary = { id: string; slug: string; question: string };
 
 const sections = [
-  { title: "قيد المراجعة", matches: (study: StudyData[string]) => study.progress === "reviewing" },
-  { title: "متقن", matches: (study: StudyData[string]) => study.progress === "mastered" },
-  { title: "المفضلة", matches: (study: StudyData[string]) => study.favorite },
+  { title: "قيد المراجعة", matches: (saved: SavedQuestions[string]) => saved.progress === "reviewing" },
+  { title: "متقن", matches: (saved: SavedQuestions[string]) => saved.progress === "mastered" },
+  { title: "المفضلة", matches: (saved: SavedQuestions[string]) => saved.favorite },
 ];
 
 export function ProgressDashboard({ questions }: { questions: QuestionSummary[] }) {
-  const [data, setData] = useState<StudyData>({});
+  const [data, setData] = useState<SavedQuestions>({});
 
-  useEffect(() => setData(getStudyData(localStorage)), []);
+  useEffect(() => setData(getSavedQuestions(localStorage)), []);
 
   function reset() {
     if (!window.confirm("متأكد إنك عايز تمسح تقدمك والمفضلة من الجهاز ده؟")) return;
-    resetStudyData(localStorage);
+    resetSavedQuestions(localStorage);
     setData({});
   }
 
