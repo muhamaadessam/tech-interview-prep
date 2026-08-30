@@ -34,6 +34,12 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     <html lang="ar" dir="rtl" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script
+          id="locale-init"
+          dangerouslySetInnerHTML={{
+            __html: `(()=>{const l=location.pathname.split('/').filter(Boolean)[0]==="en"?"en":"ar";document.documentElement.lang=l;document.documentElement.dir=l==="en"?"ltr":"rtl"})()`,
+          }}
+        />
+        <script
           id="theme-init"
           dangerouslySetInnerHTML={{
             __html: `(()=>{try{const s=localStorage.getItem(${JSON.stringify(themeKey)});document.documentElement.dataset.theme=s==="light"||s==="dark"?s:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch{}})()`,
