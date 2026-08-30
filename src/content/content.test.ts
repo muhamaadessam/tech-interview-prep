@@ -159,6 +159,22 @@ test("the Local Storage and Platform Integration topics contain their planned qu
   }
 });
 
+test("the Architecture topic contains its planned question set", () => {
+  const expected = [
+    "presentation-domain-and-data-boundaries",
+    "dependency-injection-in-flutter",
+    "testing-architecture-seams",
+    "feature-boundaries-and-folder-organization",
+    "dependency-inversion-in-flutter",
+    "solid-boundaries-in-flutter-widgets",
+    "when-not-to-apply-solid",
+    "service-repository-network-boundaries",
+  ];
+  const actual = new Set(questions.filter((question) => question.topicIds.includes("architecture")).map((question) => question.slug));
+  assert.equal(actual.size, expected.length);
+  for (const slug of expected) assert.ok(actual.has(slug), `missing Architecture question: ${slug}`);
+});
+
 test("the catalogue keeps official HTTPS sources and real review dates", () => {
   for (const question of questions) {
     assert.equal(new Date(`${question.lastReviewedAt}T00:00:00Z`).toISOString().slice(0, 10), question.lastReviewedAt);
