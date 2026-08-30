@@ -54,14 +54,19 @@ export function toSearchParams(filters: LibraryFilters): URLSearchParams {
   if (filters.search.trim()) params.set("search", filters.search.trim());
   if (filters.topic) params.set("topic", filters.topic);
   if (filters.difficulty) params.set("difficulty", filters.difficulty);
+  if (filters.progress) params.set("progress", filters.progress);
+  if (filters.favoriteOnly) params.set("favorite", "1");
   return params;
 }
 
-export function fromSearchParams(params: URLSearchParams): Pick<LibraryFilters, "search" | "topic" | "difficulty"> {
+export function fromSearchParams(params: URLSearchParams): Pick<LibraryFilters, "search" | "topic" | "difficulty" | "progress" | "favoriteOnly"> {
   const difficulty = params.get("difficulty");
+  const progress = params.get("progress");
   return {
     search: params.get("search") ?? "",
     topic: params.get("topic") ?? "",
     difficulty: difficulty && difficultyOptions.includes(difficulty as DifficultyLevel) ? difficulty as DifficultyLevel : "",
+    progress: progress && ["not-started", "reviewing", "mastered"].includes(progress) ? progress as QuestionProgress : "",
+    favoriteOnly: params.get("favorite") === "1",
   };
 }

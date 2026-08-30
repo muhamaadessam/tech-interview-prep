@@ -32,9 +32,9 @@ test("library filters combine with local progress and favorite state", () => {
   assert.equal(filterQuestions(searchFixtures, { ...emptyFilters, progress: "not-started" }, {}, topics).length, 2);
 });
 
-test("shareable query params omit personal progress and favorites", () => {
+test("shareable query params include the active library filters", () => {
   const params = toSearchParams({ ...emptyFilters, search: "final", topic: "dart", difficulty: "Junior", progress: "mastered", favoriteOnly: true });
-  assert.equal(params.toString(), "search=final&topic=dart&difficulty=Junior");
+  assert.equal(params.toString(), "search=final&topic=dart&difficulty=Junior&progress=mastered&favorite=1");
 });
 
 test("full interview filters multiple topics and includes lower difficulty levels", () => {

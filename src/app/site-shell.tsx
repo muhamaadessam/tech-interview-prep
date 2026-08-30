@@ -28,7 +28,11 @@ export function SiteShell({ children }: { children: ReactNode }) {
     };
     sync();
     window.addEventListener("popstate", sync);
-    return () => window.removeEventListener("popstate", sync);
+    window.addEventListener("urlchange", sync);
+    return () => {
+      window.removeEventListener("popstate", sync);
+      window.removeEventListener("urlchange", sync);
+    };
   }, []);
 
   useEffect(() => {

@@ -28,6 +28,7 @@ function updateUrl(selection: InterviewSelection) {
   if (selection.difficulty) params.set("difficulty", selection.difficulty);
   const query = params.toString();
   window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+  window.dispatchEvent(new Event("urlchange"));
 }
 
 export function FullInterview({ questions, topics, locale = "ar" }: { questions: InterviewQuestion[]; topics: Topic[]; locale?: Locale }) {

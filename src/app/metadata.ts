@@ -15,5 +15,6 @@ export function localizedMetadata(locale: Locale, path: string, title: string, d
       },
     },
     openGraph: { title, description, locale: locale === "ar" ? "ar_EG" : "en_US" },
+    twitter: { card: "summary", title, description },
   };
 }

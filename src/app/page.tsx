@@ -20,7 +20,7 @@ export default function HomePage({ locale = "ar" }: { locale?: Locale }) {
             <Link className="button" href={localizedHref(locale, "/topics")}>{copy.exploreTopics}</Link>
           </div>
         </div>
-        <aside className="hero-card" aria-label="ملخص المحتوى الحالي">
+        <aside className="hero-card" aria-label={locale === "ar" ? "ملخص المحتوى الحالي" : "Current content summary"}>
           <strong>{questions.length}</strong>
           <span>{questions.length} {copy.currentQuestions}</span>
           <hr />

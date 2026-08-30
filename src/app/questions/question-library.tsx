@@ -33,7 +33,11 @@ export function QuestionLibrary({ questions, topics, locale = "ar" }: { question
     setSaved(getSavedQuestions(localStorage));
 
     window.addEventListener("popstate", syncFromUrl);
-    return () => window.removeEventListener("popstate", syncFromUrl);
+    window.addEventListener("urlchange", syncFromUrl);
+    return () => {
+      window.removeEventListener("popstate", syncFromUrl);
+      window.removeEventListener("urlchange", syncFromUrl);
+    };
   }, []);
 
   function updateFilters(update: Partial<LibraryFilters>) {
@@ -41,6 +45,7 @@ export function QuestionLibrary({ questions, topics, locale = "ar" }: { question
     setFilters(next);
     const query = toSearchParams(next).toString();
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+    window.dispatchEvent(new Event("urlchange"));
   }
 
   const matchingQuestions = filterQuestions(questions, filters, saved, topics);
