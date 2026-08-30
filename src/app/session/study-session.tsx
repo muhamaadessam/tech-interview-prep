@@ -64,7 +64,7 @@ export function StudySession({ questions, topics }: { questions: InterviewQuesti
           </select>
         </label>
         <label>
-          Difficulty Level
+          مستوى الصعوبة
           <select value={selection.difficulty} onChange={(event) => updateSelection({ difficulty: event.target.value as SessionSelection["difficulty"] })}>
             <option value="">اختار المستوى</option>
             {difficultyOptions.map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}

@@ -8,7 +8,7 @@ export default function TopicsPage() {
   return (
     <section className="shell section">
       <header className="page-header">
-        <span className="eyebrow">Flutter Track</span>
+        <span className="eyebrow">مسار Flutter</span>
         <h1>الموضوعات</h1>
         <p>المحتوى متقسم حسب المفاهيم اللي بتتقابل في الانترفيو. نبدأ بـ Dart ونضيف باقي موضوعات Flutter تباعًا.</p>
       </header>

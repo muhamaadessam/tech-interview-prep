@@ -7,7 +7,7 @@ export default function QuestionsPage() {
   return (
     <section className="shell section">
       <header className="page-header">
-        <span className="eyebrow">Question Library</span>
+        <span className="eyebrow">مكتبة الأسئلة</span>
         <h1>مكتبة الأسئلة</h1>
         <p>راجع السؤال، جاوب بصوتك، وبعدها افتح التفاصيل وقارن إجابتك بشرح مدعوم بالمصدر الرسمي.</p>
       </header>

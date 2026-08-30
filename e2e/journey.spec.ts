@@ -28,7 +28,7 @@ test.describe("Discovery, study session, and progress journey", () => {
     await expect(page).toHaveURL(/\/questions\/\?search=final&topic=dart/);
 
     // Select Difficulty Level
-    await page.getByLabel("Difficulty Level").selectOption("Junior");
+    await page.getByLabel("مستوى الصعوبة").selectOption("Junior");
     await expect(page).toHaveURL(/\/questions\/\?search=final&topic=dart&difficulty=Junior/);
 
     // Verify session button is available when topic & difficulty are set
@@ -57,6 +57,7 @@ test.describe("Discovery, study session, and progress journey", () => {
 
     await expect(masteredRadio).toBeChecked();
     await expect(favoriteCheckbox).toBeChecked();
+    await expect(page.getByText("تم حفظ التقدم على هذا الجهاز")).toBeAttached();
 
     // Reload page to verify persistence
     await page.reload();

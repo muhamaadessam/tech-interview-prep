@@ -12,6 +12,7 @@ import {
 
 export function QuestionControls({ questionId }: { questionId: string }) {
   const [questionState, setQuestionState] = useState<SavedQuestionState>(defaultQuestionState);
+  const [saveStatus, setSaveStatus] = useState("");
 
   useEffect(() => {
     const saved = getSavedQuestions(localStorage)[questionId];
@@ -21,10 +22,12 @@ export function QuestionControls({ questionId }: { questionId: string }) {
   function update(patch: Partial<SavedQuestionState>) {
     saveQuestionState(localStorage, questionId, patch);
     setQuestionState((current) => ({ ...current, ...patch }));
+    setSaveStatus("تم حفظ التقدم على هذا الجهاز");
   }
 
   return (
     <div className="question-controls">
+      <span className="sr-only" aria-live="polite">{saveStatus}</span>
       <fieldset>
         <legend>تقدم السؤال</legend>
         {questionProgressOptions.map((option) => (

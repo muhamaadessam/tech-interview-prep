@@ -7,7 +7,7 @@ export default function ProgressPage() {
   return (
     <section className="shell section">
       <header className="page-header">
-        <span className="eyebrow">Local Progress</span>
+        <span className="eyebrow">تقدمك على الجهاز</span>
         <h1>تقدمي</h1>
         <p>حالتك محفوظة على الجهاز ده فقط، من غير حساب أو إرسال بيانات.</p>
       </header>

@@ -66,14 +66,14 @@ export function QuestionLibrary({ questions, topics }: { questions: SearchableQu
           </select>
         </label>
         <label>
-          Difficulty Level
+          مستوى الصعوبة
           <select value={filters.difficulty} onChange={(event) => updateFilters({ difficulty: event.target.value as LibraryFilters["difficulty"] })}>
             <option value="">كل المستويات</option>
             {difficultyOptions.map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}
           </select>
         </label>
         <label>
-          Question Progress
+          حالة المراجعة
           <select value={filters.progress} onChange={(event) => updateFilters({ progress: event.target.value as LibraryFilters["progress"] })}>
             <option value="">كل الحالات</option>
             {questionProgressOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -87,7 +87,7 @@ export function QuestionLibrary({ questions, topics }: { questions: SearchableQu
 
       <div className="library-toolbar">
         <p aria-live="polite">{matchingQuestions.length} سؤال متاح.</p>
-        {sessionHref ? <Link className="button primary" href={sessionHref}>ابدأ جلسة المراجعة</Link> : <span className="filter-hint">اختار موضوعًا ومستوى لبدء جلسة.</span>}
+        {sessionHref ? <Link className="button primary" href={sessionHref}>ابدأ جلسة المراجعة</Link> : <Link className="button" href="/session">جهّز جلسة مراجعة</Link>}
       </div>
 
       {matchingQuestions.length ? (

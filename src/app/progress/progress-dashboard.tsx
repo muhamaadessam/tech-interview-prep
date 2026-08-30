@@ -26,6 +26,10 @@ export function ProgressDashboard({ questions }: { questions: QuestionSummary[] 
 
   return (
     <>
+      <div className="progress-summary">
+        <p>راجعت <strong>{questions.filter((question) => data[question.id]?.progress === "reviewing" || data[question.id]?.progress === "mastered").length}</strong> من {questions.length} سؤالًا.</p>
+        <Link className="button primary" href="/questions">كمّل المراجعة</Link>
+      </div>
       <div className="progress-grid">
         {sections.map((section) => {
           const matching = questions.filter((question) => {
