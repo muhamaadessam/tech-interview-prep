@@ -11,7 +11,6 @@ export type LibraryFilters = {
 
 export type SearchableQuestion = Pick<InterviewQuestion, "id" | "slug" | "topicIds" | "difficulty" | "question" | "shortAnswer">;
 
-const difficultyValues: DifficultyLevel[] = ["Junior", "Mid", "Senior"];
 export const difficultyOptions: DifficultyLevel[] = ["Junior", "Mid", "Senior"];
 
 export function questionHasTopic(question: SearchableQuestion, topicValue: string, availableTopics: Pick<Topic, "id" | "slug">[]): boolean {
@@ -50,6 +49,6 @@ export function fromSearchParams(params: URLSearchParams): Pick<LibraryFilters, 
   return {
     search: params.get("search") ?? "",
     topic: params.get("topic") ?? "",
-    difficulty: difficulty && difficultyValues.includes(difficulty as DifficultyLevel) ? difficulty as DifficultyLevel : "",
+    difficulty: difficulty && difficultyOptions.includes(difficulty as DifficultyLevel) ? difficulty as DifficultyLevel : "",
   };
 }
