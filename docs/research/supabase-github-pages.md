@@ -22,7 +22,7 @@ pages, Next.js API/Route Handlers, or request-time database reads.
 | --- | --- | --- |
 | Can Next.js remain on Pages? | Next.js static export emits an `out` directory of HTML/CSS/JS and supports client-side data fetching, but server features are not supported. [Next.js static exports](https://nextjs.org/docs/pages/guides/static-exports) · [Next.js SPAs](https://nextjs.org/docs/app/guides/single-page-applications) | Fetch Supabase data after hydration; do not add Next.js API routes, Server Actions, middleware, or SSR auth. |
 | Is GitHub Pages suitable? | GitHub Pages publishes HTML, CSS, and JavaScript files, optionally after a build. [GitHub Pages](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages) | Keep the existing GitHub Actions deployment and static `basePath`. |
-| Can the browser use Supabase? | Supabase documents publishable/anon keys as browser-safe only with RLS enabled; secret/service-role keys bypass RLS and must never be in a browser. [Supabase environment variables](https://supabase.com/docs/guides/functions/secrets) · [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security) | Expose only `NEXT_PUBLIC_SUPABASE_URL` and the publishable key. Protect every exposed table with explicit grants and RLS. |
+| Can the browser use Supabase? | Supabase documents publishable/anon keys as browser-safe only with RLS enabled; secret/service-role keys bypass RLS and must never be in a browser. [Supabase environment variables](https://supabase.com/docs/guides/functions/secrets) · [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security) | Expose only `NEXT_PUBLIC_SUPABASE_URL`, the Supabase publishable key, and Clerk's public key. Protect every exposed table with explicit grants and RLS. |
 | Does Auth cover the requested providers? | Clerk owns Google OAuth and email/password in this architecture. [Clerk authentication](https://clerk.com/docs/guides/secure/authentication) | Configure `http://localhost:3000` and `https://muhamaadessam.github.io/tech-interview-prep` as Clerk allowed origins. Use a Clerk JWT template for Supabase third-party auth before enforcing signed-in RLS. |
 | Can a static client call an Edge Function? | Browser calls need CORS; authenticated function calls carry the user JWT and can keep JWT verification enabled. [CORS](https://supabase.com/docs/guides/functions/cors) · [Securing Edge Functions](https://supabase.com/docs/guides/functions/auth) | `submit-question` should require an authenticated user, validate input, and apply rate limits/idempotency. |
 | Can the function open a GitHub Issue? | GitHub’s create-issue endpoint accepts GitHub App installation tokens and fine-grained tokens; repository Issues permission must be `write`. GitHub recommends App tokens for automation and says not to use a personal access token or password for a GitHub App. [Create an issue](https://docs.github.com/en/rest/issues/issues?apiVersion=latest) · [GitHub App best practices](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/best-practices-for-creating-a-github-app) | Prefer a GitHub App installed only on this repository with Issues: write. Keep its private key and installation details in Edge Function secrets. |
@@ -36,12 +36,12 @@ Browser on GitHub Pages
   │   └─ Clerk JWT for authenticated Supabase calls
   └─ Supabase browser client + publishable key
       ├─ public published Tracks/Topics/Interview Questions (RLS: anon SELECT)
-      └─ learner progress/favorites (RLS: owner only)
-  └─ supabase.functions.invoke("submit-question")
-        ├─ verifies the Supabase user JWT
-        ├─ validates and stores a Submission as pending
-        ├─ creates a GitHub Issue through the GitHub App
-        └─ stores issue number/URL and returns a safe result
+      ├─ learner progress/favorites (RLS: owner only)
+      └─ supabase.functions.invoke("submit-question")
+          ├─ verifies the Clerk JWT through Supabase third-party auth
+          ├─ validates and stores a Submission as pending
+          ├─ creates a GitHub Issue through the GitHub App
+          └─ stores issue number/URL and returns a safe result
 ```
 
 The Submission write and GitHub call are not one database transaction. Store a
@@ -54,10 +54,9 @@ GitHub outage from losing a learner’s submission and avoids duplicate Issues.
 1. Supabase: project URL and publishable key as GitHub Actions variables.
    Clerk: publishable key, exact local/production origins, Google provider, and
    email/password settings.
-2. Frontend build: public Supabase URL/key as GitHub Actions environment values
-   (not committed secrets), and a static `/auth/callback/` route if PKCE is
-   selected later. Client-only implicit auth is the smallest supported first
-   implementation; PKCE remains available if the threat model requires it. [PKCE flow](https://supabase.com/docs/guides/auth/sessions/pkce-flow)
+2. Frontend build: public Clerk and Supabase values as GitHub Actions variables
+   (not committed secrets). Clerk owns sign-in redirects; no Supabase callback
+   route is required.
 3. Database: `tracks`, `topics`, `interview_questions`, translations/content
    fields, `question_progress`, `favorites`, `submissions`, and a moderator
    role/profile. Public catalogue rows need an explicit published predicate;

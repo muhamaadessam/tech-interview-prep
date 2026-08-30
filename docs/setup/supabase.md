@@ -2,14 +2,15 @@
 
 This project remains a static Next.js export on GitHub Pages. Supabase supplies
 the database, Row Level Security, and Edge Functions; Clerk owns authentication.
-The browser only receives the public Supabase URL and publishable key.
+The browser only receives the two public publishable keys.
 
 ## Provisioning checklist
 
 1. Production project: `aptxrianhyxvdjnuyruo` (`eu-central-1`). Its URL and
    publishable key are stored as GitHub Actions variables named
-   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
-   Do not commit either value; never expose a service-role key.
+   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; Clerk's
+   key is stored as `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`. Do not commit values or
+   expose a service-role key.
 2. Configure Google and email/password providers in Clerk. Allow these exact
    origins: `http://localhost:3000` and
    `https://muhamaadessam.github.io/tech-interview-prep`.
@@ -22,8 +23,7 @@ The browser only receives the public Supabase URL and publishable key.
 ## Local configuration
 
 Copy `.env.example` to `.env.local` and fill in the Clerk and Supabase public
-values. The
-static catalogue must continue to work when these values are empty so local
+values. The static catalogue must continue to work when these values are empty so local
 content development does not depend on production credentials.
 
 ## Acceptance checks
