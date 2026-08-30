@@ -133,6 +133,28 @@ test("the Navigation and Networking topics contain their planned question sets",
   } as const;
   for (const [topic, slugs] of Object.entries(expected)) {
     const actual = new Set(questions.filter((question) => question.topicIds.includes(topic)).map((question) => question.slug));
+    assert.equal(actual.size, slugs.length, `${topic} question count changed`);
+    for (const slug of slugs) assert.ok(actual.has(slug), `missing ${topic} question: ${slug}`);
+  }
+});
+
+test("the Local Storage and Platform Integration topics contain their planned question sets", () => {
+  const expected = {
+    "local-storage": [
+      "preferences-files-and-local-databases",
+      "key-value-preferences-for-small-settings",
+      "files-for-local-documents-and-blobs",
+      "sqlite-for-structured-local-data",
+      "testable-and-resilient-local-persistence",
+    ],
+    "platform-integration": [
+      "platform-channels-and-native-boundaries",
+      "choosing-flutter-plugins-and-native-integration",
+    ],
+  } as const;
+  for (const [topic, slugs] of Object.entries(expected)) {
+    const actual = new Set(questions.filter((question) => question.topicIds.includes(topic)).map((question) => question.slug));
+    assert.equal(actual.size, slugs.length, `${topic} question count changed`);
     for (const slug of slugs) assert.ok(actual.has(slug), `missing ${topic} question: ${slug}`);
   }
 });
