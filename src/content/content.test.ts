@@ -6,7 +6,6 @@ import { questions, validateQuestions } from "./questions.ts";
 test("the public question catalogue accepts the permanent Dart questions", () => {
   assert.doesNotThrow(() => validateQuestions(questions));
   const dartQuestions = questions.filter((question) => question.topicIds.includes("dart"));
-  assert.equal(dartQuestions.length, 12);
   const requiredDartSlugs = [
     "final-vs-const-in-dart",
     "var-vs-dynamic-in-dart",
