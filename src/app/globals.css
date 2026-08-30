@@ -13,6 +13,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
+    color-scheme: dark;
     --background: #09131f;
     --surface: #101f2e;
     --surface-soft: #102d40;
@@ -243,4 +244,8 @@ h3 { line-height: 1.45; }
 
 @media (prefers-reduced-motion: no-preference) {
   .button, .card-link { transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }

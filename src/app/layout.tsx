@@ -3,10 +3,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+import { siteUrl } from "./site-config";
 import { ThemeToggle } from "./theme-toggle";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://muhamaadessam.github.io/tech-interview-prep/"),
+  metadataBase: new URL(`${siteUrl}/`),
   title: {
     default: "Tech Interview Prep",
     template: "%s | Tech Interview Prep",
@@ -34,7 +35,15 @@ const links = [
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="ar" dir="rtl" data-scroll-behavior="smooth">
+    <html lang="ar" dir="rtl" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <head>
+        <script
+          id="theme-init"
+          dangerouslySetInnerHTML={{
+            __html: `(()=>{try{const s=localStorage.getItem("tech-interview-prep:theme");document.documentElement.dataset.theme=s==="light"||s==="dark"?s:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch{}})()`,
+          }}
+        />
+      </head>
       <body>
         <a className="skip-link" href="#main-content">
           انتقل إلى المحتوى

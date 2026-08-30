@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 
 import { questions } from "../content/questions";
+import { siteUrl } from "./site-config";
 
-const siteUrl = "https://muhamaadessam.github.io/tech-interview-prep";
 export const dynamic = "force-static";
 
 export default function sitemap(): MetadataRoute.Sitemap {

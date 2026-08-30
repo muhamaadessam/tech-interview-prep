@@ -9,7 +9,12 @@ export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem(themeKey);
+    let stored: string | null = null;
+    try {
+      stored = localStorage.getItem(themeKey);
+    } catch {
+      // Continue with the system preference when storage is unavailable.
+    }
     const next: Theme = stored === "light" || stored === "dark"
       ? stored
       : window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -20,7 +25,11 @@ export function ThemeToggle() {
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
-    localStorage.setItem(themeKey, next);
+    try {
+      localStorage.setItem(themeKey, next);
+    } catch {
+      // The current session still follows the selected theme.
+    }
     setTheme(next);
   }
 
