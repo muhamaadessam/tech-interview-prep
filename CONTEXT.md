@@ -27,3 +27,15 @@ _Avoid_: Completion, status
 **Study Session**:
 An ordered set of Interview Questions selected by Topic and Difficulty Level for focused review.
 _Avoid_: Quiz, mock interview
+
+**Submission**:
+A proposed Interview Question and its learning material sent by an authenticated contributor. A Submission is not part of the public catalogue until it passes Review.
+_Avoid_: User question, draft question
+
+**Review**:
+The moderation process that evaluates a Submission for correctness, clarity, attribution, and fit before it becomes a published Interview Question.
+_Avoid_: Approval only, voting
+
+**Account**:
+An authenticated identity used to own Question Progress, Favorites, and Submissions. Anonymous learners may browse without an Account.
+_Avoid_: Profile when referring to identity or access
