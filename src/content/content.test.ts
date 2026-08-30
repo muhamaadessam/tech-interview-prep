@@ -64,13 +64,29 @@ test("the OOP and SOLID topics contain their planned question sets", () => {
   }
 });
 
+test("the Flutter Fundamentals topic contains its planned question set", () => {
+  const slugs = new Set(questions.filter((question) => question.topicIds.includes("flutter-fundamentals")).map((question) => question.slug));
+  for (const slug of [
+    "flutter-framework-engine-and-embedder",
+    "declarative-ui-in-flutter",
+    "widget-element-render-object-trees",
+    "flutter-frame-rendering-pipeline",
+    "hot-reload-vs-hot-restart",
+    "debug-profile-and-release-modes",
+    "pubspec-dependencies-and-packages",
+    "flutter-app-lifecycle",
+    "assets-and-images-in-flutter",
+    "flutter-flavors-and-build-configurations",
+  ]) assert.ok(slugs.has(slug), `missing Flutter Fundamentals question: ${slug}`);
+});
+
 test("the catalogue keeps official HTTPS sources and real review dates", () => {
   for (const question of questions) {
     assert.equal(new Date(`${question.lastReviewedAt}T00:00:00Z`).toISOString().slice(0, 10), question.lastReviewedAt);
     for (const source of question.sources) {
       const url = new URL(source.url);
       assert.equal(url.protocol, "https:");
-      assert.ok(["dart.dev", "api.dart.dev", "docs.flutter.dev", "blog.cleancoder.com"].includes(url.hostname));
+      assert.ok(["dart.dev", "api.dart.dev", "docs.flutter.dev", "api.flutter.dev", "blog.cleancoder.com"].includes(url.hostname));
     }
   }
 });
