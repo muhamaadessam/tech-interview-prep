@@ -5,9 +5,9 @@ import { questions, validateQuestions } from "./questions.ts";
 
 test("the public question catalogue accepts the permanent Dart questions", () => {
   assert.doesNotThrow(() => validateQuestions(questions));
-  assert.equal(questions.length, 2);
-  assert.equal(questions[0]?.slug, "final-vs-const-in-dart");
-  assert.equal(questions[1]?.slug, "var-vs-dynamic-in-dart");
+  const slugs = new Set(questions.map((question) => question.slug));
+  assert.ok(slugs.has("final-vs-const-in-dart"));
+  assert.ok(slugs.has("var-vs-dynamic-in-dart"));
 });
 
 test("the public question catalogue rejects missing data and duplicate identity", () => {

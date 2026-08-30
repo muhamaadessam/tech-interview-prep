@@ -19,6 +19,7 @@ export function StudySession({ questions, topics }: { questions: InterviewQuesti
     function syncFromUrl() {
       const parsed = fromSearchParams(new URLSearchParams(window.location.search));
       setSelection({ topic: parsed.topic, difficulty: parsed.difficulty });
+      setCurrentIndex(0);
     }
     syncFromUrl();
     setIsHydrated(true);
