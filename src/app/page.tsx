@@ -45,7 +45,7 @@ export default function HomePage() {
               <span className="chip">{question.difficulty}</span>
             </div>
             <h3 className="question-title">{question.question}</h3>
-            <p>{question.shortAnswer}</p>
+            <p>جاوب من ذاكرتك، وبعدها اكشف الإجابة وقارن شرحك بالتفاصيل.</p>
             <span className="text-link">اقرأ الإجابة كاملة ←</span>
           </Link>
         )}

@@ -22,6 +22,9 @@ export type InterviewQuestion = {
   question: string;
   shortAnswer: string;
   explanation: string;
+  codeExample?: string;
+  commonMistakes?: string[];
+  followUpQuestions?: string[];
   sources: { title: string; url: string }[];
   lastReviewedAt: string;
 };
@@ -46,6 +49,17 @@ export const questions: InterviewQuestion[] = [
       "final تعني أن المتغير يُسند مرة واحدة وقت التشغيل، بينما const تنشئ قيمة ثابتة وقت الترجمة.",
     explanation:
       "استخدم final عندما لا تتغير الإشارة بعد تعيينها لكن القيمة لا تُعرف إلا وقت التشغيل، مثل نتيجة طلب أو الوقت الحالي. استخدم const عندما تكون القيمة وكل مكوناتها معروفة وقت الترجمة؛ والقيم المتطابقة من const يمكن أن تشترك في نفس النسخة canonical.",
+    codeExample: `final currentTime = DateTime.now();
+const apiVersion = 2;
+const point = Point(1, 2);`,
+    commonMistakes: [
+      "اعتبار final قيمة ثابتة وقت الترجمة؛ هي فقط تُسند مرة واحدة.",
+      "استخدام const مع قيمة لا يمكن حسابها وقت الترجمة مثل DateTime.now().",
+    ],
+    followUpQuestions: [
+      "هل يمكن أن تتغير محتويات List مُسندة إلى متغير final؟",
+      "ما المقصود بـ canonical instances عند استخدام const؟",
+    ],
     sources: [
       {
         title: "Dart language — Variables",

@@ -16,6 +16,7 @@ const links = [
   ["الرئيسية", "/"],
   ["الموضوعات", "/topics"],
   ["مكتبة الأسئلة", "/questions"],
+  ["تقدمي", "/progress"],
 ] as const;
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

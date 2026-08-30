@@ -22,7 +22,7 @@ export default function QuestionsPage() {
               <span className="chip">{question.difficulty}</span>
             </div>
             <h2 className="question-title">{question.question}</h2>
-            <p>{question.shortAnswer}</p>
+            <p>اختبر إجابتك قبل ما تكشف الشرح.</p>
             <span className="text-link">فتح السؤال ←</span>
           </Link>
         ))}
