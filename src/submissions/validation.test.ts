@@ -25,6 +25,7 @@ test("submission validation rejects HTML, missing consent, and non-HTTPS sources
   assert.throws(() => validateSubmission({ ...valid, licenseConsent: false }), /license_consent_required/);
   assert.throws(() => validateSubmission({ ...valid, sources: [] }), /sources_invalid/);
   assert.throws(() => validateSubmission({ ...valid, sources: ["http://example.com"] }), /sources_invalid/);
+  assert.throws(() => validateSubmission({ ...valid, codeExample: "```dart\nfinal x = 1;\n```" }), /code_invalid/);
 });
 
 test("duplicate advisory normalization is stable", () => {

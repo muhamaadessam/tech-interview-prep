@@ -57,6 +57,8 @@ supabase link --project-ref aptxrianhyxvdjnuyruo
 supabase db push
 supabase db query --file supabase/seed.sql
 supabase functions deploy submit-question
+supabase functions deploy moderator-actions
+supabase functions deploy account-delete
 ```
 
 The `submit-question` function performs its own Clerk JWT verification (the
@@ -68,6 +70,16 @@ the Submission and its first revision, then creates a GitHub Issue with the fixe
 leave retries in the `failed` state without exposing privileged values.
 Submission revisions and rate-limit counters are service-role-only tables; the
 browser can read only its own Submission rows.
+
+The `moderator-actions` function is the only write path for suspensions,
+rejections, and unpublishing. The `account-delete` function removes private
+account data and unpublished submissions, anonymizes published attribution,
+records an append-only audit event, and then deletes the Clerk account. Both
+functions require the same Clerk JWT settings and service-role key; GitHub App
+secrets are needed for closing review Issues after a rejection. Audit rows carry
+a 12-month expiry and are never exposed to browser roles. If Clerk deletion
+temporarily fails, the function returns a retryable error after the database
+cleanup; published attribution remains anonymized.
 
 ## Acceptance checks
 

@@ -190,6 +190,12 @@ domain = "driven-pipefish-724.clerk.accounts.dev"
 [functions.submit-question]
 verify_jwt = false
 
+[functions.moderator-actions]
+verify_jwt = false
+
+[functions.account-delete]
+verify_jwt = false
+
 # Configure passkey sign-ins.
 # [auth.passkey]
 # enabled = false

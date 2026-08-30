@@ -65,6 +65,7 @@ export function validateSubmission(value: unknown): ValidatedSubmission {
   const sources = list(draft.sources, submissionLimits.sources, "sources");
   if (!sources.length || !sources.every((source) => /^https:\/\/[^\s]+$/i.test(source))) throw new Error("sources_invalid");
   const codeExample = draft.codeExample ? text(draft.codeExample, submissionLimits.code, "code") : null;
+  if (codeExample?.includes("```")) throw new Error("code_invalid");
   const commonMistakes = draft.commonMistakes ? list(draft.commonMistakes, submissionLimits.items, "mistakes") : [];
   const followUpQuestions = draft.followUpQuestions ? list(draft.followUpQuestions, submissionLimits.items, "followups") : [];
   const displayName = draft.displayName ? text(draft.displayName, submissionLimits.displayName, "display_name") : "Community contributor";

@@ -96,6 +96,7 @@ function errorMessage(code: string, copy: typeof messages.ar | typeof messages.e
   if (code === "daily_limit_reached") return copy.submitRateLimit;
   if (code === "cooldown_active") return copy.submitCooldown;
   if (code === "email_confirmation_required") return copy.submitEmailRequired;
+  if (code === "submission_suspended") return copy.submitSuspended;
   if (code === "topics_invalid" || code === "taxonomy_invalid" || code.endsWith("_invalid") || code === "license_consent_required") return copy.submitValidation;
   return copy.submitUnavailable;
 }

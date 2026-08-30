@@ -1,4 +1,5 @@
 import { normalizeQuestion, validateSubmission, type ValidatedSubmission } from "../../../src/submissions/validation.ts";
+import { clerkAuth, emailConfirmed, pseudonymousUserId } from "../_shared/clerk-auth.ts";
 
 const cors = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -11,7 +12,6 @@ const maxDailySubmissions = 5;
 const cooldownMs = 60_000;
 const stalePendingMs = 120_000;
 
-type JwtClaims = Record<string, unknown>;
 type SubmissionRow = {
   id: string;
   status: string;
@@ -30,46 +30,6 @@ class DatabaseError extends Error {
 
 function response(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: cors });
-}
-
-function decodePart(part: string): Uint8Array {
-  const normalized = part.replaceAll("-", "+").replaceAll("_", "/").padEnd(Math.ceil(part.length / 4) * 4, "=");
-  const binary = atob(normalized);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
-}
-
-async function verifyJwt(token: string): Promise<JwtClaims | null> {
-  const [encodedHeader, encodedPayload, encodedSignature] = token.split(".");
-  if (!encodedHeader || !encodedPayload || !encodedSignature) return null;
-  try {
-    const header = JSON.parse(new TextDecoder().decode(decodePart(encodedHeader))) as { alg?: string; kid?: string };
-    const claims = JSON.parse(new TextDecoder().decode(decodePart(encodedPayload))) as JwtClaims;
-    if (header.alg !== "RS256" || typeof header.kid !== "string" || typeof claims.sub !== "string") return null;
-    if (typeof claims.exp === "number" && claims.exp < Math.floor(Date.now() / 1000)) return null;
-    const jwksUrl = Deno.env.get("CLERK_JWKS_URL");
-    const configuredIssuer = Deno.env.get("CLERK_JWT_ISSUER");
-    if (!jwksUrl || !configuredIssuer) return null;
-    const jwksResponse = await fetch(jwksUrl);
-    if (!jwksResponse.ok) return null;
-    const jwks = await jwksResponse.json() as { keys?: Array<JsonWebKey & { kid?: string; alg?: string }> };
-    const jwk = jwks.keys?.find((key) => key.kid === header.kid && key.alg === "RS256");
-    if (!jwk) return null;
-    const key = await crypto.subtle.importKey("jwk", jwk, { hash: "SHA-256", name: "RSASSA-PKCS1-v1_5" }, false, ["verify"]);
-    const valid = await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, decodePart(encodedSignature), new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`));
-    const issuer = configuredIssuer.replace(/\/$/, "");
-    if (typeof claims.iss !== "string" || claims.iss.replace(/\/$/, "") !== issuer) return null;
-    return valid ? claims : null;
-  } catch {
-    return null;
-  }
-}
-
-async function bearer(request: Request): Promise<{ token: string; claims: JwtClaims } | null> {
-  const value = request.headers.get("authorization") ?? "";
-  const token = value.match(/^Bearer\s+(.+)$/i)?.[1];
-  if (!token) return null;
-  const claims = await verifyJwt(token);
-  return claims ? { token, claims } : null;
 }
 
 function dbConfig(): { url: string; key: string } {
@@ -95,18 +55,6 @@ async function dbRequest(path: string, key: string, init: RequestInit = {}): Pro
 
 function jsonValue(value: unknown): unknown {
   return value && typeof value === "object" ? value : {};
-}
-
-async function emailConfirmed(userId: string, claims: JwtClaims): Promise<boolean> {
-  if (claims.email_verified === true || claims.email_verified === "true") return true;
-  const secret = Deno.env.get("CLERK_SECRET_KEY");
-  if (!secret) return false;
-  const result = await fetch(`https://api.clerk.com/v1/users/${encodeURIComponent(userId)}`, {
-    headers: { Authorization: `Bearer ${secret}`, Accept: "application/json" },
-  });
-  if (!result.ok) return false;
-  const user = await result.json() as { primary_email_address_id?: string; email_addresses?: Array<{ id?: string; verification?: { status?: string } }> };
-  return Boolean(user.email_addresses?.some((email) => email.id === user.primary_email_address_id && email.verification?.status === "verified"));
 }
 
 function intersects(a: string[], b: string[]): boolean {
@@ -213,7 +161,7 @@ async function createGithubIssue(draft: ValidatedSubmission, submissionId: strin
 
 async function submit(request: Request): Promise<Response> {
   if (!request.headers.get("apikey")) return response({ error: "invalid_client" }, 401);
-  const auth = await bearer(request);
+  const auth = await clerkAuth(request);
   if (!auth) return response({ error: "unauthenticated" }, 401);
   const userId = typeof auth.claims.sub === "string" ? auth.claims.sub : "";
   if (!userId) return response({ error: "unauthenticated" }, 401);
@@ -228,6 +176,8 @@ async function submit(request: Request): Promise<Response> {
 
   try {
     const { key } = dbConfig();
+    const roles = await (await dbRequest(`/rest/v1/account_roles?select=suspended&user_id=eq.${encodeURIComponent(userId)}&limit=1`, key)).json() as Array<{ suspended?: boolean }>;
+    if (roles[0]?.suspended) return response({ error: "submission_suspended" }, 403);
     const existing = await (await dbRequest(`/rest/v1/submissions?select=id,status,github_issue_number,github_issue_url,last_error,revision_number,updated_at&submitted_by=eq.${encodeURIComponent(userId)}&idempotency_key=eq.${encodeURIComponent(draft.idempotencyKey)}&limit=1`, key)).json() as SubmissionRow[];
     const previous = existing[0];
     const pendingStatus = previous?.status === "pending" || previous?.status === "issue_creating";
@@ -260,6 +210,7 @@ async function submit(request: Request): Promise<Response> {
       if (!submissionId) throw new Error("database_error");
       if (insertedNew) {
         await dbRequest("/rest/v1/submission_revisions", key, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify([{ submission_id: submissionId, revision_number: 1, submitted_by: userId, track_id: draft.trackId, topic_ids: draft.topicIds, difficulty: draft.difficulty, payload }]) });
+        await dbRequest("/rest/v1/moderation_audit_events", key, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify([{ actor_user_id: await pseudonymousUserId(userId), action: "submission_created", target_type: "submission", target_id: submissionId, metadata: { duplicate_advisory: Boolean(duplicateOf) } }]) });
       }
     } else {
       const revisions = await (await dbRequest(`/rest/v1/submission_revisions?select=id&submission_id=eq.${encodeURIComponent(submissionId)}&revision_number=eq.1&limit=1`, key)).json() as Array<{ id: string }>;
