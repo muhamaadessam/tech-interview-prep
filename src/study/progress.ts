@@ -12,6 +12,12 @@ export const defaultQuestionState: SavedQuestionState = {
   favorite: false,
 };
 
+export const questionProgressOptions: { value: QuestionProgress; label: string }[] = [
+  { value: "not-started", label: "لم أبدأ" },
+  { value: "reviewing", label: "قيد المراجعة" },
+  { value: "mastered", label: "متقن" },
+];
+
 type StudyStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 const storageKey = "tech-interview-prep:questions:v1";

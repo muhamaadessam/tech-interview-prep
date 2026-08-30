@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import type { InterviewQuestion, Topic, DifficultyLevel } from "../../content/questions";
+import { difficultyOptions, questionHasTopic } from "../../content/question-search";
+import { AnswerContent } from "../answer-content";
 import { AnswerDisclosure, QuestionControls } from "../question-controls";
 
 type SessionSelection = { topic: string; difficulty: DifficultyLevel | "" };
@@ -23,11 +25,9 @@ export function StudySession({ questions, topics }: { questions: InterviewQuesti
     setReady(true);
   }, []);
 
-  const sessionQuestions = selection.topic && selection.difficulty
-    ? questions.filter((question) => {
-        const topic = topics.find((candidate) => candidate.slug === selection.topic || candidate.id === selection.topic);
-        return topic ? question.topicIds.includes(topic.id) && question.difficulty === selection.difficulty : false;
-      })
+  const selectedTopic = topics.find((candidate) => candidate.slug === selection.topic || candidate.id === selection.topic);
+  const sessionQuestions = selection.topic && selection.difficulty && selectedTopic
+    ? questions.filter((question) => questionHasTopic(question, selectedTopic.slug, topics) && question.difficulty === selection.difficulty)
     : [];
   const question = sessionQuestions[currentIndex];
 
@@ -64,9 +64,7 @@ export function StudySession({ questions, topics }: { questions: InterviewQuesti
           Difficulty Level
           <select value={selection.difficulty} onChange={(event) => updateSelection({ difficulty: event.target.value as SessionSelection["difficulty"] })}>
             <option value="">اختار المستوى</option>
-            <option value="Junior">Junior</option>
-            <option value="Mid">Mid</option>
-            <option value="Senior">Senior</option>
+            {difficultyOptions.map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}
           </select>
         </label>
       </div>
@@ -77,18 +75,10 @@ export function StudySession({ questions, topics }: { questions: InterviewQuesti
           <article className="question-body session-question">
             <div className="meta"><span className="chip">{selection.difficulty}</span></div>
             <h2>{question.question}</h2>
-            <QuestionControls questionId={question.id} />
-            <AnswerDisclosure>
-              <h2>الإجابة المختصرة</h2>
-              <p>{question.shortAnswer}</p>
-              <h2>الشرح</h2>
-              <p>{question.explanation}</p>
-              {question.codeExample ? <><h2>مثال بالكود</h2><pre dir="ltr"><code>{question.codeExample}</code></pre></> : null}
-              {question.commonMistakes?.length ? <><h2>أخطاء شائعة</h2><ul>{question.commonMistakes.map((mistake) => <li key={mistake}>{mistake}</li>)}</ul></> : null}
-              {question.followUpQuestions?.length ? <><h2>أسئلة متابعة</h2><ul>{question.followUpQuestions.map((followUp) => <li key={followUp}>{followUp}</li>)}</ul></> : null}
-              <h2>المصادر</h2>
-              <ul className="source-list">{question.sources.map((source) => <li key={source.url}><a href={source.url} target="_blank" rel="noreferrer">{source.title}</a></li>)}</ul>
-            </AnswerDisclosure>
+            <div key={question.id}>
+              <QuestionControls questionId={question.id} />
+              <AnswerDisclosure><AnswerContent question={question} /></AnswerDisclosure>
+            </div>
           </article>
           <nav className="session-navigation" aria-label="تنقل جلسة المراجعة">
             <button className="button" type="button" disabled={currentIndex === 0} onClick={() => setCurrentIndex((index) => index - 1)}>السؤال السابق</button>

@@ -12,6 +12,11 @@ export type LibraryFilters = {
 export type SearchableQuestion = Pick<InterviewQuestion, "id" | "slug" | "topicIds" | "difficulty" | "question" | "shortAnswer">;
 
 const difficultyValues: DifficultyLevel[] = ["Junior", "Mid", "Senior"];
+export const difficultyOptions: DifficultyLevel[] = ["Junior", "Mid", "Senior"];
+
+export function questionHasTopic(question: SearchableQuestion, topicValue: string, availableTopics: Pick<Topic, "id" | "slug">[]): boolean {
+  return availableTopics.some((topic) => question.topicIds.includes(topic.id) && (topic.slug === topicValue || topic.id === topicValue));
+}
 
 export function filterQuestions(
   interviewQuestions: SearchableQuestion[],
@@ -23,10 +28,10 @@ export function filterQuestions(
 
   return interviewQuestions.filter((question) => {
     const matchesSearch = !search || `${question.question} ${question.shortAnswer}`.toLocaleLowerCase().includes(search);
-    const matchesTopic = !filters.topic || availableTopics.some((topic) => question.topicIds.includes(topic.id) && (topic.slug === filters.topic || topic.id === filters.topic));
+    const matchesTopic = !filters.topic || questionHasTopic(question, filters.topic, availableTopics);
     const matchesDifficulty = !filters.difficulty || question.difficulty === filters.difficulty;
     const savedQuestion = saved[question.id];
-    const matchesProgress = !filters.progress || savedQuestion?.progress === filters.progress;
+    const matchesProgress = !filters.progress || (savedQuestion?.progress ?? "not-started") === filters.progress;
     const matchesFavorite = !filters.favoriteOnly || savedQuestion?.favorite === true;
     return matchesSearch && matchesTopic && matchesDifficulty && matchesProgress && matchesFavorite;
   });

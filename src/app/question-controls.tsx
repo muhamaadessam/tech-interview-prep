@@ -5,23 +5,17 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   defaultQuestionState,
   getSavedQuestions,
-  type QuestionProgress,
+  questionProgressOptions,
   type SavedQuestionState,
   saveQuestionState,
 } from "../study/progress";
-
-const progressOptions: { value: QuestionProgress; label: string }[] = [
-  { value: "not-started", label: "لم أبدأ" },
-  { value: "reviewing", label: "قيد المراجعة" },
-  { value: "mastered", label: "متقن" },
-];
 
 export function QuestionControls({ questionId }: { questionId: string }) {
   const [questionState, setQuestionState] = useState<SavedQuestionState>(defaultQuestionState);
 
   useEffect(() => {
     const saved = getSavedQuestions(localStorage)[questionId];
-    if (saved) setQuestionState(saved);
+    setQuestionState(saved ?? defaultQuestionState);
   }, [questionId]);
 
   function update(patch: Partial<SavedQuestionState>) {
@@ -33,7 +27,7 @@ export function QuestionControls({ questionId }: { questionId: string }) {
     <div className="question-controls">
       <fieldset>
         <legend>تقدم السؤال</legend>
-        {progressOptions.map((option) => (
+        {questionProgressOptions.map((option) => (
           <label key={option.value}>
             <input
               type="radio"

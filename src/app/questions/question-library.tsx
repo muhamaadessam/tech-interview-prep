@@ -7,20 +7,15 @@ import {
   filterQuestions,
   fromSearchParams,
   toSearchParams,
+  difficultyOptions,
   type LibraryFilters,
   type SearchableQuestion,
 } from "../../content/question-search";
-import { getSavedQuestions, type QuestionProgress, type SavedQuestions } from "../../study/progress";
+import { getSavedQuestions, questionProgressOptions, type SavedQuestions } from "../../study/progress";
 
 type LibraryTopic = { id: string; slug: string; name: string };
 
 const emptyFilters: LibraryFilters = { search: "", topic: "", difficulty: "", progress: "", favoriteOnly: false };
-const progressOptions: { value: QuestionProgress; label: string }[] = [
-  { value: "not-started", label: "لم أبدأ" },
-  { value: "reviewing", label: "قيد المراجعة" },
-  { value: "mastered", label: "متقن" },
-];
-
 export function QuestionLibrary({ questions, topics }: { questions: SearchableQuestion[]; topics: LibraryTopic[] }) {
   const [filters, setFilters] = useState<LibraryFilters>(emptyFilters);
   const [saved, setSaved] = useState<SavedQuestions>({});
@@ -65,16 +60,14 @@ export function QuestionLibrary({ questions, topics }: { questions: SearchableQu
           Difficulty Level
           <select value={filters.difficulty} onChange={(event) => updateFilters({ difficulty: event.target.value as LibraryFilters["difficulty"] })}>
             <option value="">كل المستويات</option>
-            <option value="Junior">Junior</option>
-            <option value="Mid">Mid</option>
-            <option value="Senior">Senior</option>
+            {difficultyOptions.map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}
           </select>
         </label>
         <label>
           Question Progress
           <select value={filters.progress} onChange={(event) => updateFilters({ progress: event.target.value as LibraryFilters["progress"] })}>
             <option value="">كل الحالات</option>
-            {progressOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            {questionProgressOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
         </label>
         <label className="filter-checkbox">

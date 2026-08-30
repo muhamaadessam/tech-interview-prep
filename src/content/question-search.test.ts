@@ -24,6 +24,7 @@ test("library filters combine with local progress and favorite state", () => {
 
   assert.equal(filterQuestions(questions, filters, saved, topics).length, 1);
   assert.equal(filterQuestions(questions, { ...filters, progress: "reviewing" }, saved, topics).length, 0);
+  assert.equal(filterQuestions(questions, { ...emptyFilters, progress: "not-started" }, {}, topics).length, 1);
 });
 
 test("shareable query params omit personal progress and favorites", () => {
