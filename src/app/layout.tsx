@@ -3,13 +3,26 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import "./globals.css";
+import { ThemeToggle } from "./theme-toggle";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://muhamaadessam.github.io/tech-interview-prep/"),
   title: {
     default: "Tech Interview Prep",
     template: "%s | Tech Interview Prep",
   },
   description: "تجهيز منظم لأسئلة مقابلات Flutter التقنية باللغة العربية.",
+  openGraph: {
+    title: "Tech Interview Prep",
+    description: "تجهيز منظم لأسئلة مقابلات Flutter التقنية باللغة العربية.",
+    type: "website",
+    locale: "ar_EG",
+  },
+  twitter: {
+    card: "summary",
+    title: "Tech Interview Prep",
+    description: "تجهيز منظم لأسئلة مقابلات Flutter التقنية باللغة العربية.",
+  },
 };
 
 const links = [
@@ -37,6 +50,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
                 <Link key={href} href={href}>{label}</Link>
               ))}
             </div>
+            <ThemeToggle />
           </nav>
         </header>
         <main id="main-content">{children}</main>

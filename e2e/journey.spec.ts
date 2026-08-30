@@ -7,6 +7,14 @@ test.describe("Discovery, study session, and progress journey", () => {
     await expect(page.getByRole("heading", { name: "ادخل الانترفيو وإجابتك مرتبة في دماغك." })).toBeVisible();
     await expect(page.getByText("سؤال دائم في النسخة الأولى")).toBeVisible();
 
+    const themeToggle = page.getByRole("button", { name: "تغيير المظهر" });
+    const initialTheme = await page.locator("html").getAttribute("data-theme");
+    await themeToggle.click();
+    const nextTheme = initialTheme === "dark" ? "light" : "dark";
+    await expect(page.locator("html")).toHaveAttribute("data-theme", nextTheme);
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", nextTheme);
+
     await page.goto("/topics");
     await expect(page.getByRole("heading", { name: "الموضوعات" })).toBeVisible();
     await page.click("text=عرض الأسئلة");
