@@ -95,7 +95,7 @@ value = 123; // Allowed`,
     sources: [
       {
         title: "Dart language — Types",
-        url: "https://dart.dev/language/types",
+        url: "https://dart.dev/language/type-system",
       },
     ],
     lastReviewedAt: "2026-08-30",
@@ -308,6 +308,8 @@ const requiredQuestionFields = [
 export function validateQuestions(interviewQuestions: InterviewQuestion[]): void {
   const ids = new Set<string>();
   const slugs = new Set<string>();
+  const trackIds = new Set(tracks.map((track) => track.id));
+  const topicById = new Map(topics.map((topic) => [topic.id, topic]));
 
   for (const question of interviewQuestions) {
     if (
@@ -317,6 +319,10 @@ export function validateQuestions(interviewQuestions: InterviewQuestion[]): void
       question.sources.some((source) => !source.title.trim() || !source.url.trim())
     ) {
       throw new Error(`Question ${question.id || "unknown"} is missing required data`);
+    }
+
+    if (!trackIds.has(question.trackId) || question.topicIds.some((topicId) => topicById.get(topicId)?.trackId !== question.trackId)) {
+      throw new Error(`Question ${question.id || "unknown"} has an invalid Track or Topic reference`);
     }
 
     if (ids.has(question.id) || slugs.has(question.slug)) {
