@@ -36,6 +36,24 @@ _Avoid_: User question, draft question
 The moderation process that evaluates a Submission for correctness, clarity, attribution, and fit before it becomes a published Interview Question.
 _Avoid_: Approval only, voting
 
+**Moderator**:
+An Account authorized to conduct Review, request changes, reject Submissions,
+publish accepted content, and restore an earlier Question Revision. Moderator
+access is separate from learner progress and contribution ownership.
+_Avoid_: Reviewer when referring to the Account role
+
+**Question Revision**:
+An immutable version of an Interview Question's learning material. A Revision
+may be a working draft or the version currently published in the catalogue;
+publishing or restoring content creates a new Revision.
+_Avoid_: Edit, overwrite
+
+**Review Issue**:
+The GitHub Issue that records a Submission's review conversation and decision.
+It is a review record, not the catalogue source of truth and not proof that a
+Submission is published.
+_Avoid_: Pull request, publication record
+
 **Account**:
 An authenticated identity used to own Question Progress, Favorites, and Submissions. Anonymous learners may browse without an Account.
 _Avoid_: Profile when referring to identity or access
