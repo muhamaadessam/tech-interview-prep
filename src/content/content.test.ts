@@ -175,6 +175,20 @@ test("the Architecture topic contains its planned question set", () => {
   for (const slug of expected) assert.ok(actual.has(slug), `missing Architecture question: ${slug}`);
 });
 
+test("the Testing topic contains its planned question set", () => {
+  const expected = [
+    "unit-tests-for-flutter-domain-logic",
+    "widget-tests-and-user-visible-behavior",
+    "integration-tests-for-critical-flows",
+    "fakes-mocks-and-test-doubles",
+    "deterministic-and-reliable-flutter-tests",
+    "testing-architecture-seams",
+  ];
+  const actual = new Set(questions.filter((question) => question.topicIds.includes("testing")).map((question) => question.slug));
+  assert.equal(actual.size, expected.length);
+  for (const slug of expected) assert.ok(actual.has(slug), `missing Testing question: ${slug}`);
+});
+
 test("the catalogue keeps official HTTPS sources and real review dates", () => {
   for (const question of questions) {
     assert.equal(new Date(`${question.lastReviewedAt}T00:00:00Z`).toISOString().slice(0, 10), question.lastReviewedAt);
