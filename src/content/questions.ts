@@ -1777,9 +1777,9 @@ export const questions: InterviewQuestion[] = baseQuestions.map((question) => ({
 
 export const topicTranslations: Record<Locale, Record<string, string>> = {
   ar: {
-    dart: "Dart", oop: "OOP", solid: "SOLID", "flutter-fundamentals": "أساسيات Flutter", widgets: "Widgets",
-    "state-management": "إدارة الحالة", navigation: "التنقل", networking: "الشبكات", "local-storage": "التخزين المحلي",
-    "platform-integration": "تكامل المنصة", architecture: "الهندسة المعمارية", testing: "الاختبار", performance: "الأداء", "async-isolates": "Async & Isolates",
+    dart: "Dart", oop: "OOP", solid: "SOLID", "flutter-fundamentals": "Flutter Fundamentals", widgets: "Widgets",
+    "state-management": "State Management", navigation: "Navigation", networking: "Networking", "local-storage": "Local Storage",
+    "platform-integration": "Platform Integration", architecture: "Architecture", testing: "Testing", performance: "Performance", "async-isolates": "Async & Isolates",
   },
   en: {
     dart: "Dart", oop: "OOP", solid: "SOLID", "flutter-fundamentals": "Flutter Fundamentals", widgets: "Widgets",

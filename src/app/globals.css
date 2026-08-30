@@ -236,7 +236,7 @@ h3 { line-height: 1.45; }
 .session-navigation { display: flex; justify-content: space-between; gap: 12px; margin-block-start: 18px; }
 .interview-builder { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 18px; align-items: start; margin-block-end: 28px; }
 .interview-page .page-header { padding-block-start: 44px; }
-.interview-builder > label { display: grid; gap: 6px; min-height: 100%; padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); color: var(--muted); font-weight: 800; }
+.interview-builder > label { display: grid; gap: 6px; align-self: start; min-height: auto; padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); color: var(--muted); font-weight: 800; }
 .interview-builder select { width: 100%; min-height: 44px; padding-inline: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
 .topic-picker { margin: 0; padding: 16px; border: 1px solid var(--border); border-radius: 16px; }
 .topic-picker legend { padding-inline: 6px; color: var(--text); font-weight: 800; }
