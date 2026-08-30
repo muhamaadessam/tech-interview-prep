@@ -10,8 +10,9 @@ The browser only receives the public Supabase URL and publishable key.
    publishable key are stored as GitHub Actions variables named
    `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
    Do not commit either value; never expose a service-role key.
-2. Configure Google and email/password providers in Clerk, including the local
-   and GitHub Pages origins.
+2. Configure Google and email/password providers in Clerk. Allow these exact
+   origins: `http://localhost:3000` and
+   `https://muhamaadessam.github.io/tech-interview-prep`.
 3. Configure Clerk's JWT template / Supabase third-party auth integration before
    enabling RLS policies that depend on the signed-in Clerk user.
 4. Store the GitHub App id, installation id, private key, repository owner, and
@@ -20,7 +21,8 @@ The browser only receives the public Supabase URL and publishable key.
 
 ## Local configuration
 
-Copy `.env.example` to `.env.local` and fill in the Supabase public values. The
+Copy `.env.example` to `.env.local` and fill in the Clerk and Supabase public
+values. The
 static catalogue must continue to work when these values are empty so local
 content development does not depend on production credentials.
 
