@@ -338,7 +338,6 @@ final candidate = Candidate("Mona");`,
     followUpQuestions: ["متى يكون getter محسوبًا أفضل من كشف field؟"],
     sources: [
       { title: "Dart language — Classes", url: "https://dart.dev/language/classes" },
-      { title: "Flutter FAQ — Programming paradigm", url: "https://docs.flutter.dev/resources/faq#what-programming-paradigm-does-flutters-framework-use" },
     ],
     lastReviewedAt: "2026-08-30",
   },
@@ -361,7 +360,10 @@ abstract interface class Validator {
 }`,
     commonMistakes: ["وراثة كلاس فقط لإعادة استخدام ميثود واحدة.", "تحويل composition إلى طبقات كثيرة من غير حدود مفهومة."],
     followUpQuestions: ["كيف تختبر collaborator في تصميم قائم على composition؟"],
-    sources: [{ title: "Dart language — Classes", url: "https://dart.dev/language/classes" }],
+    sources: [
+      { title: "Dart language — Classes", url: "https://dart.dev/language/classes" },
+      { title: "Flutter FAQ — Programming paradigm", url: "https://docs.flutter.dev/resources/faq#what-programming-paradigm-does-flutters-framework-use" },
+    ],
     lastReviewedAt: "2026-08-30",
   },
   {
