@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 
 import { localeDirection, localeFromPathname, localizedHref, messages, type Locale } from "../i18n";
 import { ThemeToggle } from "./theme-toggle";
+import { BrandLogo } from "./logo";
 
 const paths = [["home", "/"], ["topics", "/topics"], ["questions", "/questions"], ["interview", "/interview"], ["progress", "/progress"]] as const;
 
@@ -54,7 +55,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
       <header className="site-header">
         <nav className="shell nav" aria-label={locale === "ar" ? "التنقل الرئيسي" : "Main navigation"}>
           <Link className="brand" href={localizedHref(locale)} aria-label={`Tech Interview Prep — ${copy.home}`}>
-            <span className="brand-mark" aria-hidden="true">T</span>
+            <BrandLogo />
             <span dir="ltr">Tech Interview Prep</span>
           </Link>
           <div className="nav-links">
