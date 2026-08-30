@@ -311,7 +311,10 @@ try {
 final candidate = Candidate("Mona");`,
     commonMistakes: ["اعتبار class نفسه قيمة يمكن تعديل state الخاص بها.", "نسيان أن كل instance تملك state خاصًا بها."],
     followUpQuestions: ["أين تضع السلوك الذي لا يعتمد على instance state؟"],
-    sources: [{ title: "Dart language — Classes", url: "https://dart.dev/language/classes" }],
+    sources: [
+      { title: "Dart language — Classes", url: "https://dart.dev/language/classes" },
+      { title: "Flutter FAQ — Programming paradigm", url: "https://docs.flutter.dev/resources/faq#what-programming-paradigm-does-flutters-framework-use" },
+    ],
     lastReviewedAt: "2026-08-30",
   },
   {
