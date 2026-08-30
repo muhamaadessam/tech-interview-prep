@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { questions, topics } from "../content/questions";
+import { getQuestionTopics, questions, topics } from "../content/questions";
 
 export default function HomePage() {
   const question = questions[0];
@@ -39,7 +39,9 @@ export default function HomePage() {
         {question && (
           <Link className="card card-link" href={`/questions/${question.slug}`}>
             <div className="meta">
-              <span className="chip">Dart</span>
+              {getQuestionTopics(question).map((topic) => (
+                <span className="chip" key={topic.id}>{topic.name}</span>
+              ))}
               <span className="chip">{question.difficulty}</span>
             </div>
             <h3 className="question-title">{question.question}</h3>

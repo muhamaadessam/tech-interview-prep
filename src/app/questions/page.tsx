@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { questions } from "../../content/questions";
+import { getQuestionTopics, questions } from "../../content/questions";
 
 export const metadata = { title: "مكتبة الأسئلة" };
 
@@ -16,7 +16,9 @@ export default function QuestionsPage() {
         {questions.map((question) => (
           <Link key={question.id} className="card card-link" href={`/questions/${question.slug}`}>
             <div className="meta">
-              <span className="chip">Dart</span>
+              {getQuestionTopics(question).map((topic) => (
+                <span className="chip" key={topic.id}>{topic.name}</span>
+              ))}
               <span className="chip">{question.difficulty}</span>
             </div>
             <h2 className="question-title">{question.question}</h2>

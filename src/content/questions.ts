@@ -67,26 +67,26 @@ const requiredText = [
   "lastReviewedAt",
 ] as const;
 
-export function validateQuestions(items: InterviewQuestion[]): void {
+export function validateQuestions(interviewQuestions: InterviewQuestion[]): void {
   const ids = new Set<string>();
   const slugs = new Set<string>();
 
-  for (const item of items) {
+  for (const question of interviewQuestions) {
     if (
-      requiredText.some((field) => !item[field]?.trim()) ||
-      item.topicIds.length === 0 ||
-      item.sources.length === 0 ||
-      item.sources.some((source) => !source.title.trim() || !source.url.trim())
+      requiredText.some((field) => !question[field]?.trim()) ||
+      question.topicIds.length === 0 ||
+      question.sources.length === 0 ||
+      question.sources.some((source) => !source.title.trim() || !source.url.trim())
     ) {
-      throw new Error(`Question ${item.id || "unknown"} is missing required data`);
+      throw new Error(`Question ${question.id || "unknown"} is missing required data`);
     }
 
-    if (ids.has(item.id) || slugs.has(item.slug)) {
-      throw new Error(`Question ${item.id} has a duplicate id or slug`);
+    if (ids.has(question.id) || slugs.has(question.slug)) {
+      throw new Error(`Question ${question.id} has a duplicate id or slug`);
     }
 
-    ids.add(item.id);
-    slugs.add(item.slug);
+    ids.add(question.id);
+    slugs.add(question.slug);
   }
 }
 
@@ -94,4 +94,8 @@ validateQuestions(questions);
 
 export function getQuestion(slug: string): InterviewQuestion | undefined {
   return questions.find((question) => question.slug === slug);
+}
+
+export function getQuestionTopics(question: InterviewQuestion): Topic[] {
+  return topics.filter((topic) => question.topicIds.includes(topic.id));
 }

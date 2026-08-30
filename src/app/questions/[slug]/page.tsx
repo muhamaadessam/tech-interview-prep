@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getQuestion, questions } from "../../../content/questions";
+import { getQuestion, getQuestionTopics, questions } from "../../../content/questions";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -26,7 +26,9 @@ export default async function QuestionDetailsPage({ params }: Props) {
       <header className="page-header">
         <Link className="text-link" href="/questions">← مكتبة الأسئلة</Link>
         <div className="meta">
-          <span className="chip">Dart</span>
+          {getQuestionTopics(question).map((topic) => (
+            <span className="chip" key={topic.id}>{topic.name}</span>
+          ))}
           <span className="chip">{question.difficulty}</span>
         </div>
         <h1>{question.question}</h1>

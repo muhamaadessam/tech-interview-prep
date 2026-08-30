@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { questions, topics } from "../../content/questions";
+import { questions, topics, tracks } from "../../content/questions";
 
 export const metadata = { title: "الموضوعات" };
 
@@ -15,9 +15,10 @@ export default function TopicsPage() {
       <div className="grid">
         {topics.map((topic) => {
           const count = questions.filter((question) => question.topicIds.includes(topic.id)).length;
+          const track = tracks.find(({ id }) => id === topic.trackId);
           return (
             <Link key={topic.id} className="card card-link" href="/questions">
-              <div className="meta"><span className="chip">Flutter</span></div>
+              <div className="meta"><span className="chip">{track?.name}</span></div>
               <h2 dir="ltr">{topic.name}</h2>
               <p>{count} سؤال متاح للمراجعة حاليًا.</p>
               <span className="text-link">عرض الأسئلة ←</span>
