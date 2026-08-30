@@ -96,6 +96,22 @@ test("the Widgets topic contains its planned question set", () => {
   ]) assert.ok(slugs.has(slug), `missing Widgets question: ${slug}`);
 });
 
+test("the State Management topic contains its planned question set", () => {
+  const slugs = new Set(questions.filter((question) => question.topicIds.includes("state-management")).map((question) => question.slug));
+  for (const slug of [
+    "local-vs-shared-state",
+    "lifting-state-up-in-flutter",
+    "immutable-state-and-change-notification",
+    "unidirectional-data-flow",
+    "state-controller-lifecycle-and-dispose",
+    "testable-state-management-boundaries",
+    "valuenotifier-and-changenotifier",
+    "streams-vs-notifiers-for-state",
+    "choosing-a-state-management-approach",
+    "state-restoration-and-persistence",
+  ]) assert.ok(slugs.has(slug), `missing State Management question: ${slug}`);
+});
+
 test("the catalogue keeps official HTTPS sources and real review dates", () => {
   for (const question of questions) {
     assert.equal(new Date(`${question.lastReviewedAt}T00:00:00Z`).toISOString().slice(0, 10), question.lastReviewedAt);
