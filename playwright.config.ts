@@ -19,7 +19,8 @@ export default defineConfig({
   webServer: {
     command: "npx next dev -p 3000",
     url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    env: { ...process.env, NEXT_PUBLIC_SUPABASE_URL: "https://mock.supabase.local", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "playwright-test" },
+    reuseExistingServer: false,
     timeout: 120 * 1000,
   },
 });
