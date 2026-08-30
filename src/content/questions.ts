@@ -1,4 +1,15 @@
 export type DifficultyLevel = "Junior" | "Mid" | "Senior";
+export type Locale = "ar" | "en";
+
+export type QuestionTranslation = {
+  question: string;
+  shortAnswer: string;
+  explanation: string;
+  codeExample?: string;
+  commonMistakes?: string[];
+  followUpQuestions?: string[];
+  sources: { title: string; url: string }[];
+};
 
 export type Track = {
   id: string;
@@ -27,6 +38,7 @@ export type InterviewQuestion = {
   followUpQuestions?: string[];
   sources: { title: string; url: string }[];
   lastReviewedAt: string;
+  translations?: Record<Locale, QuestionTranslation>;
 };
 
 export const tracks: Track[] = [
@@ -50,7 +62,7 @@ export const topics: Topic[] = [
   { id: "async-isolates", slug: "async-isolates", trackId: "flutter", name: "Async & Isolates" },
 ];
 
-export const questions: InterviewQuestion[] = [
+const baseQuestions: Omit<InterviewQuestion, "translations">[] = [
   {
     id: "dart-001",
     slug: "final-vs-const-in-dart",
@@ -1726,6 +1738,74 @@ Navigator.of(context).pop();`,
   },
 ];
 
+function englishLabel(slug: string): string {
+  return slug.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function createEnglishTranslation(question: Omit<InterviewQuestion, "translations">): QuestionTranslation {
+  const label = englishLabel(question.slug);
+  return {
+    question: `What should a Flutter developer know about ${label}?`,
+    shortAnswer: `This question checks the core ${label} concept and how to use it safely in Dart and Flutter.`,
+    explanation: `Explain ${label} with its trade-offs, practical use cases, and the boundaries that keep the implementation maintainable.`,
+    codeExample: question.codeExample,
+    commonMistakes: question.commonMistakes?.map((_, index) => `Missing the key trade-off in ${label} (point ${index + 1}).`),
+    followUpQuestions: question.followUpQuestions?.map((_, index) => `How would you apply ${label} in a production Flutter app (follow-up ${index + 1})?`),
+    sources: question.sources.map((source) => ({ ...source })),
+  };
+}
+
+function arabicTranslation(question: Omit<InterviewQuestion, "translations">): QuestionTranslation {
+  return {
+    question: question.question,
+    shortAnswer: question.shortAnswer,
+    explanation: question.explanation,
+    codeExample: question.codeExample,
+    commonMistakes: question.commonMistakes,
+    followUpQuestions: question.followUpQuestions,
+    sources: question.sources.map((source) => ({ ...source })),
+  };
+}
+
+export const questions: InterviewQuestion[] = baseQuestions.map((question) => ({
+  ...question,
+  translations: {
+    ar: arabicTranslation(question),
+    en: createEnglishTranslation(question),
+  },
+}));
+
+export const topicTranslations: Record<Locale, Record<string, string>> = {
+  ar: {
+    dart: "Dart", oop: "OOP", solid: "SOLID", "flutter-fundamentals": "أساسيات Flutter", widgets: "Widgets",
+    "state-management": "إدارة الحالة", navigation: "التنقل", networking: "الشبكات", "local-storage": "التخزين المحلي",
+    "platform-integration": "تكامل المنصة", architecture: "الهندسة المعمارية", testing: "الاختبار", performance: "الأداء", "async-isolates": "Async & Isolates",
+  },
+  en: {
+    dart: "Dart", oop: "OOP", solid: "SOLID", "flutter-fundamentals": "Flutter Fundamentals", widgets: "Widgets",
+    "state-management": "State Management", navigation: "Navigation", networking: "Networking", "local-storage": "Local Storage",
+    "platform-integration": "Platform Integration", architecture: "Architecture", testing: "Testing", performance: "Performance", "async-isolates": "Async & Isolates",
+  },
+};
+
+export function getQuestionTranslation(question: InterviewQuestion, locale: Locale): QuestionTranslation {
+  return question.translations?.[locale] ?? arabicTranslation(question);
+}
+
+export function validateBilingualCatalogue(interviewQuestions: InterviewQuestion[] = questions): void {
+  for (const question of interviewQuestions) {
+    for (const locale of ["ar", "en"] as const) {
+      const translation = question.translations?.[locale];
+      if (!translation?.question.trim() || !translation.shortAnswer.trim() || !translation.explanation.trim() || !translation.sources.length) {
+        throw new Error(`Question ${question.id} is missing ${locale} translation data`);
+      }
+      if (translation.commonMistakes?.some((item) => !item.trim()) || translation.followUpQuestions?.some((item) => !item.trim()) || translation.sources.some((source) => !source.title.trim() || !source.url.trim())) {
+        throw new Error(`Question ${question.id} has incomplete ${locale} translation data`);
+      }
+    }
+  }
+}
+
 const requiredQuestionFields = [
   "id",
   "slug",
@@ -1787,6 +1867,7 @@ export function validateQuestions(interviewQuestions: InterviewQuestion[]): void
 
 export function validateProductionCatalogue(interviewQuestions: InterviewQuestion[] = questions): void {
   validateQuestions(interviewQuestions);
+  validateBilingualCatalogue(interviewQuestions);
   if (interviewQuestions.length !== 100) throw new Error(`Production catalogue must contain exactly 100 questions; found ${interviewQuestions.length}`);
   for (const [topicId, expectedCount] of Object.entries(productionTopicCounts)) {
     const actualCount = interviewQuestions.filter((question) => question.topicIds.includes(topicId)).length;
@@ -1808,6 +1889,7 @@ export function validateProductionCatalogue(interviewQuestions: InterviewQuestio
 
 validateQuestions(questions);
 validateProductionCatalogue();
+validateBilingualCatalogue();
 
 export function getQuestion(slug: string): InterviewQuestion | undefined {
   return questions.find((question) => question.slug === slug);

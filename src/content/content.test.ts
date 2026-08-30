@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { questions, validateProductionCatalogue, validateQuestions } from "./questions.ts";
+import { questions, validateBilingualCatalogue, validateProductionCatalogue, validateQuestions } from "./questions.ts";
 
 test("the public question catalogue accepts the permanent Dart questions", () => {
   assert.doesNotThrow(() => validateQuestions(questions));
@@ -28,6 +28,16 @@ test("the public question catalogue accepts the permanent Dart questions", () =>
     assert.ok(question.shortAnswer);
     assert.ok(question.explanation);
     assert.match(question.lastReviewedAt, /^\d{4}-\d{2}-\d{2}$/);
+  }
+});
+
+test("every question has complete Arabic and English translations", () => {
+  assert.doesNotThrow(() => validateBilingualCatalogue());
+  for (const question of questions) {
+    assert.ok(question.translations?.ar.question);
+    assert.ok(question.translations?.en.question);
+    assert.equal(question.translations?.ar.sources.length, question.sources.length);
+    assert.equal(question.translations?.en.sources.length, question.sources.length);
   }
 });
 

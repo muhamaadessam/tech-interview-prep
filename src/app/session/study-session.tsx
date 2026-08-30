@@ -3,14 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import type { InterviewQuestion, Topic, DifficultyLevel } from "../../content/questions";
+import { getQuestionTranslation, type InterviewQuestion, type Topic, type DifficultyLevel, type Locale } from "../../content/questions";
 import { difficultyOptions, fromSearchParams, questionHasTopic } from "../../content/question-search";
 import { AnswerContent } from "../answer-content";
 import { AnswerDisclosure, QuestionControls } from "../question-controls";
+import { localizedHref, messages, topicName } from "../../i18n";
 
 type SessionSelection = { topic: string; difficulty: DifficultyLevel | "" };
 
-export function StudySession({ questions, topics }: { questions: InterviewQuestion[]; topics: Topic[] }) {
+export function StudySession({ questions, topics, locale = "ar" }: { questions: InterviewQuestion[]; topics: Topic[]; locale?: Locale }) {
+  const copy = messages[locale];
   const [selection, setSelection] = useState<SessionSelection>({ topic: "", difficulty: "" });
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -45,28 +47,28 @@ export function StudySession({ questions, topics }: { questions: InterviewQuesti
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
   }
 
-  if (!isHydrated) return <section className="shell section"><p>جاري تجهيز الجلسة...</p></section>;
+  if (!isHydrated) return <section className="shell section"><p>{copy.preparing}</p></section>;
 
   return (
     <section className="shell section">
       <header className="page-header">
-        <Link className="text-link" href="/questions">← مكتبة الأسئلة</Link>
-        <h1>جلسة مراجعة</h1>
-        <p>اختار موضوعًا ومستوى، وراجع بالترتيب من غير مؤقت أو عشوائية.</p>
+        <Link className="text-link" href={localizedHref(locale, "/questions")}>{copy.backLibrary}</Link>
+        <h1>{copy.sessionTitle}</h1>
+        <p>{copy.sessionDescription}</p>
       </header>
 
       <div className="session-filters">
         <label>
-          الموضوع
+          {copy.topic}
           <select value={selection.topic} onChange={(event) => updateSelection({ topic: event.target.value })}>
-            <option value="">اختار موضوعًا</option>
-            {topics.map((topic) => <option key={topic.id} value={topic.slug}>{topic.name}</option>)}
+            <option value="">{copy.chooseTopic}</option>
+            {topics.map((topic) => <option key={topic.id} value={topic.slug}>{topicName(locale, topic.id)}</option>)}
           </select>
         </label>
         <label>
-          مستوى الصعوبة
+          {copy.difficulty}
           <select value={selection.difficulty} onChange={(event) => updateSelection({ difficulty: event.target.value as SessionSelection["difficulty"] })}>
-            <option value="">اختار المستوى</option>
+            <option value="">{copy.chooseDifficulty}</option>
             {difficultyOptions.map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}
           </select>
         </label>
@@ -74,22 +76,22 @@ export function StudySession({ questions, topics }: { questions: InterviewQuesti
 
       {question ? (
         <>
-          <div className="session-progress" aria-live="polite">سؤال {currentIndex + 1} من {sessionQuestions.length}</div>
+          <div className="session-progress" aria-live="polite">{copy.question} {currentIndex + 1} {copy.of} {sessionQuestions.length}</div>
           <article className="question-body session-question">
             <div className="meta"><span className="chip">{selection.difficulty}</span></div>
-            <h2>{question.question}</h2>
+            <h2>{getQuestionTranslation(question, locale).question}</h2>
             <div key={question.id}>
-              <QuestionControls questionId={question.id} />
-              <AnswerDisclosure><AnswerContent question={question} /></AnswerDisclosure>
+              <QuestionControls questionId={question.id} locale={locale} />
+              <AnswerDisclosure locale={locale}><AnswerContent question={question} locale={locale} /></AnswerDisclosure>
             </div>
           </article>
-          <nav className="session-navigation" aria-label="تنقل جلسة المراجعة">
-            <button className="button" type="button" disabled={currentIndex === 0} onClick={() => setCurrentIndex((index) => index - 1)}>السؤال السابق</button>
-            <button className="button primary" type="button" disabled={currentIndex === sessionQuestions.length - 1} onClick={() => setCurrentIndex((index) => index + 1)}>السؤال التالي</button>
+          <nav className="session-navigation" aria-label={copy.sessionTitle}>
+            <button className="button" type="button" disabled={currentIndex === 0} onClick={() => setCurrentIndex((index) => index - 1)}>{copy.previous}</button>
+            <button className="button primary" type="button" disabled={currentIndex === sessionQuestions.length - 1} onClick={() => setCurrentIndex((index) => index + 1)}>{copy.next}</button>
           </nav>
         </>
       ) : (
-        <div className="empty-state"><h2>{selection.topic || selection.difficulty ? "لا توجد أسئلة للجمع ده" : "ابدأ جلسة مراجعة"}</h2><p>اختار موضوعًا ومستوى من القوائم عشان نجهز لك الأسئلة بالترتيب.</p></div>
+        <div className="empty-state"><h2>{selection.topic || selection.difficulty ? copy.noCombination : copy.startStudy}</h2><p>{copy.selectSession}</p></div>
       )}
     </section>
   );

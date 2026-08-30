@@ -8,7 +8,7 @@ export const dynamic = "force-static";
 export default function sitemap(): MetadataRoute.Sitemap {
   const pages = ["", "/topics", "/questions", "/progress", "/session", "/interview"];
   return [
-    ...pages.map((path) => ({ url: `${siteUrl}${path}/`, changeFrequency: "monthly" as const })),
-    ...questions.map((question) => ({ url: `${siteUrl}/questions/${question.slug}/`, changeFrequency: "monthly" as const })),
+    ...["ar", "en"].flatMap((locale) => pages.map((path) => ({ url: `${siteUrl}/${locale}${path}/`, changeFrequency: "monthly" as const }))),
+    ...["ar", "en"].flatMap((locale) => questions.map((question) => ({ url: `${siteUrl}/${locale}/questions/${question.slug}/`, changeFrequency: "monthly" as const }))),
   ];
 }

@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import type { DifficultyLevel, InterviewQuestion, Topic } from "../../content/questions";
+import { getQuestionTranslation, type DifficultyLevel, type InterviewQuestion, type Topic, type Locale } from "../../content/questions";
 import { difficultyOptions, filterInterviewQuestions } from "../../content/question-search";
 import { AnswerContent } from "../answer-content";
 import { AnswerDisclosure, QuestionControls } from "../question-controls";
+import { localizedHref, messages, topicName } from "../../i18n";
 
 type InterviewSelection = { topicValues: string[]; difficulty: DifficultyLevel | "" };
 
@@ -29,7 +30,8 @@ function updateUrl(selection: InterviewSelection) {
   window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
 }
 
-export function FullInterview({ questions, topics }: { questions: InterviewQuestion[]; topics: Topic[] }) {
+export function FullInterview({ questions, topics, locale = "ar" }: { questions: InterviewQuestion[]; topics: Topic[]; locale?: Locale }) {
+  const copy = messages[locale];
   const [selection, setSelection] = useState<InterviewSelection>({ topicValues: [], difficulty: "" });
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -64,20 +66,20 @@ export function FullInterview({ questions, topics }: { questions: InterviewQuest
     updateSelection({ topicValues });
   }
 
-  if (!isHydrated) return <section className="shell section"><p>جاري تجهيز المقابلة...</p></section>;
+  if (!isHydrated) return <section className="shell section"><p>{copy.preparingInterview}</p></section>;
 
   return (
     <section className="shell section interview-page">
       <header className="page-header">
-        <Link className="text-link" href="/questions">← مكتبة الأسئلة</Link>
-        <span className="eyebrow">مقابلة Flutter كاملة</span>
-        <h1>ابنِ انترفيو شامل</h1>
-        <p>اختار أكثر من موضوع ومستوى واحد. المستوى الأعلى يشمل أسئلته وأسئلة المستويات الأقل.</p>
+        <Link className="text-link" href={localizedHref(locale, "/questions")}>{copy.backLibrary}</Link>
+        <span className="eyebrow">{copy.interviewEyebrow}</span>
+        <h1>{copy.interviewTitle}</h1>
+        <p>{copy.interviewDescription}</p>
       </header>
 
       <div className="interview-builder">
         <fieldset className="topic-picker">
-          <legend>اختار الموضوعات <span className="topic-count">{selection.topicValues.length} مختارة</span></legend>
+          <legend>{copy.chooseTopics} <span className="topic-count">{selection.topicValues.length} {copy.selected}</span></legend>
           <div className="topic-options">
             {topics.map((topic) => (
               <label key={topic.id}>
@@ -86,44 +88,44 @@ export function FullInterview({ questions, topics }: { questions: InterviewQuest
                   checked={selection.topicValues.includes(topic.slug) || selection.topicValues.includes(topic.id)}
                   onChange={(event) => toggleTopic(topic, event.target.checked)}
                 />
-                {topic.name}
+                {topicName(locale, topic.id)}
               </label>
             ))}
           </div>
         </fieldset>
         <label className="interview-level">
-          مستوى المقابلة
+          {copy.interviewLevel}
           <select value={selection.difficulty} onChange={(event) => updateSelection({ difficulty: event.target.value as InterviewSelection["difficulty"] })}>
-            <option value="">اختار المستوى</option>
+            <option value="">{copy.chooseDifficulty}</option>
             {difficultyOptions.map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}
           </select>
-          <span className="filter-hint">المستوى المختار يشمل كل المستويات الأقل منه.</span>
+          <span className="filter-hint">{copy.inclusiveHint}</span>
         </label>
       </div>
 
       {question ? (
         <>
-          <div className="session-progress" aria-live="polite">سؤال {currentIndex + 1} من {sessionQuestions.length}</div>
+          <div className="session-progress" aria-live="polite">{copy.question} {currentIndex + 1} {copy.of} {sessionQuestions.length}</div>
           <article className="question-body session-question">
             <div className="meta">
-              {topics.filter((topic) => question.topicIds.includes(topic.id) && selection.topicValues.includes(topic.slug)).map((topic) => <span className="chip" key={topic.id}>{topic.name}</span>)}
+              {topics.filter((topic) => question.topicIds.includes(topic.id) && selection.topicValues.includes(topic.slug)).map((topic) => <span className="chip" key={topic.id}>{topicName(locale, topic.id)}</span>)}
               <span className="chip">{question.difficulty}</span>
             </div>
-            <h2>{question.question}</h2>
+            <h2>{getQuestionTranslation(question, locale).question}</h2>
             <div key={question.id}>
-              <QuestionControls questionId={question.id} />
-              <AnswerDisclosure><AnswerContent question={question} /></AnswerDisclosure>
+              <QuestionControls questionId={question.id} locale={locale} />
+              <AnswerDisclosure locale={locale}><AnswerContent question={question} locale={locale} /></AnswerDisclosure>
             </div>
           </article>
-          <nav className="session-navigation" aria-label="تنقل المقابلة الكاملة">
-            <button className="button" type="button" disabled={currentIndex === 0} onClick={() => setCurrentIndex((index) => index - 1)}>السؤال السابق</button>
-            <button className="button primary" type="button" disabled={currentIndex === sessionQuestions.length - 1} onClick={() => setCurrentIndex((index) => index + 1)}>السؤال التالي</button>
+          <nav className="session-navigation" aria-label={copy.interviewTitle}>
+            <button className="button" type="button" disabled={currentIndex === 0} onClick={() => setCurrentIndex((index) => index - 1)}>{copy.previous}</button>
+            <button className="button primary" type="button" disabled={currentIndex === sessionQuestions.length - 1} onClick={() => setCurrentIndex((index) => index + 1)}>{copy.next}</button>
           </nav>
         </>
       ) : (
         <div className="empty-state">
-          <h2>{selection.topicValues.length || selection.difficulty ? "كمّل إعداد المقابلة" : "ابدأ مقابلة كاملة"}</h2>
-          <p>اختار موضوعًا واحدًا على الأقل ومستوى المقابلة عشان نجهز لك الأسئلة.</p>
+          <h2>{selection.topicValues.length || selection.difficulty ? copy.completeSetup : copy.startInterview}</h2>
+          <p>{copy.interviewEmpty}</p>
         </div>
       )}
     </section>

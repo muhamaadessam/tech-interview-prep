@@ -4,22 +4,23 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { getSavedQuestions, resetSavedQuestions, type SavedQuestions } from "../../study/progress";
+import { localizedHref, messages, type Locale } from "../../i18n";
 
 type QuestionSummary = { id: string; slug: string; question: string };
 
-const sections = [
-  { title: "قيد المراجعة", matches: (saved: SavedQuestions[string]) => saved.progress === "reviewing" },
-  { title: "متقن", matches: (saved: SavedQuestions[string]) => saved.progress === "mastered" },
-  { title: "المفضلة", matches: (saved: SavedQuestions[string]) => saved.favorite },
-];
-
-export function ProgressDashboard({ questions }: { questions: QuestionSummary[] }) {
+export function ProgressDashboard({ questions, locale = "ar" }: { questions: QuestionSummary[]; locale?: Locale }) {
+  const copy = messages[locale];
+  const sections = [
+    { title: copy.reviewing, matches: (saved: SavedQuestions[string]) => saved.progress === "reviewing" },
+    { title: copy.mastered, matches: (saved: SavedQuestions[string]) => saved.progress === "mastered" },
+    { title: copy.favorites, matches: (saved: SavedQuestions[string]) => saved.favorite },
+  ];
   const [data, setData] = useState<SavedQuestions>({});
 
   useEffect(() => setData(getSavedQuestions(localStorage)), []);
 
   function reset() {
-    if (!window.confirm("متأكد إنك عايز تمسح تقدمك والمفضلة من الجهاز ده؟")) return;
+    if (!window.confirm(copy.resetConfirm)) return;
     resetSavedQuestions(localStorage);
     setData({});
   }
@@ -27,8 +28,8 @@ export function ProgressDashboard({ questions }: { questions: QuestionSummary[] 
   return (
     <>
       <div className="progress-summary">
-        <p>راجعت <strong>{questions.filter((question) => data[question.id]?.progress === "reviewing" || data[question.id]?.progress === "mastered").length}</strong> من {questions.length} سؤالًا.</p>
-        <Link className="button primary" href="/questions">كمّل المراجعة</Link>
+        <p>{copy.reviewed} <strong>{questions.filter((question) => data[question.id]?.progress === "reviewing" || data[question.id]?.progress === "mastered").length}</strong> {locale === "ar" ? "من" : "of"} {questions.length} {locale === "ar" ? "سؤالًا." : "questions."}</p>
+        <Link className="button primary" href={localizedHref(locale, "/questions")}>{copy.continueReview}</Link>
       </div>
       <div className="progress-grid">
         {sections.map((section) => {
@@ -42,17 +43,17 @@ export function ProgressDashboard({ questions }: { questions: QuestionSummary[] 
               {matching.length ? (
                 <ul className="progress-list">
                   {matching.map((question) => (
-                    <li key={question.id}><Link href={`/questions/${question.slug}`}>{question.question}</Link></li>
+                    <li key={question.id}><Link href={localizedHref(locale, `/questions/${question.slug}`)}>{question.question}</Link></li>
                   ))}
                 </ul>
-              ) : <p>لا توجد أسئلة هنا حاليًا.</p>}
+              ) : <p>{copy.noQuestions}</p>}
             </section>
           );
         })}
       </div>
       <div className="reset-panel">
-        <div><b>إعادة ضبط البيانات المحلية</b><p>يمسح تقدم الأسئلة والمفضلة فقط.</p></div>
-        <button className="button danger" type="button" onClick={reset}>إعادة ضبط التقدم</button>
+        <div><b>{copy.resetTitle}</b><p>{copy.resetDescription}</p></div>
+        <button className="button danger" type="button" onClick={reset}>{copy.reset}</button>
       </div>
     </>
   );

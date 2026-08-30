@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { themeKey } from "./site-config";
+import { messages, type Locale } from "../i18n";
 
 type Theme = "light" | "dark";
 
-export function ThemeToggle() {
+export function ThemeToggle({ locale = "ar" }: { locale?: Locale }) {
   const [theme, setTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
@@ -33,9 +34,10 @@ export function ThemeToggle() {
     setTheme(next);
   }
 
+  const copy = messages[locale];
   return (
-    <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label="تغيير المظهر" aria-pressed={theme === "dark"}>
-      {theme === "dark" ? "☀ الوضع الفاتح" : "◐ الوضع الداكن"}
+    <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label={copy.theme} aria-pressed={theme === "dark"}>
+      {theme === "dark" ? copy.light : copy.dark}
     </button>
   );
 }

@@ -1,8 +1,10 @@
 import { questions, topics } from "../../content/questions";
 import { FullInterview } from "./full-interview";
+import type { Locale } from "../../content/questions";
+import { localizedMetadata } from "../metadata";
 
-export const metadata = { title: "مقابلة كاملة" };
+export const metadata = localizedMetadata("ar", "/interview", "مقابلة كاملة", "مقابلة Flutter شاملة.");
 
-export default function FullInterviewPage() {
-  return <FullInterview questions={questions} topics={topics} />;
+export default function FullInterviewPage({ locale = "ar" }: { locale?: Locale }) {
+  return <FullInterview questions={questions} topics={topics} locale={locale} />;
 }

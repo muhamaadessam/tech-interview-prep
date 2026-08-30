@@ -12,11 +12,13 @@ import {
   type SearchableQuestion,
 } from "../../content/question-search";
 import { getSavedQuestions, questionProgressOptions, type SavedQuestions } from "../../study/progress";
+import { localizedHref, messages, type Locale } from "../../i18n";
 
 type LibraryTopic = { id: string; slug: string; name: string };
 
 const emptyFilters: LibraryFilters = { search: "", topic: "", difficulty: "", progress: "", favoriteOnly: false };
-export function QuestionLibrary({ questions, topics }: { questions: SearchableQuestion[]; topics: LibraryTopic[] }) {
+export function QuestionLibrary({ questions, topics, locale = "ar" }: { questions: SearchableQuestion[]; topics: LibraryTopic[]; locale?: Locale }) {
+  const copy = messages[locale];
   const [filters, setFilters] = useState<LibraryFilters>(emptyFilters);
   const [saved, setSaved] = useState<SavedQuestions>({});
 
@@ -50,61 +52,61 @@ export function QuestionLibrary({ questions, topics }: { questions: SearchableQu
     <>
       <form className="library-filters" onSubmit={(event) => event.preventDefault()}>
         <label>
-          ابحث في الأسئلة
+          {copy.search}
           <input
             type="search"
             value={filters.search}
             onChange={(event) => updateFilters({ search: event.target.value })}
-            placeholder="مثال: final أو وقت التشغيل"
+            placeholder={copy.searchPlaceholder}
           />
         </label>
         <label>
-          الموضوع
+          {copy.topic}
           <select value={filters.topic} onChange={(event) => updateFilters({ topic: event.target.value })}>
-            <option value="">كل الموضوعات</option>
+            <option value="">{copy.allTopics}</option>
             {topics.map((topic) => <option key={topic.id} value={topic.slug}>{topic.name}</option>)}
           </select>
         </label>
         <label>
-          مستوى الصعوبة
+          {copy.difficulty}
           <select value={filters.difficulty} onChange={(event) => updateFilters({ difficulty: event.target.value as LibraryFilters["difficulty"] })}>
-            <option value="">كل المستويات</option>
+            <option value="">{copy.allDifficulties}</option>
             {difficultyOptions.map((difficulty) => <option key={difficulty} value={difficulty}>{difficulty}</option>)}
           </select>
         </label>
         <label>
-          حالة المراجعة
+          {copy.progressFilter}
           <select value={filters.progress} onChange={(event) => updateFilters({ progress: event.target.value as LibraryFilters["progress"] })}>
-            <option value="">كل الحالات</option>
-            {questionProgressOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            <option value="">{copy.allProgress}</option>
+            {questionProgressOptions.map((option) => <option key={option.value} value={option.value}>{option.value === "not-started" ? (locale === "ar" ? "لم أبدأ" : "Not started") : option.value === "reviewing" ? copy.reviewing : copy.mastered}</option>)}
           </select>
         </label>
         <label className="filter-checkbox">
           <input type="checkbox" checked={filters.favoriteOnly} onChange={(event) => updateFilters({ favoriteOnly: event.target.checked })} />
-          المفضلة فقط
+          {copy.favoriteOnly}
         </label>
       </form>
 
       <div className="library-toolbar">
-        <p aria-live="polite">{matchingQuestions.length} سؤال متاح.</p>
-        {sessionHref ? <Link className="button primary" href={sessionHref}>ابدأ جلسة المراجعة</Link> : <Link className="button" href="/session">جهّز جلسة مراجعة</Link>}
+        <p aria-live="polite">{matchingQuestions.length} {copy.available}</p>
+        {sessionHref ? <Link className="button primary" href={localizedHref(locale, sessionHref)}> {copy.startSession}</Link> : <Link className="button" href={localizedHref(locale, "/session")}>{copy.prepareSession}</Link>}
       </div>
 
       {matchingQuestions.length ? (
         <div className="grid">
           {matchingQuestions.map((question) => (
-            <Link key={question.id} className="card card-link" href={`/questions/${question.slug}`}>
+            <Link key={question.id} className="card card-link" href={localizedHref(locale, `/questions/${question.slug}`)}>
               <div className="meta">
                 {topics.filter((topic) => question.topicIds.includes(topic.id)).map((topic) => <span className="chip" key={topic.id}>{topic.name}</span>)}
                 <span className="chip">{question.difficulty}</span>
               </div>
               <h2 className="question-title">{question.question}</h2>
-              <p>اختبر إجابتك قبل ما تكشف الشرح.</p>
-              <span className="text-link">فتح السؤال ←</span>
+              <p>{locale === "ar" ? "اختبر إجابتك قبل ما تكشف الشرح." : "Test your answer before revealing the explanation."}</p>
+              <span className="text-link">{locale === "ar" ? "فتح السؤال ←" : "Open question →"}</span>
             </Link>
           ))}
         </div>
-      ) : <div className="empty-state"><h2>مفيش نتائج مطابقة</h2><p>جرّب تغيّر البحث أو توسّع الفلاتر.</p></div>}
+      ) : <div className="empty-state"><h2>{copy.noResults}</h2><p>{copy.expandFilters}</p></div>}
     </>
   );
 }

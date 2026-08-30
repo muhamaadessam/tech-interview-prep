@@ -9,8 +9,10 @@ import {
   type SavedQuestionState,
   saveQuestionState,
 } from "../study/progress";
+import { messages } from "../i18n";
+import type { Locale } from "../content/questions";
 
-export function QuestionControls({ questionId }: { questionId: string }) {
+export function QuestionControls({ questionId, locale = "ar" }: { questionId: string; locale?: Locale }) {
   const [questionState, setQuestionState] = useState<SavedQuestionState>(defaultQuestionState);
   const [saveStatus, setSaveStatus] = useState("");
 
@@ -22,14 +24,14 @@ export function QuestionControls({ questionId }: { questionId: string }) {
   function update(patch: Partial<SavedQuestionState>) {
     saveQuestionState(localStorage, questionId, patch);
     setQuestionState((current) => ({ ...current, ...patch }));
-    setSaveStatus("تم حفظ التقدم على هذا الجهاز");
+    setSaveStatus(messages[locale].saved);
   }
 
   return (
     <div className="question-controls">
       <span className="sr-only" aria-live="polite">{saveStatus}</span>
       <fieldset>
-        <legend>تقدم السؤال</legend>
+        <legend>{messages[locale].progressLegend}</legend>
         {questionProgressOptions.map((option) => (
           <label key={option.value}>
             <input
@@ -39,7 +41,7 @@ export function QuestionControls({ questionId }: { questionId: string }) {
               checked={questionState.progress === option.value}
               onChange={() => update({ progress: option.value })}
             />
-            {option.label}
+            {option.value === "not-started" ? (locale === "ar" ? "لم أبدأ" : "Not started") : option.value === "reviewing" ? messages[locale].reviewing : messages[locale].mastered}
           </label>
         ))}
       </fieldset>
@@ -49,13 +51,13 @@ export function QuestionControls({ questionId }: { questionId: string }) {
           checked={questionState.favorite}
           onChange={(event) => update({ favorite: event.target.checked })}
         />
-        حفظ في المفضلة
+        {messages[locale].favorite}
       </label>
     </div>
   );
 }
 
-export function AnswerDisclosure({ children }: { children: ReactNode }) {
+export function AnswerDisclosure({ children, locale = "ar" }: { children: ReactNode; locale?: Locale }) {
   const [revealed, setRevealed] = useState(false);
 
   return (
@@ -67,7 +69,7 @@ export function AnswerDisclosure({ children }: { children: ReactNode }) {
         aria-controls="question-answer"
         onClick={() => setRevealed((current) => !current)}
       >
-        {revealed ? "اخفِ الإجابة" : "اكشف الإجابة"}
+        {revealed ? messages[locale].hide : messages[locale].reveal}
       </button>
       {revealed ? <div className="answer-content" id="question-answer">{children}</div> : null}
     </div>

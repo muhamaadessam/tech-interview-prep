@@ -20,7 +20,7 @@ test.describe("Discovery, study session, and progress journey", () => {
     await page.click("text=عرض الأسئلة");
 
     // 2. Library Discovery & Filters
-    await expect(page).toHaveURL(/\/questions\/\?topic=dart/);
+    await expect(page).toHaveURL(/\/ar\/questions\/\?topic=dart/);
     const searchInput = page.getByLabel("ابحث في الأسئلة");
     await searchInput.fill("final");
 
@@ -102,5 +102,21 @@ test.describe("Discovery, study session, and progress journey", () => {
     await expect(page).toHaveURL(/topics=dart(?:%2C|,)oop&difficulty=Senior/);
     await expect(page.getByText(/سؤال 1 من \d+/)).toBeVisible();
     await expect(page.getByRole("heading", { level: 2 })).toHaveText("ما الفرق بين final و const في Dart؟");
+  });
+
+  test("serves the English locale with LTR metadata and preserves study state", async ({ page }) => {
+    await page.goto("/en/");
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
+    await expect(page.getByRole("heading", { name: "Walk into the interview with your answers organized." })).toBeVisible();
+    await page.getByRole("link", { name: "Question Library" }).click();
+    await expect(page).toHaveURL(/\/en\/questions\/$/);
+    await expect(page.getByLabel("Search questions")).toBeVisible();
+    await page.getByText("What should a Flutter developer know about Final Vs Const In Dart?").click();
+    await expect(page).toHaveURL(/\/en\/questions\/final-vs-const-in-dart\/$/);
+    await expect(page.getByRole("heading", { name: "What should a Flutter developer know about Final Vs Const In Dart?" })).toBeVisible();
+    await page.getByRole("link", { name: "العربية" }).click();
+    await expect(page).toHaveURL(/\/ar\/questions\/final-vs-const-in-dart\/$/);
+    await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   });
 });

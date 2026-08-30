@@ -1,19 +1,27 @@
 import { questions, topics } from "../../content/questions";
 import { QuestionLibrary } from "./question-library";
+import { getQuestionTranslation, type Locale } from "../../content/questions";
+import { messages, topicName } from "../../i18n";
+import { localizedMetadata } from "../metadata";
 
-export const metadata = { title: "مكتبة الأسئلة" };
+export const metadata = localizedMetadata("ar", "/questions", "مكتبة الأسئلة", "مكتبة أسئلة مقابلات Flutter.");
 
-export default function QuestionsPage() {
+export default function QuestionsPage({ locale = "ar" }: { locale?: Locale }) {
+  const copy = messages[locale];
   return (
     <section className="shell section">
       <header className="page-header">
-        <span className="eyebrow">مكتبة الأسئلة</span>
-        <h1>مكتبة الأسئلة</h1>
-        <p>راجع السؤال، جاوب بصوتك، وبعدها افتح التفاصيل وقارن إجابتك بشرح مدعوم بالمصدر الرسمي.</p>
+        <span className="eyebrow">{copy.libraryEyebrow}</span>
+        <h1>{copy.libraryTitle}</h1>
+        <p>{copy.libraryDescription}</p>
       </header>
       <QuestionLibrary
-        questions={questions.map(({ id, slug, topicIds, difficulty, question, shortAnswer }) => ({ id, slug, topicIds, difficulty, question, shortAnswer }))}
-        topics={topics}
+        questions={questions.map((question) => {
+          const translation = getQuestionTranslation(question, locale);
+          return { id: question.id, slug: question.slug, topicIds: question.topicIds, difficulty: question.difficulty, question: translation.question, shortAnswer: translation.shortAnswer };
+        })}
+        topics={topics.map((topic) => ({ ...topic, name: topicName(locale, topic.id) }))}
+        locale={locale}
       />
     </section>
   );
