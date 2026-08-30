@@ -112,13 +112,38 @@ test("the State Management topic contains its planned question set", () => {
   ]) assert.ok(slugs.has(slug), `missing State Management question: ${slug}`);
 });
 
+test("the Navigation and Networking topics contain their planned question sets", () => {
+  const expected = {
+    navigation: [
+      "navigator-route-stack-and-push-pop",
+      "passing-data-between-flutter-routes",
+      "deep-links-and-route-information",
+      "imperative-vs-declarative-navigation",
+      "nested-navigation-flows",
+    ],
+    networking: [
+      "http-responses-and-status-codes",
+      "json-serialization-and-typed-models",
+      "future-loading-success-and-error-states",
+      "network-timeouts-and-retry-boundaries",
+      "cancelling-network-work-with-widget-lifecycle",
+      "service-repository-network-boundaries",
+      "websockets-and-stream-lifecycle",
+    ],
+  } as const;
+  for (const [topic, slugs] of Object.entries(expected)) {
+    const actual = new Set(questions.filter((question) => question.topicIds.includes(topic)).map((question) => question.slug));
+    for (const slug of slugs) assert.ok(actual.has(slug), `missing ${topic} question: ${slug}`);
+  }
+});
+
 test("the catalogue keeps official HTTPS sources and real review dates", () => {
   for (const question of questions) {
     assert.equal(new Date(`${question.lastReviewedAt}T00:00:00Z`).toISOString().slice(0, 10), question.lastReviewedAt);
     for (const source of question.sources) {
       const url = new URL(source.url);
       assert.equal(url.protocol, "https:");
-      assert.ok(["dart.dev", "api.dart.dev", "docs.flutter.dev", "api.flutter.dev", "blog.cleancoder.com"].includes(url.hostname));
+      assert.ok(["dart.dev", "api.dart.dev", "docs.flutter.dev", "api.flutter.dev", "blog.cleancoder.com", "www.rfc-editor.org"].includes(url.hostname));
     }
   }
 });
