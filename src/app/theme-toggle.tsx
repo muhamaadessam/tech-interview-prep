@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { themeKey } from "./site-config";
 
 type Theme = "light" | "dark";
-const themeKey = "tech-interview-prep:theme";
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme | null>(null);
@@ -34,7 +34,7 @@ export function ThemeToggle() {
   }
 
   return (
-    <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label="تغيير المظهر">
+    <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label="تغيير المظهر" aria-pressed={theme === "dark"}>
       {theme === "dark" ? "☀ الوضع الفاتح" : "◐ الوضع الداكن"}
     </button>
   );

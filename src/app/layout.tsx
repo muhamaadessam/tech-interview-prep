@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import "./globals.css";
-import { siteUrl } from "./site-config";
+import { siteUrl, themeKey } from "./site-config";
 import { ThemeToggle } from "./theme-toggle";
 
 export const metadata: Metadata = {
@@ -40,7 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <script
           id="theme-init"
           dangerouslySetInnerHTML={{
-            __html: `(()=>{try{const s=localStorage.getItem("tech-interview-prep:theme");document.documentElement.dataset.theme=s==="light"||s==="dark"?s:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch{}})()`,
+            __html: `(()=>{try{const s=localStorage.getItem(${JSON.stringify(themeKey)});document.documentElement.dataset.theme=s==="light"||s==="dark"?s:matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"}catch{}})()`,
           }}
         />
       </head>
