@@ -2,7 +2,7 @@
 
 This project remains a static Next.js export on GitHub Pages. Supabase supplies
 the database, Row Level Security, and Edge Functions; Clerk owns authentication.
-The browser only receives the two public publishable keys.
+The browser only receives the public Supabase URL and two publishable keys.
 
 ## Provisioning checklist
 
