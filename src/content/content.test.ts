@@ -57,3 +57,8 @@ test("the public question catalogue rejects missing data and duplicate identity"
     /invalid Track or Topic reference/,
   );
 });
+
+test("the OOP and SOLID topics contain their planned question sets", () => {
+  assert.equal(questions.filter((question) => question.topicIds.includes("oop")).length, 8);
+  assert.equal(questions.filter((question) => question.topicIds.includes("solid")).length, 8);
+});
