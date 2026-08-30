@@ -27,12 +27,7 @@ test("the public question catalogue accepts the permanent Dart questions", () =>
     assert.ok(question.question);
     assert.ok(question.shortAnswer);
     assert.ok(question.explanation);
-    assert.ok(question.sources.every((source) => {
-      const url = new URL(source.url);
-      return url.protocol === "https:" && (url.hostname === "dart.dev" || url.hostname.endsWith(".dart.dev"));
-    }));
     assert.match(question.lastReviewedAt, /^\d{4}-\d{2}-\d{2}$/);
-    assert.equal(new Date(`${question.lastReviewedAt}T00:00:00Z`).toISOString().slice(0, 10), question.lastReviewedAt);
   }
 });
 
@@ -59,6 +54,23 @@ test("the public question catalogue rejects missing data and duplicate identity"
 });
 
 test("the OOP and SOLID topics contain their planned question sets", () => {
-  assert.equal(questions.filter((question) => question.topicIds.includes("oop")).length, 8);
-  assert.equal(questions.filter((question) => question.topicIds.includes("solid")).length, 8);
+  const expected = {
+    oop: ["class-and-object-in-dart", "encapsulation-and-private-members-in-dart", "composition-vs-inheritance-in-flutter", "polymorphism-and-interfaces-in-dart", "abstract-class-and-interface-in-dart", "mixins-and-reusable-behavior-in-dart", "equality-and-hashcode-for-dart-objects", "immutable-value-objects-in-dart"],
+    solid: ["single-responsibility-in-flutter", "open-closed-principle-for-renderers", "liskov-substitution-in-dart", "interface-segregation-in-flutter", "dependency-inversion-in-flutter", "solid-boundaries-in-flutter-widgets", "when-not-to-apply-solid", "refactoring-legacy-flutter-code-with-solid"],
+  } as const;
+  for (const [topic, slugs] of Object.entries(expected)) {
+    const actual = new Set(questions.filter((question) => question.topicIds.includes(topic)).map((question) => question.slug));
+    for (const slug of slugs) assert.ok(actual.has(slug));
+  }
+});
+
+test("the catalogue keeps official HTTPS sources and real review dates", () => {
+  for (const question of questions) {
+    assert.equal(new Date(`${question.lastReviewedAt}T00:00:00Z`).toISOString().slice(0, 10), question.lastReviewedAt);
+    for (const source of question.sources) {
+      const url = new URL(source.url);
+      assert.equal(url.protocol, "https:");
+      assert.ok(["dart.dev", "api.dart.dev", "docs.flutter.dev", "blog.cleancoder.com"].includes(url.hostname));
+    }
+  }
 });

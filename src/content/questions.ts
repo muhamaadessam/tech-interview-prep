@@ -356,7 +356,7 @@ abstract interface class Validator {
 }`,
     commonMistakes: ["وراثة كلاس فقط لإعادة استخدام ميثود واحدة.", "تحويل composition إلى طبقات كثيرة من غير حدود مفهومة."],
     followUpQuestions: ["كيف تختبر collaborator في تصميم قائم على composition؟"],
-    sources: [{ title: "Dart language — Class modifiers", url: "https://dart.dev/language/class-modifiers" }],
+    sources: [{ title: "Dart language — Classes", url: "https://dart.dev/language/classes" }],
     lastReviewedAt: "2026-08-30",
   },
   {
@@ -420,7 +420,7 @@ class ApiClient with Loggable {}`,
     question: "إزاي تعرّف equality صحيحة لـ value object في Dart؟",
     shortAnswer: "override == وhashCode معًا باستخدام نفس الحقول التي تحدد الهوية المنطقية، ولا تغيّر هذه الحقول أثناء استخدام object كمفتاح.",
     explanation: "الـSet والـMap يعتمدان على اتساق == مع hashCode: لو كائنان متساويان يجب أن يكون لهما hashCode واحد. قارن الأنواع والحقول المهمة فقط، وحافظ على immutability للحقول التي تدخل في الهوية حتى لا يصبح المفتاح غير قابل للوصول.",
-    codeExample: `class Point {
+    codeExample: `final class Point {
   const Point(this.x, this.y);
   final int x;
   final int y;
@@ -431,7 +431,10 @@ class ApiClient with Loggable {}`,
 }`,
     commonMistakes: ["override == من غير hashCode.", "استخدام mutable fields في hashCode ثم تعديلها داخل Set أو Map."],
     followUpQuestions: ["لماذا يجب فحص runtime type قبل مقارنة الحقول؟"],
-    sources: [{ title: "Dart language — Equality and hash code", url: "https://dart.dev/language/operators#equality-and-relational-operators" }],
+    sources: [
+      { title: "Dart API — Object ==", url: "https://api.dart.dev/dart-core/Object/operator_equals.html" },
+      { title: "Dart API — Object.hashCode", url: "https://api.dart.dev/dart-core/Object/hashCode.html" },
+    ],
     lastReviewedAt: "2026-08-30",
   },
   {
@@ -445,7 +448,7 @@ class ApiClient with Loggable {}`,
     explanation: "اجعل الحقول final، وفّر constructor واضحًا، وأعد instance جديدة عند التغيير بدل تعديل القديمة. هذا يجعل state transitions صريحة ويقلل مفاجآت rebuilds، لكن لا تحوّل كل object إلى immutable بلا حاجة؛ الصور والموارد ذات lifecycle مختلف.",
     commonMistakes: ["تجميد reference مع إبقاء List داخلية قابلة للتعديل.", "اعتبار إنشاء نسخة جديدة حلًا لمشكلة أداء قبل القياس."],
     followUpQuestions: ["كيف تحمي collection داخل value object من التعديل الخارجي؟"],
-    sources: [{ title: "Dart language — Classes", url: "https://dart.dev/language/classes" }],
+    sources: [{ title: "Dart Blog — An intro to immutability", url: "https://dart.dev/blog/an-intro-to-immutability-with-dart" }],
     lastReviewedAt: "2026-08-30",
   },
   {
@@ -459,7 +462,10 @@ class ApiClient with Loggable {}`,
     explanation: "SRP لا يعني أن كل class يحتوي ميثود واحدة. اسأل: هل تغييرات تصميم الواجهة وتغييرات API ستجبر نفس الملف على التعديل؟ فصل orchestration عن data access وعن presentation يجعل الكود أوضح وأسهل في الاختبار من غير طبقات شكلية.",
     commonMistakes: ["تقسيم كل سطر إلى class جديد بلا سبب تغيير حقيقي.", "ترك parsing وطلبات الشبكة داخل build method."],
     followUpQuestions: ["ما العلامة التي تقول إن الفصل زاد عن حاجته؟"],
-    sources: [{ title: "Flutter docs — App architecture", url: "https://docs.flutter.dev/app-architecture" }],
+    sources: [
+      { title: "Flutter docs — App architecture", url: "https://docs.flutter.dev/app-architecture" },
+      { title: "Robert C. Martin — Solid Relevance", url: "https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html" },
+    ],
     lastReviewedAt: "2026-08-30",
   },
   {
@@ -478,7 +484,10 @@ class ApiClient with Loggable {}`,
 String buildCard(CardRenderer renderer) => renderer.render();`,
     commonMistakes: ["إنشاء factory وinterface لفرع واحد لا يتغير.", "إخفاء switch داخل abstraction من غير تقليل تكلفة التغيير."],
     followUpQuestions: ["إمتى يكون switch الواضح أفضل من polymorphism؟"],
-    sources: [{ title: "Flutter docs — Design patterns", url: "https://docs.flutter.dev/app-architecture/design-patterns" }],
+    sources: [
+      { title: "Flutter docs — Design patterns", url: "https://docs.flutter.dev/app-architecture/design-patterns" },
+      { title: "Robert C. Martin — Solid Relevance", url: "https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html" },
+    ],
     lastReviewedAt: "2026-08-30",
   },
   {
@@ -492,7 +501,10 @@ String buildCard(CardRenderer renderer) => renderer.render();`,
     explanation: "لو implementation ترمي UnsupportedError لميثود يفرضها base interface أو تقبل مدخلات أضيق من العقد، فهي غالبًا ليست subtype صالحًا. أصلح العقد ليعبّر عن القدرات الحقيقية أو استخدم interfaces أصغر بدل إجبار كل implementation على سلوك لا يملكه.",
     commonMistakes: ["اعتبار inheritance صحيحًا لمجرد أن الكود يترجم.", "إرجاع null أو خطأ مفاجئ بدل contract متوقع."],
     followUpQuestions: ["كيف تكشف اختبارًا أن implementation كسرت LSP؟"],
-    sources: [{ title: "Dart language — Class modifiers", url: "https://dart.dev/language/class-modifiers" }],
+    sources: [
+      { title: "Dart language — Class modifiers", url: "https://dart.dev/language/class-modifiers" },
+      { title: "Robert C. Martin — Solid Relevance", url: "https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html" },
+    ],
     lastReviewedAt: "2026-08-30",
   },
   {
@@ -506,7 +518,10 @@ String buildCard(CardRenderer renderer) => renderer.render();`,
     explanation: "interface صغيرة مثل UserReader وUserWriter تسمح للـview model بالاعتماد على القراءة فقط، وللاختبار بتوفير fake أصغر. لا تقسّم كل ميثود في interface منفصلة؛ اجمع العمليات التي تتغير معًا ولها نفس المستهلك.",
     commonMistakes: ["إضافة ميثود no-op لإرضاء interface ضخمة.", "تقسيم الواجهة بلا محور استخدام واضح."],
     followUpQuestions: ["ما علاقة ISP بالـmock أو fake في اختبارات Flutter؟"],
-    sources: [{ title: "Flutter docs — App architecture", url: "https://docs.flutter.dev/app-architecture" }],
+    sources: [
+      { title: "Flutter docs — App architecture", url: "https://docs.flutter.dev/app-architecture" },
+      { title: "Robert C. Martin — Solid Relevance", url: "https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html" },
+    ],
     lastReviewedAt: "2026-08-30",
   },
   {
@@ -528,7 +543,10 @@ class ProfileController {
 }`,
     commonMistakes: ["اعتبار حقن dependency عبر global singleton تطبيقًا كاملًا لـDIP.", "وضع interface بجانب implementation بدل حدود المستهلك."],
     followUpQuestions: ["أين يكون composition root في تطبيق Flutter؟"],
-    sources: [{ title: "Flutter docs — App architecture", url: "https://docs.flutter.dev/app-architecture" }],
+    sources: [
+      { title: "Flutter docs — App architecture", url: "https://docs.flutter.dev/app-architecture" },
+      { title: "Robert C. Martin — Solid Relevance", url: "https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html" },
+    ],
     lastReviewedAt: "2026-08-30",
   },
   {
@@ -542,7 +560,10 @@ class ProfileController {
     explanation: "Flutter يشجع composition، لذلك فصل العرض عن state والبيانات غالبًا أوضح من توريث Widgets مخصصة. خذ القرار على أساس أسباب التغيير واختباراتك، لا على أسماء طبقات ثابتة؛ شاشة صغيرة قد لا تحتاج architecture كاملة.",
     commonMistakes: ["وضع كل منطق التطبيق داخل build لأن الوصول إلى context سهل.", "نسخ Widget tree عميقة لإخفاء مسؤوليات مختلطة."],
     followUpQuestions: ["ما الذي يبقى داخل StatefulWidget حتى بعد فصل state؟"],
-    sources: [{ title: "Flutter docs — Architectural overview", url: "https://docs.flutter.dev/app-architecture/guide" }],
+    sources: [
+      { title: "Flutter docs — Architectural overview", url: "https://docs.flutter.dev/app-architecture/guide" },
+      { title: "Robert C. Martin — Solid Relevance", url: "https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html" },
+    ],
     lastReviewedAt: "2026-08-30",
   },
   {
@@ -556,7 +577,10 @@ class ProfileController {
     explanation: "SOLID heuristics وليست checklist. في feature صغيرة، function واضحة قد تكون أفضل من خمس interfaces. راقب محاور التغيير، حجم الفريق، وعمر الكود، ثم افصل عند ظهور ضغط حقيقي بدل بناء بنية مستقبلية غير مؤكدة.",
     commonMistakes: ["قياس جودة التصميم بعدد الملفات والـinterfaces.", "استخدام SOLID ذريعة لتأجيل شحن feature بسيطة."],
     followUpQuestions: ["كيف تكتشف أن abstraction أصبحت عبئًا؟"],
-    sources: [{ title: "Flutter docs — App architecture", url: "https://docs.flutter.dev/app-architecture" }],
+    sources: [
+      { title: "Flutter docs — App architecture", url: "https://docs.flutter.dev/app-architecture" },
+      { title: "Robert C. Martin — Solid Relevance", url: "https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html" },
+    ],
     lastReviewedAt: "2026-08-30",
   },
   {
@@ -570,7 +594,10 @@ class ProfileController {
     explanation: "لا تعِد كتابة الشاشة كلها دفعة واحدة. أضف characterization test، افصل طلب الشبكة أو parsing خلف contract، ثم انقل المسؤولية تدريجيًا. كل خطوة يجب أن تقلل coupling أو تحسن الاختبار، وإلا ارجع لأبسط شكل.",
     commonMistakes: ["دمج refactor شامل مع تغيير سلوك يصعب مراجعته.", "اختيار abstraction قبل فهم السلوك الحالي والقيود."],
     followUpQuestions: ["ما أول seam تختاره لاختبار شاشة تعتمد على API؟"],
-    sources: [{ title: "Flutter docs — App architecture", url: "https://docs.flutter.dev/app-architecture" }],
+    sources: [
+      { title: "Flutter docs — App architecture", url: "https://docs.flutter.dev/app-architecture" },
+      { title: "Robert C. Martin — Solid Relevance", url: "https://blog.cleancoder.com/uncle-bob/2020/10/18/Solid-Relevance.html" },
+    ],
     lastReviewedAt: "2026-08-30",
   },
 ];
