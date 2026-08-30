@@ -11,6 +11,10 @@ npm install
 npm run dev
 ```
 
+لتفعيل تسجيل الدخول، انسخ `.env.example` إلى `.env.local` وضع `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` من Clerk. وللنشر على GitHub Pages أضف نفس القيمة كـ Actions variable باسم `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`.
+
+الموقع static، لذلك Clerk يعمل من المتصفح فقط؛ حماية المسارات من الخادم تحتاج استضافة تدعم runtime مثل Vercel.
+
 التحقق قبل النشر:
 
 ```bash

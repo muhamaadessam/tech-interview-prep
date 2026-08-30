@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { localeDirection, localeFromPathname, localizedHref, messages, type Locale } from "../i18n";
 import { ThemeToggle } from "./theme-toggle";
 import { BrandLogo } from "./logo";
+import { ClerkControls } from "./clerk-controls";
 
 const paths = [["home", "/"], ["topics", "/topics"], ["questions", "/questions"], ["interview", "/interview"], ["progress", "/progress"]] as const;
 
@@ -62,6 +63,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             {paths.map(([key, path]) => <Link key={path} href={localizedHref(locale, path)}>{copy[key]}</Link>)}
           </div>
           <div className="nav-actions">
+            <ClerkControls locale={locale} />
             <Link className="locale-switcher" href={switchHref}>{copy.language}</Link>
             <ThemeToggle locale={locale} />
           </div>

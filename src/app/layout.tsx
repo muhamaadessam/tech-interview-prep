@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import "./globals.css";
 import { siteUrl, themeKey } from "./site-config";
 import { SiteShell } from "./site-shell";
+import { ClerkRoot } from "./clerk-provider";
 
 export const metadata: Metadata = {
   metadataBase: new URL(`${siteUrl}/`),
@@ -47,7 +48,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         />
       </head>
       <body>
-        <SiteShell>{children}</SiteShell>
+        <ClerkRoot><SiteShell>{children}</SiteShell></ClerkRoot>
       </body>
     </html>
   );

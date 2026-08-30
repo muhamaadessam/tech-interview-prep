@@ -107,6 +107,9 @@ a { color: inherit; }
 .nav-links a { color: var(--muted); text-decoration: none; font-weight: 700; }
 .nav-links a:hover, .nav-links a:focus-visible { color: var(--brand); }
 .nav-actions { display: flex; align-items: center; gap: 8px; }
+.auth-controls { display: flex; align-items: center; gap: 6px; }
+.auth-button { min-height: 38px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; font-size: .82rem; font-weight: 800; cursor: pointer; }
+.auth-button-primary { border-color: var(--brand); background: var(--brand); color: #fff; }
 .locale-switcher { padding: 7px 10px; border: 1px solid var(--border); border-radius: 9px; color: var(--brand-strong); font-size: .84rem; font-weight: 800; text-decoration: none; }
 .theme-toggle { min-height: 38px; padding-inline: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; font-size: .85rem; font-weight: 800; cursor: pointer; }
 

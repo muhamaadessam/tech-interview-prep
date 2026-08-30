@@ -7,7 +7,7 @@ export const messages = {
   ar: {
     brandName: "تحضير المقابلات التقنية",
     home: "الرئيسية", topics: "الموضوعات", questions: "مكتبة الأسئلة", interview: "مقابلة كاملة", progress: "تقدمي",
-    skip: "انتقل إلى المحتوى", theme: "تغيير المظهر", dark: "◐ الوضع الداكن", light: "☀ الوضع الفاتح",
+    skip: "انتقل إلى المحتوى", theme: "تغيير المظهر", dark: "◐ الوضع الداكن", light: "☀ الوضع الفاتح", signIn: "تسجيل الدخول", signUp: "إنشاء حساب",
     libraryEyebrow: "مكتبة الأسئلة", libraryTitle: "مكتبة الأسئلة", libraryDescription: "راجع السؤال، جاوب بصوتك، وبعدها افتح التفاصيل وقارن إجابتك بشرح مدعوم بالمصدر الرسمي.",
     search: "ابحث في الأسئلة", searchPlaceholder: "مثال: final أو وقت التشغيل", topic: "الموضوع", allTopics: "كل الموضوعات", difficulty: "مستوى الصعوبة", allDifficulties: "كل المستويات", progressFilter: "حالة المراجعة", allProgress: "كل الحالات", favoriteOnly: "المفضلة فقط", available: "سؤال متاح.", startSession: "ابدأ جلسة المراجعة", prepareSession: "جهّز جلسة مراجعة", noResults: "مفيش نتائج مطابقة", expandFilters: "جرّب تغيّر البحث أو توسّع الفلاتر.",
     topicsEyebrow: "مسار Flutter", topicsTitle: "الموضوعات", topicsDescription: "المحتوى متقسم حسب المفاهيم اللي بتتقابل في الانترفيو.", availableQuestions: "سؤال متاح للمراجعة حاليًا.", viewQuestions: "عرض الأسئلة ←",
@@ -20,7 +20,7 @@ export const messages = {
   en: {
     brandName: "Tech Interview Prep",
     home: "Home", topics: "Topics", questions: "Question Library", interview: "Full Interview", progress: "Progress",
-    skip: "Skip to content", theme: "Change theme", dark: "◐ Dark mode", light: "☀ Light mode",
+    skip: "Skip to content", theme: "Change theme", dark: "◐ Dark mode", light: "☀ Light mode", signIn: "Sign in", signUp: "Sign up",
     libraryEyebrow: "Question library", libraryTitle: "Question library", libraryDescription: "Answer out loud, open the details, and compare your reasoning with an answer backed by official sources.",
     search: "Search questions", searchPlaceholder: "Example: final or runtime", topic: "Topic", allTopics: "All topics", difficulty: "Difficulty", allDifficulties: "All levels", progressFilter: "Question progress", allProgress: "All progress", favoriteOnly: "Favorites only", available: "questions available.", startSession: "Start review session", prepareSession: "Prepare a review session", noResults: "No matching results", expandFilters: "Try changing the search or widening the filters.",
     topicsEyebrow: "Flutter track", topicsTitle: "Topics", topicsDescription: "Browse the concepts that commonly appear in Flutter interviews.", availableQuestions: "questions currently available for review.", viewQuestions: "View questions →",
