@@ -31,7 +31,7 @@ export const messages = {
 } as const;
 
 export function localeFromPathname(pathname: string): Locale {
-  return pathname.split("/").filter(Boolean)[0] === "en" ? "en" : "ar";
+  return pathname.split("/").filter(Boolean).find((segment) => segment === "en" || segment === "ar") === "en" ? "en" : "ar";
 }
 
 export function localizedHref(locale: Locale, path = "/"): string {

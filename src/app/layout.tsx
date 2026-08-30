@@ -36,7 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <script
           id="locale-init"
           dangerouslySetInnerHTML={{
-            __html: `(()=>{const l=location.pathname.split('/').filter(Boolean)[0]==="en"?"en":"ar";document.documentElement.lang=l;document.documentElement.dir=l==="en"?"ltr":"rtl"})()`,
+            __html: `(()=>{const l=location.pathname.split('/').filter(Boolean).find(s=>s==="en"||s==="ar")==="en"?"en":"ar";document.documentElement.lang=l;document.documentElement.dir=l==="en"?"ltr":"rtl"})()`,
           }}
         />
         <script
