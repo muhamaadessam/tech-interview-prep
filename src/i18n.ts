@@ -57,10 +57,14 @@ export function topicName(locale: Locale, topicId: string): string {
   return topicTranslations[locale][topicId] ?? topicId;
 }
 
+function localeWithLatinDigits(locale: Locale): string {
+  return locale === "ar" ? "ar-EG-u-nu-latn" : "en-US-u-nu-latn";
+}
+
 export function formatNumber(value: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US").format(value);
+  return new Intl.NumberFormat(localeWithLatinDigits(locale)).format(value);
 }
 
 export function formatDate(value: string, locale: Locale): string {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", { dateStyle: "medium" }).format(new Date(`${value}T00:00:00Z`));
+  return new Intl.DateTimeFormat(localeWithLatinDigits(locale), { dateStyle: "medium" }).format(new Date(`${value}T00:00:00Z`));
 }
