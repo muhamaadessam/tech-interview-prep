@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-لتفعيل تسجيل الدخول، انسخ `.env.example` إلى `.env.local` وضع `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` من Clerk. وللنشر على GitHub Pages أضف نفس القيمة كـ Actions variable باسم `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`.
+لتفعيل تسجيل الدخول، انسخ `.env.example` إلى `.env.local` وضع `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` من Clerk. النشر الحالي يتم على [Cloudflare Pages](https://tech-interview-prep-1ux.pages.dev/ar/)، ويستخدم مفتاح Clerk Development مؤقتًا لأن دومينًا مملوكًا غير متاح بعد؛ استبدله بمفتاح Production بعد توثيق دومينك في Clerk.
 
 الموقع static، لذلك Clerk يعمل من المتصفح فقط؛ حماية المسارات من الخادم تحتاج استضافة تدعم runtime مثل Vercel.
 

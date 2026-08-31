@@ -11,6 +11,8 @@ The browser only receives the public Supabase URL and two publishable keys.
    `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; Clerk's
    key is stored as `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`. Do not commit values or
    expose a service-role key.
+   The Cloudflare Pages deployment currently uses Clerk Development until a
+   custom domain is available and verified in Clerk Production.
 2. Configure Google and email/password providers in Clerk. Allow these exact
    origins: `http://localhost:3000` and
    `https://tech-interview-prep-1ux.pages.dev`.
