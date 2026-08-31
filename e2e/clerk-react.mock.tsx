@@ -12,7 +12,10 @@ export function useAuth() {
   const isSignedIn = useSignedIn();
   return { isLoaded: true, isSignedIn, userId: isSignedIn ? "user_playwright" : null, getToken };
 }
-export function useUser() { return { user: { primaryEmailAddress: { verification: { status: "verified" } } } }; }
+export function useUser() {
+  const verified = typeof window === "undefined" || localStorage.getItem("playwright-email-verified") !== "false";
+  return { user: { primaryEmailAddress: { verification: { status: verified ? "verified" : "unverified" } } } };
+}
 export function Show({ when, children }: { when: "signed-in" | "signed-out"; children: ReactNode }) {
   const isSignedIn = useSignedIn();
   return (when === "signed-in") === isSignedIn ? children : null;

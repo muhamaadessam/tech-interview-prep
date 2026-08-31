@@ -1,4 +1,5 @@
 import { normalizeQuestion, validateSubmission, type ValidatedSubmission } from "../../../src/submissions/validation.ts";
+import { buildReviewIssue } from "../../../src/submissions/review-issue.ts";
 import { clerkAuth, emailConfirmed, pseudonymousUserId } from "../_shared/clerk-auth.ts";
 
 const cors = {
@@ -7,7 +8,6 @@ const cors = {
   "Access-Control-Allow-Origin": "*",
   "Content-Type": "application/json",
 };
-const githubLabels = ["community-submission", "needs-review"];
 const maxDailySubmissions = 5;
 const cooldownMs = 60_000;
 const stalePendingMs = 120_000;
@@ -19,6 +19,7 @@ type SubmissionRow = {
   github_issue_url: string | null;
   last_error: string | null;
   revision_number: number;
+  duplicate_advisory: boolean;
   updated_at: string;
 };
 
@@ -69,7 +70,7 @@ async function isDuplicate(draft: ValidatedSubmission, key: string): Promise<str
   const match = rows.find((row) => {
     const payload = jsonValue(row.payload) as { question?: unknown };
     const topics = Array.isArray(row.topic_ids) ? row.topic_ids.filter((topic): topic is string => typeof topic === "string") : [];
-    return typeof payload.question === "string" && normalizeQuestion(payload.question) === normalized && intersects(topics, draft.topicIds);
+    return typeof payload.question === "string" && normalizeQuestion(payload.question) === normalized && (!draft.topicIds.length || intersects(topics, draft.topicIds));
   });
   return match?.id ?? null;
 }
@@ -130,28 +131,11 @@ async function createGithubIssue(draft: ValidatedSubmission, submissionId: strin
   const token = await githubInstallationToken();
   const existing = await findGithubIssue(token, owner, repository, submissionId);
   if (existing) return existing;
-  const body = [
-    `<!-- submission-id: ${submissionId} -->`,
-    "## Community submission",
-    `- Submission ID: \`${submissionId}\``,
-    `- Track: ${draft.trackId}`,
-    `- Topics: ${draft.topicIds.join(", ")}`,
-    `- Difficulty: ${draft.difficulty}`,
-    `- Contributor: ${draft.displayName}`,
-    "",
-    `### Question\n${draft.question}`,
-    `### Short answer\n${draft.shortAnswer}`,
-    `### Explanation\n${draft.explanation}`,
-    draft.codeExample ? `### Code example\n\`\`\`\n${draft.codeExample}\n\`\`\`` : "",
-    draft.commonMistakes.length ? `### Common mistakes\n${draft.commonMistakes.map((item) => `- ${item}`).join("\n")}` : "",
-    draft.followUpQuestions.length ? `### Follow-up questions\n${draft.followUpQuestions.map((item) => `- ${item}`).join("\n")}` : "",
-    `### Sources\n${draft.sources.map((source) => `- ${source}`).join("\n")}`,
-    "\n> This issue is a review record. Closing it does not publish content.",
-  ].filter(Boolean).join("\n\n");
+  const issueContent = buildReviewIssue({ draft, submissionId });
   const issue = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/issues`, {
     method: "POST",
     headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "Content-Type": "application/json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "tech-interview-prep" },
-    body: JSON.stringify({ title: `[Community submission] ${draft.question.slice(0, 80)}`, body, labels: githubLabels }),
+    body: JSON.stringify(issueContent),
   });
   if (!issue.ok) throw new Error("github_issue_error");
   const created = await issue.json() as { number?: number; html_url?: string };
@@ -178,23 +162,34 @@ async function submit(request: Request): Promise<Response> {
     const { key } = dbConfig();
     const roles = await (await dbRequest(`/rest/v1/account_roles?select=suspended&user_id=eq.${encodeURIComponent(userId)}&limit=1`, key)).json() as Array<{ suspended?: boolean }>;
     if (roles[0]?.suspended) return response({ error: "submission_suspended" }, 403);
-    const existing = await (await dbRequest(`/rest/v1/submissions?select=id,status,github_issue_number,github_issue_url,last_error,revision_number,updated_at&submitted_by=eq.${encodeURIComponent(userId)}&idempotency_key=eq.${encodeURIComponent(draft.idempotencyKey)}&limit=1`, key)).json() as SubmissionRow[];
+    const existing = await (await dbRequest(`/rest/v1/submissions?select=id,status,github_issue_number,github_issue_url,last_error,revision_number,duplicate_advisory,updated_at&submitted_by=eq.${encodeURIComponent(userId)}&idempotency_key=eq.${encodeURIComponent(draft.idempotencyKey)}&limit=1`, key)).json() as SubmissionRow[];
     const previous = existing[0];
     const pendingStatus = previous?.status === "pending" || previous?.status === "issue_creating";
     const pendingIsFresh = pendingStatus && Date.now() - Date.parse(previous.updated_at) < stalePendingMs;
     if (previous && ((previous.status !== "failed" && !pendingStatus) || pendingIsFresh)) {
-      return response({ submissionId: previous.id, status: previous.status === "issue_creating" ? "pending" : previous.status, githubIssueNumber: previous.github_issue_number, githubIssueUrl: previous.github_issue_url });
+      return response({ submissionId: previous.id, status: previous.status === "issue_creating" ? "pending" : previous.status, githubIssueNumber: previous.github_issue_number, githubIssueUrl: previous.github_issue_url, duplicateAdvisory: previous.duplicate_advisory });
     }
-    const tracks = await (await dbRequest(`/rest/v1/tracks?select=id&id=eq.${encodeURIComponent(draft.trackId)}&limit=1`, key)).json() as Array<{ id: string }>;
-    const topics = await (await dbRequest(`/rest/v1/topics?select=id,track_id&id=in.(${draft.topicIds.map(encodeURIComponent).join(",")})`, key)).json() as Array<{ id: string; track_id: string }>;
-    if (tracks.length !== 1 || topics.length !== draft.topicIds.length || topics.some((topic) => topic.track_id !== draft.trackId)) return response({ error: "taxonomy_invalid" }, 400);
+    const preferences = await (await dbRequest(`/rest/v1/account_track_preferences?select=track_id,tracks!inner(is_active)&user_id=eq.${encodeURIComponent(userId)}&track_id=eq.${encodeURIComponent(draft.trackId)}&tracks.is_active=eq.true&limit=1`, key)).json() as Array<{ track_id: string }>;
+    if (preferences.length !== 1) return response({ error: "track_preference_required" }, 403);
+    const topics = draft.topicIds.length
+      ? await (await dbRequest(`/rest/v1/topics?select=id,track_id&id=in.(${draft.topicIds.map(encodeURIComponent).join(",")})`, key)).json() as Array<{ id: string; track_id: string }>
+      : [];
+    if (topics.length !== draft.topicIds.length || topics.some((topic) => topic.track_id !== draft.trackId)) return response({ error: "taxonomy_invalid" }, 400);
 
     const duplicateOf = await isDuplicate(draft, key);
     if (!previous) {
-      const allowed = await (await dbRequest("/rest/v1/rpc/claim_submission_slot", key, { method: "POST", body: JSON.stringify({ p_user_id: userId, p_daily_limit: maxDailySubmissions, p_cooldown_seconds: cooldownMs / 1000 }) })).json() as boolean;
-      if (!allowed) return response({ error: "daily_limit_reached" }, 429);
+      const limit = await (await dbRequest("/rest/v1/rpc/claim_submission_slot_reason", key, { method: "POST", body: JSON.stringify({ p_user_id: userId, p_daily_limit: maxDailySubmissions, p_cooldown_seconds: cooldownMs / 1000 }) })).json() as "allowed" | "daily_limit_reached" | "cooldown_active";
+      if (limit !== "allowed") return response({ error: limit }, 429);
     }
-    const payload = { question: draft.question, shortAnswer: draft.shortAnswer, explanation: draft.explanation, sources: draft.sources, codeExample: draft.codeExample, commonMistakes: draft.commonMistakes, followUpQuestions: draft.followUpQuestions };
+    const payload = {
+      question: draft.question,
+      ...(draft.shortAnswer ? { shortAnswer: draft.shortAnswer } : {}),
+      ...(draft.explanation ? { explanation: draft.explanation } : {}),
+      ...(draft.sources.length ? { sources: draft.sources } : {}),
+      ...(draft.codeExample ? { codeExample: draft.codeExample } : {}),
+      ...(draft.commonMistakes.length ? { commonMistakes: draft.commonMistakes } : {}),
+      ...(draft.followUpQuestions.length ? { followUpQuestions: draft.followUpQuestions } : {}),
+    };
     let submissionId = previous?.id;
     let insertedNew = false;
     if (!submissionId) {

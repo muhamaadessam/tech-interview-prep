@@ -15,7 +15,7 @@ export type SubmissionDraft = {
   question: string;
   shortAnswer: string;
   explanation: string;
-  difficulty: "Junior" | "Mid" | "Senior";
+  difficulty: "Junior" | "Mid" | "Senior" | null;
   sources: string[];
   codeExample?: string;
   commonMistakes?: string[];
@@ -27,13 +27,13 @@ export type SubmissionDraft = {
 
 export type ValidatedSubmission = Omit<SubmissionDraft, "question" | "shortAnswer" | "explanation" | "sources" | "codeExample" | "commonMistakes" | "followUpQuestions" | "displayName"> & {
   question: string;
-  shortAnswer: string;
-  explanation: string;
+  shortAnswer: string | null;
+  explanation: string | null;
   sources: string[];
   codeExample: string | null;
   commonMistakes: string[];
   followUpQuestions: string[];
-  displayName: string;
+  displayName: string | null;
 };
 
 const htmlTag = /<\/?[a-z][^>]*>/i;
@@ -46,6 +46,11 @@ function text(value: unknown, max: number, field: string): string {
   return normalized;
 }
 
+function optionalText(value: unknown, max: number, field: string): string | null {
+  if (value === undefined || value === null || (typeof value === "string" && !value.trim())) return null;
+  return text(value, max, field);
+}
+
 function list(value: unknown, maxItems: number, field: string): string[] {
   if (!Array.isArray(value) || value.length > maxItems) throw new Error(`${field}_invalid`);
   return value.map((item) => text(item, submissionLimits.item, field));
@@ -56,20 +61,22 @@ export function validateSubmission(value: unknown): ValidatedSubmission {
   const draft = value as Record<string, unknown>;
   const trackId = text(draft.trackId, 80, "track");
   const topicIds = list(draft.topicIds, 20, "topics");
-  if (!topicIds.length || new Set(topicIds).size !== topicIds.length) throw new Error("topics_invalid");
+  if (new Set(topicIds).size !== topicIds.length) throw new Error("topics_invalid");
   const question = text(draft.question, submissionLimits.question, "question");
-  const shortAnswer = text(draft.shortAnswer, submissionLimits.shortAnswer, "short_answer");
-  const explanation = text(draft.explanation, submissionLimits.explanation, "explanation");
-  const difficulty = draft.difficulty;
-  if (difficulty !== "Junior" && difficulty !== "Mid" && difficulty !== "Senior") throw new Error("difficulty_invalid");
+  const shortAnswer = optionalText(draft.shortAnswer, submissionLimits.shortAnswer, "short_answer");
+  const explanation = optionalText(draft.explanation, submissionLimits.explanation, "explanation");
+  const difficulty = draft.difficulty === "" || draft.difficulty === undefined ? null : draft.difficulty;
+  if (difficulty !== null && difficulty !== "Junior" && difficulty !== "Mid" && difficulty !== "Senior") throw new Error("difficulty_invalid");
   const sources = list(draft.sources, submissionLimits.sources, "sources");
-  if (!sources.length || !sources.every((source) => /^https:\/\/[^\s]+$/i.test(source))) throw new Error("sources_invalid");
-  const codeExample = draft.codeExample ? text(draft.codeExample, submissionLimits.code, "code") : null;
+  if (!sources.every((source) => {
+    try { return new URL(source).protocol === "https:"; } catch { return false; }
+  })) throw new Error("sources_invalid");
+  const codeExample = optionalText(draft.codeExample, submissionLimits.code, "code");
   if (codeExample?.includes("```")) throw new Error("code_invalid");
   const commonMistakes = draft.commonMistakes ? list(draft.commonMistakes, submissionLimits.items, "mistakes") : [];
   const followUpQuestions = draft.followUpQuestions ? list(draft.followUpQuestions, submissionLimits.items, "followups") : [];
-  const displayName = draft.displayName ? text(draft.displayName, submissionLimits.displayName, "display_name") : "Community contributor";
-  if (/@|\S+@\S+\.\S+/.test(displayName)) throw new Error("display_name_invalid");
+  const displayName = optionalText(draft.displayName, submissionLimits.displayName, "display_name");
+  if (displayName && /@|\S+@\S+\.\S+/.test(displayName)) throw new Error("display_name_invalid");
   if (draft.licenseConsent !== true) throw new Error("license_consent_required");
   const idempotencyKey = text(draft.idempotencyKey, 80, "idempotency_key");
   if (!uuid.test(idempotencyKey)) throw new Error("idempotency_key_invalid");

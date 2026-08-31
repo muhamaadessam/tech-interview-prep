@@ -5,6 +5,7 @@ export const locales: Locale[] = ["ar", "en"];
 
 export const messages = {
   ar: {
+    submitDifficultyNone: "غير محدد", submitTrackPreference: "اختر مسارًا نشطًا من تفضيلات المسارات.",
     brandName: "تحضير المقابلات التقنية",
     home: "الرئيسية", topics: "الموضوعات", questions: "مكتبة الأسئلة", interview: "مقابلة كاملة", progress: "تقدمي", submit: "اقترح سؤالًا", moderator: "المراجعة", myTracks: "مساراتي",
     skip: "انتقل إلى المحتوى", menu: "القائمة", close: "إغلاق", theme: "تغيير المظهر", dark: "◐ الوضع الداكن", light: "☀ الوضع الفاتح", signIn: "تسجيل الدخول", signUp: "إنشاء حساب",
@@ -21,6 +22,7 @@ export const messages = {
     onboardingEyebrow: "إعداد الحساب", onboardingTitle: "اختر مساراتك", onboardingDescription: "اختر مسارًا نشطًا واحدًا على الأقل وحدد المسار الافتراضي الذي تبدأ منه.", myTracksTitle: "مساراتي", myTracksDescription: "أضف أو احذف تفضيلات المسارات النشطة وغيّر المسار الافتراضي. لن يتأثر تقدم الأسئلة أو المفضلة أو المساهمات السابقة.", tracksLoading: "جاري تحميل المسارات…", tracksSignIn: "سجّل الدخول لإدارة مساراتك.", tracksAuthSetup: "إدارة المسارات تحتاج إعداد تسجيل الدخول أولًا.", tracksLegend: "تفضيلات المسارات", defaultTrackLegend: "المسار الافتراضي", defaultTrackHint: "يجب أن يكون المسار الافتراضي ضمن المسارات المختارة.", unavailableTracksLegend: "المسارات التاريخية غير المتاحة", trackUnavailable: "غير متاح", tracksRequired: "اختر مسارًا نشطًا واحدًا على الأقل.", defaultTrackRequired: "اختر مسارًا افتراضيًا من المسارات المختارة.", lastTrackRequired: "لا يمكن حذف آخر تفضيل مسار نشط.", tracksSave: "حفظ المسارات", tracksSaving: "جاري الحفظ…", tracksSaved: "تم حفظ تفضيلات المسارات والمسار الافتراضي.", tracksUnavailable: "تعذر تحميل أو حفظ تفضيلات المسارات. جرّب مرة أخرى.", tracksRetry: "إعادة المحاولة", tracksContinue: "متابعة", continueBrowsing: "متابعة تصفح المكتبة", noActiveTracksTitle: "لا توجد مسارات نشطة الآن", noActiveTracksDescription: "ارجع لاحقًا عندما يتوفر مسار نشط لإكمال الإعداد.", tracksRecoveryTitle: "المسارات المختارة لم تعد متاحة", tracksRecoveryDescription: "اختر مسارًا نشطًا جديدًا للعودة إلى الإعداد. بيانات تقدمك ومفضلاتك ومساهماتك السابقة محفوظة.", tracksRecoveryAction: "العودة إلى الإعداد",
   },
   en: {
+    submitDifficultyNone: "Not specified", submitTrackPreference: "Choose one active Track Preference.",
     brandName: "Tech Interview Prep",
     home: "Home", topics: "Topics", questions: "Question Library", interview: "Full Interview", progress: "Progress", submit: "Suggest a question", moderator: "Moderation", myTracks: "My Tracks",
     skip: "Skip to content", menu: "Menu", close: "Close", theme: "Change theme", dark: "◐ Dark mode", light: "☀ Light mode", signIn: "Sign in", signUp: "Sign up",
