@@ -16,8 +16,22 @@ import { AuthDialogTrigger } from "./auth-dialog";
 import { adjustAskedMarker, loadAskedMarkerStates, type AskedMarkerState } from "../study/asked-markers";
 import { formatNumber } from "../i18n";
 
+type AuthState = { authLoaded: boolean; isSignedIn: boolean | undefined; userId: string | null | undefined; getToken: ReturnType<typeof useAuth>["getToken"] };
+const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+const anonymousAuth = { authLoaded: true, isSignedIn: false, userId: null, getToken: (async () => null) as AuthState["getToken"] } satisfies AuthState;
+
 export function QuestionControls({ questionId, locale = "ar" }: { questionId: string; locale?: Locale }) {
+  if (!clerkEnabled) return <QuestionControlsContent questionId={questionId} locale={locale} auth={anonymousAuth} clerkEnabled={false} />;
+  return <AuthenticatedQuestionControls questionId={questionId} locale={locale} />;
+}
+
+function AuthenticatedQuestionControls({ questionId, locale }: { questionId: string; locale: Locale }) {
   const { isLoaded: authLoaded, isSignedIn, userId, getToken } = useAuth();
+  return <QuestionControlsContent questionId={questionId} locale={locale} clerkEnabled auth={{ authLoaded, isSignedIn, userId, getToken }} />;
+}
+
+function QuestionControlsContent({ questionId, locale = "ar", auth, clerkEnabled }: { questionId: string; locale?: Locale; auth: AuthState; clerkEnabled: boolean }) {
+  const { authLoaded, isSignedIn, userId, getToken } = auth;
   const [questionState, setQuestionState] = useState<SavedQuestionState>(defaultQuestionState);
   const [saveStatus, setSaveStatus] = useState("");
   const [asked, setAsked] = useState<AskedMarkerState>({ personalCount: null, interviewFrequency: 0 });
@@ -90,7 +104,7 @@ export function QuestionControls({ questionId, locale = "ar" }: { questionId: st
       </label>
       {askedAvailable ? <div className="asked-marker" aria-live="polite">
         <div className="asked-marker-summary"><span>{messages[locale].interviewFrequency}: {askedLoading ? "…" : formatNumber(asked.interviewFrequency, locale)}</span>{isSignedIn ? <span>{messages[locale].askedMarker}: {askedLoading ? "…" : formatNumber(asked.personalCount ?? 0, locale)}</span> : null}</div>
-        {isSignedIn ? <div className="asked-marker-actions"><button className="button icon-control" type="button" onClick={() => void changeAsked(-1)} disabled={askedBusy || askedLoading || !asked.personalCount} aria-label={`${messages[locale].decreaseAsked} (${asked.personalCount ?? 0})`}>−</button><button className="button icon-control" type="button" onClick={() => void changeAsked(1)} disabled={askedBusy || askedLoading} aria-label={`${messages[locale].increaseAsked} (${asked.personalCount ?? 0})`}>+</button></div> : <AuthDialogTrigger locale={locale} className="text-link">{messages[locale].signInToMarkAsked}</AuthDialogTrigger>}
+        {isSignedIn ? <div className="asked-marker-actions"><button className="button icon-control" type="button" onClick={() => void changeAsked(-1)} disabled={askedBusy || askedLoading || !asked.personalCount} aria-label={`${messages[locale].decreaseAsked} (${asked.personalCount ?? 0})`}>−</button><button className="button icon-control" type="button" onClick={() => void changeAsked(1)} disabled={askedBusy || askedLoading} aria-label={`${messages[locale].increaseAsked} (${asked.personalCount ?? 0})`}>+</button></div> : clerkEnabled ? <AuthDialogTrigger locale={locale} className="text-link">{messages[locale].signInToMarkAsked}</AuthDialogTrigger> : null}
         {askedError && <p className="form-error" role="alert">{askedError}</p>}
       </div> : null}
     </div>

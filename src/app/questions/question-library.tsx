@@ -16,11 +16,24 @@ import { loadAskedMarkerStates, sortByInterviewFrequency, type AskedMarkerStates
 
 type LibraryTopic = { id: string; slug: string; trackId: string; name: string };
 type DisplayQuestion = SearchableQuestion & Partial<Pick<CommunityQuestion, "visibility" | "contributorUsername" | "likeCount" | "promotedAt" | "likedByViewer">> & { database?: boolean };
+type AuthState = { authLoaded: boolean; isSignedIn: boolean | undefined; userId: string | null | undefined; getToken: ReturnType<typeof useAuth>["getToken"] };
 const emptyFilters: LibraryFilters = { search: "", topic: "", difficulty: "", progress: "", favoriteOnly: false, sort: "default", scope: "public" };
+const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+const anonymousAuth = { authLoaded: true, isSignedIn: false, userId: null, getToken: (async () => null) as AuthState["getToken"] } satisfies AuthState;
 
 export function QuestionLibrary({ questions, topics, locale = "ar" }: { questions: SearchableQuestion[]; topics: LibraryTopic[]; locale?: Locale }) {
-  const copy = messages[locale];
+  if (!clerkEnabled) return <QuestionLibraryContent questions={questions} topics={topics} locale={locale} auth={anonymousAuth} clerkEnabled={false} />;
+  return <AuthenticatedQuestionLibrary questions={questions} topics={topics} locale={locale} />;
+}
+
+function AuthenticatedQuestionLibrary({ questions, topics, locale }: { questions: SearchableQuestion[]; topics: LibraryTopic[]; locale: Locale }) {
   const { isLoaded: authLoaded, isSignedIn, userId, getToken } = useAuth();
+  return <QuestionLibraryContent questions={questions} topics={topics} locale={locale} clerkEnabled auth={{ authLoaded, isSignedIn, userId, getToken }} />;
+}
+
+function QuestionLibraryContent({ questions, topics, locale = "ar", auth, clerkEnabled }: { questions: SearchableQuestion[]; topics: LibraryTopic[]; locale?: Locale; auth: AuthState; clerkEnabled: boolean }) {
+  const copy = messages[locale];
+  const { authLoaded, isSignedIn, userId, getToken } = auth;
   const [filters, setFilters] = useState<LibraryFilters>(emptyFilters);
   const [saved, setSaved] = useState<SavedQuestions>({});
   const [community, setCommunity] = useState<CommunityQuestion[]>([]);
@@ -102,9 +115,9 @@ export function QuestionLibrary({ questions, topics, locale = "ar" }: { question
       <div className="library-toolbar"><p aria-live="polite">{visibleQuestions.length} {copy.available}</p>{sessionHref ? <Link className="button primary" href={localizedHref(locale, sessionHref)}>{copy.startSession}</Link> : <Link className="button" href={localizedHref(locale, trackHref("/session"))}>{copy.prepareSession}</Link>}</div>
       {filters.scope === "community" && communityLoading ? <LoadingPlaceholder variant="moderator" className="community-loading" /> : filters.scope === "community" && communityError ? <div className="empty-state"><p>{copy.communityLoadError}</p></div> : visibleQuestions.length ? <div className="grid">{visibleQuestions.map((question) => <article key={question.id} className="card question-card">
         <Link className="card-link" href={localizedHref(locale, question.database ? `/questions/view?slug=${encodeURIComponent(question.slug)}&track=${encodeURIComponent(question.trackId)}` : trackHref(`/questions/${question.slug}`))}><div className="meta">{scopedTopics.filter((topic) => question.topicIds.includes(topic.id)).map((topic) => <span className="chip" key={topic.id}>{topic.name}</span>)}<span className="chip">{question.difficulty}</span><span className="chip">{copy.interviewFrequency}: {formatNumber(askedStates[question.id]?.interviewFrequency ?? 0, locale)}</span>{question.promotedAt && <span className="chip chip-accent">{copy.promoted}</span>}</div><h2 className="question-title">{question.question}</h2><p>{question.contributorUsername ? `${copy.contributor} @${question.contributorUsername}` : locale === "ar" ? "اختبر إجابتك قبل ما تكشف الشرح." : "Test your answer before revealing the explanation."}</p></Link>
-        {question.visibility === "community" && <div className="question-card-actions"><span className="like-count">{question.likeCount ?? 0} {copy.likes}</span>{isSignedIn ? <button className="button like-button" type="button" aria-pressed={question.likedByViewer} onClick={() => void toggleLike(question)} disabled={likeBusy[question.id] || !authLoaded}>{question.likedByViewer ? copy.unlike : copy.like}</button> : <AuthDialogTrigger locale={locale} className="button like-button">{copy.signInToLike}</AuthDialogTrigger>}</div>}
+        {question.visibility === "community" && <div className="question-card-actions"><span className="like-count">{question.likeCount ?? 0} {copy.likes}</span>{isSignedIn ? <button className="button like-button" type="button" aria-pressed={question.likedByViewer} onClick={() => void toggleLike(question)} disabled={likeBusy[question.id] || !authLoaded}>{question.likedByViewer ? copy.unlike : copy.like}</button> : clerkEnabled ? <AuthDialogTrigger locale={locale} className="button like-button">{copy.signInToLike}</AuthDialogTrigger> : null}</div>}
         {likeError && <p className="form-error" role="alert">{likeError}</p>}
-      </article>)}</div> : <div className="empty-state"><h2>{copy.noResults}</h2><p>{copy.expandFilters}</p>{filters.scope === "community" && !isSignedIn && <AuthDialogTrigger locale={locale} className="button">{copy.signInToLike}</AuthDialogTrigger>}</div>}
+      </article>)}</div> : <div className="empty-state"><h2>{copy.noResults}</h2><p>{copy.expandFilters}</p>{filters.scope === "community" && !isSignedIn && clerkEnabled && <AuthDialogTrigger locale={locale} className="button">{copy.signInToLike}</AuthDialogTrigger>}</div>}
     </>}
   </>;
 }
