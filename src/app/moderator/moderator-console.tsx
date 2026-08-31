@@ -27,6 +27,11 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   const [advisory, setAdvisory] = useState<Record<string, string>>({});
   const [questionIds, setQuestionIds] = useState<Record<string, string>>({});
   const [communityMode, setCommunityMode] = useState(false);
+  const [followUpMode, setFollowUpMode] = useState(false);
+  const [followUpSources, setFollowUpSources] = useState<Array<{ id: string; slug: string; track_id: string; target_ids: string[] }>>([]);
+  const [followUpTargets, setFollowUpTargets] = useState<Array<{ id: string; slug: string; track_id: string }>>([]);
+  const [followUpSourceId, setFollowUpSourceId] = useState("");
+  const [followUpSaving, setFollowUpSaving] = useState(false);
   const [communityRows, setCommunityRows] = useState<Array<{ id: string; slug: string; track_id: string; visibility: string; promoted_at: string | null; community_published_at: string | null; community_unpublished_at: string | null; promotion_like_count: number | null; community_contributor_username: string | null }>>([]);
 
   const load = useCallback(async () => {
@@ -41,10 +46,31 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   useEffect(() => { if (isSignedIn) void load(); }, [isSignedIn, load]);
 
   async function loadCommunity() {
-    setCommunityMode(true); setLoading(true); setError("");
+    setCommunityMode(true); setFollowUpMode(false); setLoading(true); setError("");
     try { const response = await moderationRequest<{ questions: typeof communityRows }>({ getToken, body: { action: "list_community_questions" } }); setCommunityRows(response.questions ?? []); }
     catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
     finally { setLoading(false); }
+  }
+
+  async function loadFollowUps() {
+    setFollowUpMode(true); setCommunityMode(false); setLoading(true); setError("");
+    try {
+      const result = await moderationRequest<{ sources: typeof followUpSources; targets: typeof followUpTargets }>({ getToken, body: { action: "list_follow_up_editor" } });
+      setFollowUpSources(result.sources ?? []); setFollowUpTargets(result.targets ?? []); setFollowUpSourceId(result.sources?.[0]?.id ?? "");
+    } catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
+    finally { setLoading(false); }
+  }
+
+  async function saveFollowUps() {
+    const source = followUpSources.find((item) => item.id === followUpSourceId);
+    if (!source) return;
+    setFollowUpSaving(true); setError("");
+    try {
+      const result = await moderationRequest({ getToken, body: { action: "save_follow_ups", questionId: source.id, targetQuestionIds: source.target_ids } });
+      setFollowUpSources((current) => current.map((item) => item.id === source.id ? { ...item, target_ids: source.target_ids } : item));
+      if (!result) throw new Error("moderation_unavailable");
+    } catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
+    finally { setFollowUpSaving(false); }
   }
 
   async function moderateCommunity(questionId: string, action: "unpublish_question" | "republish_question") {
@@ -80,10 +106,10 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.moderatorSignIn}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
 
   return <div className="moderator-console">
-    <div className="moderator-toolbar"><label>{copy.moderatorStatus}<select value={status} onChange={(event) => { setCommunityMode(false); setStatus(event.target.value as ModerationStatus); }}>{statuses.map((value) => <option key={value} value={value}>{statusLabel(value, locale)}</option>)}</select></label><button className="button" type="button" onClick={() => void (communityMode ? loadCommunity() : load())} disabled={loading}>{loading ? copy.moderatorLoading : copy.moderatorRefresh}</button><button className="button" type="button" onClick={() => void loadCommunity()} disabled={loading}>{locale === "ar" ? "أسئلة المجتمع" : "Community questions"}</button></div>
+    <div className="moderator-toolbar"><label>{copy.moderatorStatus}<select value={status} onChange={(event) => { setCommunityMode(false); setFollowUpMode(false); setStatus(event.target.value as ModerationStatus); }}>{statuses.map((value) => <option key={value} value={value}>{statusLabel(value, locale)}</option>)}</select></label><button className="button" type="button" onClick={() => void (followUpMode ? loadFollowUps() : communityMode ? loadCommunity() : load())} disabled={loading}>{loading ? copy.moderatorLoading : copy.moderatorRefresh}</button><button className="button" type="button" onClick={() => void loadCommunity()} disabled={loading}>{locale === "ar" ? "أسئلة المجتمع" : "Community questions"}</button><button className="button" type="button" onClick={() => void loadFollowUps()} disabled={loading}>{locale === "ar" ? "أسئلة المتابعة" : "Follow-ups"}</button></div>
     {error && <p className="form-error" role="alert">{error}</p>}
-    {!communityMode && !loading && !rows.length && <p className="empty-state">{copy.moderatorEmpty}</p>}
-    {communityMode ? loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{communityRows.map((row) => <article className="card moderator-card" key={row.id}><div className="meta"><span className="chip">{row.visibility}</span><span className="chip">{row.track_id}</span>{row.promoted_at && <span className="chip">{copy.promoted}</span>}</div><h2>{row.slug}</h2><p>{row.community_contributor_username ? `@${row.community_contributor_username}` : copy.contributor}</p><p className="field-hint">{row.community_published_at ?? "—"}{row.promotion_like_count ? ` · ${row.promotion_like_count} ${copy.likes}` : ""}</p><label>{copy.moderatorReason}<textarea value={reason[row.id] ?? ""} onChange={(event) => setReason((current) => ({ ...current, [row.id]: event.target.value }))} maxLength={500} /></label><div className="actions">{row.community_unpublished_at ? <button className="button" type="button" onClick={() => void moderateCommunity(row.id, "republish_question")}>{locale === "ar" ? "إعادة النشر" : "Republish"}</button> : <button className="button danger" type="button" onClick={() => void moderateCommunity(row.id, "unpublish_question")}>{locale === "ar" ? "إخفاء" : "Unpublish"}</button>}</div></article>)}</div> : loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{rows.map((row) => <article className="card moderator-card" key={row.id}>
+    {!communityMode && !followUpMode && !loading && !rows.length && <p className="empty-state">{copy.moderatorEmpty}</p>}
+    {followUpMode ? loading ? <LoadingPlaceholder variant="moderator" /> : <FollowUpEditor locale={locale} sources={followUpSources} targets={followUpTargets} sourceId={followUpSourceId} onSourceChange={setFollowUpSourceId} onTargetsChange={(targetIds) => setFollowUpSources((current) => current.map((item) => item.id === followUpSourceId ? { ...item, target_ids: targetIds } : item))} onSave={() => void saveFollowUps()} saving={followUpSaving} /> : communityMode ? loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{communityRows.map((row) => <article className="card moderator-card" key={row.id}><div className="meta"><span className="chip">{row.visibility}</span><span className="chip">{row.track_id}</span>{row.promoted_at && <span className="chip">{copy.promoted}</span>}</div><h2>{row.slug}</h2><p>{row.community_contributor_username ? `@${row.community_contributor_username}` : copy.contributor}</p><p className="field-hint">{row.community_published_at ?? "—"}{row.promotion_like_count ? ` · ${row.promotion_like_count} ${copy.likes}` : ""}</p><label>{copy.moderatorReason}<textarea value={reason[row.id] ?? ""} onChange={(event) => setReason((current) => ({ ...current, [row.id]: event.target.value }))} maxLength={500} /></label><div className="actions">{row.community_unpublished_at ? <button className="button" type="button" onClick={() => void moderateCommunity(row.id, "republish_question")}>{locale === "ar" ? "إعادة النشر" : "Republish"}</button> : <button className="button danger" type="button" onClick={() => void moderateCommunity(row.id, "unpublish_question")}>{locale === "ar" ? "إخفاء" : "Unpublish"}</button>}</div></article>)}</div> : loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{rows.map((row) => <article className="card moderator-card" key={row.id}>
       <div className="meta"><span className="chip">{row.difficulty}</span><span className="chip">{statusLabel(row.status, locale)}</span>{row.github_issue_url && <a className="text-link" href={row.github_issue_url} target="_blank" rel="noreferrer">GitHub #{row.github_issue_number}</a>}</div>
       <h2>{row.payload.question ?? "—"}</h2><p>{row.payload.shortAnswer ?? ""}</p>
       {row.review_notes && <p className="field-hint">{row.review_notes}</p>}
@@ -98,4 +124,15 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
 function statusLabel(status: ModerationStatus, locale: Locale): string {
   const labels = { ar: { pending: "قيد الانتظار", issue_created: "Issue منشأ", in_review: "قيد المراجعة", changes_requested: "مطلوب تعديل", approved: "مقبول", rejected: "مرفوض", published: "منشور", failed: "فشل" }, en: { pending: "Pending", issue_created: "Issue created", in_review: "In review", changes_requested: "Changes requested", approved: "Approved", rejected: "Rejected", published: "Published", failed: "Failed" } } as const;
   return labels[locale][status];
+}
+
+function FollowUpEditor({ locale, sources, targets, sourceId, onSourceChange, onTargetsChange, onSave, saving }: { locale: Locale; sources: Array<{ id: string; slug: string; track_id: string; target_ids: string[] }>; targets: Array<{ id: string; slug: string; track_id: string }>; sourceId: string; onSourceChange: (id: string) => void; onTargetsChange: (ids: string[]) => void; onSave: () => void; saving: boolean }) {
+  const source = sources.find((item) => item.id === sourceId);
+  if (!source) return <p className="empty-state">{locale === "ar" ? "لا توجد أسئلة منشورة." : "No published questions found."}</p>;
+  const sameTrack = targets.filter((target) => target.track_id === source.track_id && target.id !== source.id);
+  return <article className="card moderator-card follow-up-editor">
+    <label>{locale === "ar" ? "السؤال المصدر" : "Source question"}<select value={source.id} onChange={(event) => onSourceChange(event.target.value)}>{sources.map((item) => <option key={item.id} value={item.id}>{item.slug} · {item.track_id}</option>)}</select></label>
+    <fieldset><legend>{locale === "ar" ? "أسئلة المتابعة بالترتيب" : "Follow-up questions in order"}</legend>{sameTrack.map((target) => <label key={target.id} className="filter-checkbox"><input type="checkbox" checked={source.target_ids.includes(target.id)} onChange={(event) => onTargetsChange(event.target.checked ? [...source.target_ids, target.id] : source.target_ids.filter((id) => id !== target.id))} />{target.slug}</label>)}</fieldset>
+    <button className="button primary" type="button" onClick={onSave} disabled={saving}>{saving ? (locale === "ar" ? "جاري الحفظ…" : "Saving…") : (locale === "ar" ? "حفظ ونشر النسخة" : "Save and publish revision")}</button>
+  </article>;
 }

@@ -49,6 +49,8 @@ async function handle(request: Request): Promise<Response> {
     await db(`/rest/v1/submissions?submitted_by=eq.${encodeURIComponent(userId)}&status=neq.published`, key, { method: "DELETE", headers: { Prefer: "return=minimal" } });
     await db(`/rest/v1/question_progress?user_id=eq.${encodeURIComponent(userId)}`, key, { method: "DELETE" });
     await db(`/rest/v1/favorites?user_id=eq.${encodeURIComponent(userId)}`, key, { method: "DELETE" });
+    await db(`/rest/v1/asked_markers?account_id=eq.${encodeURIComponent(userId)}`, key, { method: "DELETE" });
+    await db(`/rest/v1/asked_marker_daily_limits?account_id=eq.${encodeURIComponent(userId)}`, key, { method: "DELETE" });
     await db(`/rest/v1/account_track_preferences?user_id=eq.${encodeURIComponent(userId)}`, key, { method: "DELETE" });
     await db(`/rest/v1/submission_rate_limits?user_id=eq.${encodeURIComponent(userId)}`, key, { method: "DELETE" });
     await db(`/rest/v1/account_roles?user_id=eq.${encodeURIComponent(userId)}`, key, { method: "DELETE" });

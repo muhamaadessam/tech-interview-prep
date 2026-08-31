@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { questions, validateBilingualCatalogue, validateProductionCatalogue, validateQuestions } from "./questions.ts";
+import { questions, validateBilingualCatalogue, validateProductionCatalogue, validateQuestions, validateFollowUpRelations, getFollowUpQuestionRefs } from "./questions.ts";
 
 test("the public question catalogue accepts the permanent Dart questions", () => {
   assert.doesNotThrow(() => validateQuestions(questions));
@@ -29,6 +29,15 @@ test("the public question catalogue accepts the permanent Dart questions", () =>
     assert.ok(question.explanation);
     assert.match(question.lastReviewedAt, /^\d{4}-\d{2}-\d{2}$/);
   }
+});
+
+test("follow-up relations resolve only to reviewed questions in the same Track", () => {
+  assert.doesNotThrow(() => validateFollowUpRelations());
+  const source = questions.find((question) => question.id === "dart-001");
+  assert.ok(source);
+  assert.deepEqual(getFollowUpQuestionRefs(source, "en").map((ref) => ref.id), ["dart-006"]);
+  assert.match(getFollowUpQuestionRefs(source, "ar")[0]?.href ?? "", /track=flutter/);
+  assert.throws(() => validateFollowUpRelations([{ ...source, trackId: "other", topicIds: ["dart"] }, questions.find((question) => question.id === "dart-006")!]), /invalid Follow-up/);
 });
 
 test("every question has complete Arabic and English translations", () => {

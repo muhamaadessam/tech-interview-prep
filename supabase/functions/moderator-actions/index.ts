@@ -81,10 +81,43 @@ async function handle(request: Request): Promise<Response> {
     const { key } = config();
     const roles = await (await db(`/rest/v1/account_roles?select=role,suspended&user_id=eq.${encodeURIComponent(actor)}&limit=1`, key)).json() as Array<{ role?: string; suspended?: boolean }>;
     if (roles[0]?.role !== "moderator" || roles[0]?.suspended) return response({ error: "moderator_required" }, 403);
-    const body = await request.json() as { action?: unknown; targetUserId?: unknown; submissionId?: unknown; questionId?: unknown; reason?: unknown; status?: unknown };
+    const body = await request.json() as { action?: unknown; targetUserId?: unknown; submissionId?: unknown; questionId?: unknown; reason?: unknown; status?: unknown; targetQuestionIds?: unknown };
     const action = text(body.action, 60);
     const reason = text(body.reason);
     if (!action) return response({ error: "payload_invalid" }, 400);
+    if (action === "list_follow_up_editor") {
+      const questions = await (await db("/rest/v1/interview_questions?select=id,slug,track_id,published_revision_id&published_revision_id=not.is.null&order=track_id,slug&limit=1000", key)).json() as Array<{ id?: string; slug?: string; track_id?: string; published_revision_id?: string }>;
+      const relations = await (await db("/rest/v1/question_follow_ups?select=source_revision_id,target_question_id,position&order=position.asc&limit=5000", key)).json() as Array<{ source_revision_id?: string; target_question_id?: string; position?: number }>;
+      return response({
+        sources: questions.flatMap((question) => typeof question.id === "string" && typeof question.slug === "string" && typeof question.track_id === "string" && typeof question.published_revision_id === "string" ? [{ id: question.id, slug: question.slug, track_id: question.track_id, target_ids: relations.filter((relation) => relation.source_revision_id === question.published_revision_id).sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).flatMap((relation) => typeof relation.target_question_id === "string" ? [relation.target_question_id] : []) }] : []),
+        targets: questions.flatMap((question) => typeof question.id === "string" && typeof question.slug === "string" && typeof question.track_id === "string" ? [{ id: question.id, slug: question.slug, track_id: question.track_id }] : []),
+      });
+    }
+    if (action === "save_follow_ups") {
+      const questionId = text(body.questionId, 120);
+      const targetIds = Array.isArray(body.targetQuestionIds) ? [...new Set(body.targetQuestionIds.flatMap((value) => typeof value === "string" ? [value.trim()] : []).filter(Boolean))] : null;
+      if (!questionId || !targetIds || targetIds.length > 8) return response({ error: "payload_invalid" }, 400);
+      const sourceRows = await (await db(`/rest/v1/interview_questions?select=id,track_id,published_revision_id&id=eq.${encodeURIComponent(questionId)}&published_revision_id=not.is.null&limit=1`, key)).json() as Array<{ id: string; track_id: string; published_revision_id: string }>;
+      const source = sourceRows[0];
+      if (!source) return response({ error: "question_not_published" }, 409);
+      if (targetIds.length) {
+        const targetRows = await (await db(`/rest/v1/interview_questions?select=id,track_id,published_revision_id&id=in.(${targetIds.map(encodeURIComponent).join(",")})&track_id=eq.${encodeURIComponent(source.track_id)}&published_revision_id=not.is.null`, key)).json() as Array<{ id: string }>;
+        if (targetRows.length !== targetIds.length || targetIds.includes(questionId)) return response({ error: "follow_up_target_invalid" }, 409);
+      }
+      const currentLocales = await (await db(`/rest/v1/question_revision_locales?select=locale,question,short_answer,explanation,code_example,common_mistakes,follow_up_questions,sources&revision_id=eq.${encodeURIComponent(source.published_revision_id)}`, key)).json() as Array<Record<string, unknown>>;
+      if (!currentLocales.some((locale) => locale.locale === "ar") || !currentLocales.some((locale) => locale.locale === "en")) return response({ error: "question_translation_required" }, 409);
+      const latest = await (await db(`/rest/v1/question_revisions?select=revision_number&question_id=eq.${encodeURIComponent(questionId)}&order=revision_number.desc&limit=1`, key)).json() as Array<{ revision_number?: number }>;
+      const revisionNumber = (latest[0]?.revision_number ?? 0) + 1;
+      const revisionRows = await (await db("/rest/v1/question_revisions", key, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify([{ question_id: questionId, revision_number: revisionNumber, status: "draft", reviewed_at: new Date().toISOString().slice(0, 10), created_by: actor }]) })).json() as Array<{ id?: string }>;
+      const revisionId = revisionRows[0]?.id;
+      if (!revisionId) return response({ error: "revision_create_failed" }, 503);
+      await db("/rest/v1/question_revision_locales", key, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(currentLocales.map((locale) => ({ ...locale, revision_id: revisionId }))) });
+      if (targetIds.length) await db("/rest/v1/question_follow_ups", key, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(targetIds.map((targetId, index) => ({ source_revision_id: revisionId, target_question_id: targetId, position: index + 1 }))) });
+      await db(`/rest/v1/question_revisions?id=eq.${encodeURIComponent(revisionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "published" }) });
+      await db(`/rest/v1/interview_questions?id=eq.${encodeURIComponent(questionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ published_revision_id: revisionId }) });
+      await audit(key, actor, action, "question_revision", questionId, null, { revision_id: revisionId, target_question_ids: targetIds });
+      return response({ ok: true, questionId, revisionId });
+    }
     if (action === "list_submissions") {
       const allowed = ["pending", "issue_created", "in_review", "changes_requested", "approved"];
       const status = text(body.status, 40) ?? "pending";

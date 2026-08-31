@@ -217,7 +217,7 @@ h3 { line-height: 1.45; }
 .page-header h1 { margin-block: 10px 14px; font-size: clamp(2rem, 5vw, 3.5rem); }
 .page-header p { max-width: 720px; color: var(--muted); }
 
-.library-filters, .session-filters { display: grid; grid-template-columns: 2fr repeat(3, 1fr) auto; gap: 12px; align-items: end; margin-block-end: 24px; }
+.library-filters, .session-filters { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(130px, 1fr)) auto; gap: 12px; align-items: end; margin-block-end: 24px; }
 .library-filters label, .session-filters label { display: grid; gap: 6px; color: var(--muted); font-weight: 800; font-size: .9rem; }
 .library-filters input, .library-filters select, .session-filters select { width: 100%; min-height: 44px; padding-inline: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
 .library-filters input:focus-visible, .library-filters select:focus-visible, .session-filters select:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand) 45%, transparent); outline-offset: 1px; }
@@ -249,6 +249,10 @@ h3 { line-height: 1.45; }
 .question-controls fieldset { display: flex; flex-wrap: wrap; gap: 12px; margin: 0; padding: 12px 16px; border: 1px solid var(--border); border-radius: 12px; }
 .question-controls label { display: inline-flex; min-height: 44px; align-items: center; gap: 6px; cursor: pointer; }
 .favorite-control { font-weight: 800; }
+.asked-marker { display: grid; gap: 8px; min-width: min(100%, 260px); padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); }
+.asked-marker-summary { display: flex; flex-wrap: wrap; gap: 10px 16px; color: var(--muted); font-size: .88rem; font-weight: 800; }
+.asked-marker-actions { display: flex; gap: 6px; }
+.asked-marker .icon-control { min-width: 36px; min-height: 34px; padding: 4px 10px; font-size: 1.1rem; }
 .answer { margin-block: 32px 0; border-inline-start: 1px solid var(--brand); background: var(--surface-soft); }
 .answer-toggle { width: 100%; padding: 18px 22px; border: 0; background: transparent; color: var(--brand-strong); font: inherit; font-weight: 800; text-align: start; cursor: pointer; }
 .answer-toggle:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
@@ -301,6 +305,8 @@ h3 { line-height: 1.45; }
 .moderator-card { display: grid; gap: 12px; }
 .moderator-card h2, .moderator-card p { margin: 0; }
 .moderator-card textarea { min-height: 84px; resize: vertical; }
+.follow-up-editor fieldset { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 16px; margin: 0; padding: 14px; border: 1px solid var(--border); border-radius: 12px; }
+.follow-up-editor select { min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
 .submission-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .submission-grid > label, .submission-topics { display: grid; gap: 7px; color: var(--muted); font-weight: 800; }
 .submission-grid input:not(.sr-only), .submission-grid select, .submission-grid textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }

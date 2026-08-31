@@ -5,6 +5,7 @@ import { getSupabaseToken, type SupabaseTokenProvider } from "../supabase/auth-t
 export type CommunityScope = "public" | "community";
 
 export type CommunityQuestion = SearchableQuestion & {
+  database: true;
   visibility: CommunityScope;
   contributorUsername: string | null;
   likeCount: number;
@@ -110,6 +111,7 @@ export async function loadCommunityQuestions({
       id,
       slug,
       trackId: track,
+      database: true,
       topicIds: topicIdsByQuestion.get(id) ?? [],
       difficulty,
       question: content.question,

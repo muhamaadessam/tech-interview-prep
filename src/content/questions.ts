@@ -1,6 +1,15 @@
 export type DifficultyLevel = "Junior" | "Mid" | "Senior";
 export type Locale = "ar" | "en";
 
+import { staticFollowUpTargets } from "./follow-up-relations.ts";
+
+export type FollowUpQuestionRef = {
+  id: string;
+  slug: string;
+  label: string;
+  href?: string;
+};
+
 export type QuestionTranslation = {
   question: string;
   shortAnswer: string;
@@ -8,6 +17,7 @@ export type QuestionTranslation = {
   codeExample?: string;
   commonMistakes?: string[];
   followUpQuestions?: string[];
+  followUpQuestionRefs?: FollowUpQuestionRef[];
   sources: { title: string; url: string }[];
 };
 
@@ -1891,9 +1901,36 @@ export function validateProductionCatalogue(interviewQuestions: InterviewQuestio
 validateQuestions(questions);
 validateProductionCatalogue();
 validateBilingualCatalogue();
+validateFollowUpRelations();
 
 export function getQuestion(slug: string): InterviewQuestion | undefined {
   return questions.find((question) => question.slug === slug);
+}
+
+export function getFollowUpQuestionRefs(question: InterviewQuestion, locale: Locale): FollowUpQuestionRef[] {
+  const translation = getQuestionTranslation(question, locale);
+  if (translation.followUpQuestionRefs) return translation.followUpQuestionRefs;
+  return (staticFollowUpTargets[question.id] ?? []).flatMap((targetId) => {
+    const target = questions.find((candidate) => candidate.id === targetId);
+    if (!target || target.trackId !== question.trackId || target.id === question.id) return [];
+    const targetTranslation = getQuestionTranslation(target, locale);
+    return [{ id: target.id, slug: target.slug, label: targetTranslation.question, href: `/questions/${target.slug}?track=${encodeURIComponent(question.trackId)}` }];
+  });
+}
+
+export function validateFollowUpRelations(interviewQuestions: InterviewQuestion[] = questions): void {
+  const byId = new Map(interviewQuestions.map((question) => [question.id, question]));
+  for (const question of interviewQuestions) {
+    const targets = staticFollowUpTargets[question.id] ?? [];
+    const seen = new Set<string>();
+    for (const targetId of targets) {
+      const target = byId.get(targetId);
+      if (!target || target.trackId !== question.trackId || target.id === question.id || seen.has(target.id)) {
+        throw new Error(`Question ${question.id} has an invalid Follow-up Question relation`);
+      }
+      seen.add(target.id);
+    }
+  }
 }
 
 export function getQuestionTopics(question: InterviewQuestion): Topic[] {

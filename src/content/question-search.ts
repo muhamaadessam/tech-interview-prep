@@ -9,6 +9,7 @@ export type LibraryFilters = {
   difficulty: DifficultyLevel | "";
   progress: QuestionProgress | "";
   favoriteOnly: boolean;
+  sort?: "default" | "most-asked";
   scope?: LibraryScope;
 };
 
@@ -60,10 +61,11 @@ export function toSearchParams(filters: LibraryFilters): URLSearchParams {
   if (filters.difficulty) params.set("difficulty", filters.difficulty);
   if (filters.progress) params.set("progress", filters.progress);
   if (filters.favoriteOnly) params.set("favorite", "1");
+  if (filters.sort === "most-asked") params.set("sort", "most-asked");
   return params;
 }
 
-export function fromSearchParams(params: URLSearchParams): Pick<LibraryFilters, "search" | "topic" | "difficulty" | "progress" | "favoriteOnly" | "scope"> {
+export function fromSearchParams(params: URLSearchParams): Pick<LibraryFilters, "search" | "topic" | "difficulty" | "progress" | "favoriteOnly" | "sort" | "scope"> {
   const difficulty = params.get("difficulty");
   const progress = params.get("progress");
   return {
@@ -72,6 +74,7 @@ export function fromSearchParams(params: URLSearchParams): Pick<LibraryFilters, 
     difficulty: difficulty && difficultyOptions.includes(difficulty as DifficultyLevel) ? difficulty as DifficultyLevel : "",
     progress: progress && ["not-started", "reviewing", "mastered"].includes(progress) ? progress as QuestionProgress : "",
     favoriteOnly: params.get("favorite") === "1",
+    sort: params.get("sort") === "most-asked" ? "most-asked" : "default",
     scope: params.get("scope") === "community" ? "community" : "public",
   };
 }

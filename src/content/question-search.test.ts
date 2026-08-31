@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { topics } from "./questions.ts";
-import { filterInterviewQuestions, filterQuestions, toSearchParams, type LibraryFilters, type SearchableQuestion } from "./question-search.ts";
+import { filterInterviewQuestions, filterQuestions, fromSearchParams, toSearchParams, type LibraryFilters, type SearchableQuestion } from "./question-search.ts";
 
 const emptyFilters: LibraryFilters = {
   search: "",
@@ -35,6 +35,12 @@ test("library filters combine with local progress and favorite state", () => {
 test("shareable query params include the active library filters", () => {
   const params = toSearchParams({ ...emptyFilters, search: "final", topic: "dart", difficulty: "Junior", progress: "mastered", favoriteOnly: true });
   assert.equal(params.toString(), "search=final&topic=dart&difficulty=Junior&progress=mastered&favorite=1");
+});
+
+test("most-asked sorting survives a shareable library URL", () => {
+  const params = toSearchParams({ ...emptyFilters, sort: "most-asked" });
+  assert.equal(params.get("sort"), "most-asked");
+  assert.equal(fromSearchParams(params).sort, "most-asked");
 });
 
 test("full interview filters multiple topics and includes lower difficulty levels", () => {
