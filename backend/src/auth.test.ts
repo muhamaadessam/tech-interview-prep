@@ -5,8 +5,8 @@ import test from "node:test";
 import { exportJWK, SignJWT } from "jose";
 
 import { createClerkAuth } from "./auth.ts";
-import { createAccountPolicy } from "./account-policy.ts";
-import { buildServer } from "./server.ts";
+import { createAccountPolicy, createSupabaseAccountRoleStore } from "./account-policy.ts";
+import { accountPolicyEnabled, buildServer, selectRoute } from "./server.ts";
 
 const issuer = "https://clerk.example";
 
@@ -53,6 +53,30 @@ test("unconfigured authentication fails closed", async () => {
   assert.equal(response.statusCode, 401);
   assert.deepEqual(response.json(), { error: "auth_not_configured" });
   await app.close();
+});
+
+test("Fastify, Clerk, Account policy, and Supabase adapter integrate through one route", async () => {
+  const key = await keyPair("key-1");
+  const jwks = await jwksServer(() => [key.jwk]);
+  let role = { role: "moderator", suspended: false };
+  const roleStore = createSupabaseAccountRoleStore({ url: "https://db.example", serviceRoleKey: "service-secret", fetchImpl: async () => new Response(JSON.stringify([role]), { status: 200 }) });
+  const app = await buildServer({ allowedOrigins: [], auth: createClerkAuth({ jwksUrl: jwks.url, issuer }), policy: createAccountPolicy(roleStore) });
+  app.get("/v1/moderator", { preHandler: [app.authenticate, app.requireModerator] }, async () => ({ ok: true }));
+  app.get("/v1/contribute", { preHandler: [app.authenticate, app.requireConfirmedEmail] }, async () => ({ ok: true }));
+  const bearer = async (claims?: Record<string, unknown>) => `Bearer ${await token(key.privateKey, "key-1", claims)}`;
+
+  assert.equal((await app.inject({ method: "GET", url: "/v1/moderator" })).statusCode, 401);
+  assert.equal((await app.inject({ method: "GET", url: "/v1/moderator", headers: { authorization: await bearer() } })).statusCode, 200);
+  role = { role: "moderator", suspended: true };
+  assert.equal((await app.inject({ method: "GET", url: "/v1/moderator", headers: { authorization: await bearer() } })).statusCode, 403);
+  role = { role: "learner", suspended: false };
+  assert.equal((await app.inject({ method: "GET", url: "/v1/contribute", headers: { authorization: await bearer({ email_verified: false }) } })).statusCode, 403);
+  assert.equal(accountPolicyEnabled("false"), false);
+  assert.equal(accountPolicyEnabled("true"), true);
+  assert.equal(selectRoute(false, "node", "edge"), "edge");
+  assert.equal(selectRoute(true, "node", "edge"), "node");
+  await app.close();
+  await jwks.close();
 });
 
 test("missing, expired, wrong issuer, wrong algorithm, and bad signature are rejected", async () => {

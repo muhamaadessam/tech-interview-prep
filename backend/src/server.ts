@@ -14,6 +14,14 @@ export type ServerOptions = {
   policy?: ReturnType<typeof createAccountPolicy>;
 };
 
+export function accountPolicyEnabled(value = process.env.ACCOUNT_POLICY_ENABLED): boolean {
+  return value !== "false";
+}
+
+export function selectRoute<T>(enabled: boolean, next: T, legacy: T): T {
+  return enabled ? next : legacy;
+}
+
 function requestId(value: unknown): string {
   return typeof value === "string" && /^[a-zA-Z0-9._:-]{1,120}$/.test(value) ? value : crypto.randomUUID();
 }
@@ -93,7 +101,7 @@ async function main() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const roleStore: AccountRoleStore | undefined = supabaseUrl && serviceRoleKey ? createSupabaseAccountRoleStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
-  const policy = roleStore ? createAccountPolicy(roleStore) : undefined;
+  const policy = accountPolicyEnabled() && roleStore ? createAccountPolicy(roleStore) : undefined;
   const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy });
   const port = Number(process.env.PORT ?? 3000);
   await app.listen({ host: "0.0.0.0", port: Number.isInteger(port) && port > 0 ? port : 3000 });
