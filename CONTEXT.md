@@ -29,8 +29,16 @@ An ordered set of Interview Questions selected by Topic and Difficulty Level for
 _Avoid_: Quiz, mock interview
 
 **Submission**:
-A proposed Interview Question and its learning material sent by an authenticated contributor. A Submission is not part of the public catalogue until it passes Review.
+A proposed Interview Question sent by an authenticated contributor. Its Track and question are required; Topics and learning material are optional enrichment. A Submission is not part of the public catalogue until it passes Review.
 _Avoid_: User question, draft question
+
+**Onboarding**:
+The first-run flow where an Account chooses one or more Tracks to personalize Topics and contribution defaults. An Account can revisit these choices later.
+_Avoid_: Setup wizard, profile form
+
+**Track Preference**:
+One or more Tracks selected by an Account for personalization. When a Submission has multiple preferred Tracks available, the Account chooses the single Track that owns that Submission.
+_Avoid_: Category filter, specialty
 
 **Review**:
 The moderation process that evaluates a Submission for correctness, clarity, attribution, and fit before it becomes a published Interview Question.
@@ -49,7 +57,7 @@ publishing or restoring content creates a new Revision.
 _Avoid_: Edit, overwrite
 
 **Review Issue**:
-The GitHub Issue that records a Submission's review conversation and decision.
+The GitHub Issue created for a Submission that records its review conversation and decision. A Moderator manually updates the database after reviewing the Issue; the Issue is not the catalogue source of truth.
 It is a review record, not the catalogue source of truth and not proof that a
 Submission is published.
 _Avoid_: Pull request, publication record
