@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { getQuestion, getQuestionTopics, getQuestionTranslation, questions } from "../../../content/questions";
 import { AnswerContent } from "../../answer-content";
 import { AnswerDisclosure, QuestionControls } from "../../question-controls";
-import { formatDate, localizedHref, messages, topicName, type Locale } from "../../../i18n";
+import { formatDate, messages, topicName, type Locale } from "../../../i18n";
 import { localizedMetadata } from "../../metadata";
+import { ActiveTrackLink, TrackContextGuard } from "../../active-track";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -27,10 +27,10 @@ export default async function QuestionDetailsPage({ params, locale = "ar" }: Pro
   const copy = messages[locale];
   const translation = getQuestionTranslation(question, locale);
 
-  return (
+  return <TrackContextGuard locale={locale} trackId={question.trackId}>
     <section className="shell section">
       <header className="page-header">
-        <Link className="text-link" href={localizedHref(locale, "/questions")}>{copy.backLibrary}</Link>
+        <ActiveTrackLink className="text-link" locale={locale} path="/questions">{copy.backLibrary}</ActiveTrackLink>
         <div className="meta">
           {getQuestionTopics(question).map((topic) => (
             <span className="chip" key={topic.id}>{topicName(locale, topic.id)}</span>
@@ -51,5 +51,5 @@ export default async function QuestionDetailsPage({ params, locale = "ar" }: Pro
         </aside>
       </div>
     </section>
-  );
+  </TrackContextGuard>;
 }

@@ -8,7 +8,7 @@ export function generateStaticParams() { return [{ locale: "ar" }, { locale: "en
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const locale = (await params).locale as Locale;
-  return localizedMetadata(locale, "/questions", locale === "ar" ? "مكتبة الأسئلة" : "Question library", locale === "ar" ? "مكتبة أسئلة مقابلات Flutter." : "Flutter interview question library.");
+  return localizedMetadata(locale, "/questions", locale === "ar" ? "مكتبة الأسئلة" : "Question library", locale === "ar" ? "مكتبة أسئلة المقابلات في المسار النشط." : "Interview Questions in the Active Track.");
 }
 
 export default async function LocalizedQuestions({ params }: { params: Promise<{ locale: string }> }) {

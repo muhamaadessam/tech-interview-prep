@@ -9,7 +9,7 @@ export type LibraryFilters = {
   favoriteOnly: boolean;
 };
 
-export type SearchableQuestion = Pick<InterviewQuestion, "id" | "slug" | "topicIds" | "difficulty" | "question" | "shortAnswer">;
+export type SearchableQuestion = Pick<InterviewQuestion, "id" | "slug" | "trackId" | "topicIds" | "difficulty" | "question" | "shortAnswer">;
 
 export const difficultyOptions: DifficultyLevel[] = ["Junior", "Mid", "Senior"];
 const difficultyRank: Record<DifficultyLevel, number> = { Junior: 1, Mid: 2, Senior: 3 };

@@ -43,6 +43,7 @@ export type InterviewQuestion = {
 
 export const tracks: Track[] = [
   { id: "flutter", slug: "flutter", name: "Flutter" },
+  { id: "backend", slug: "backend", name: "Backend" },
 ];
 
 export const topics: Topic[] = [

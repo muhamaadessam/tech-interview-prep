@@ -23,6 +23,8 @@ export default defineConfig({
       ...process.env,
       NEXT_PUBLIC_SUPABASE_URL: "https://mock.supabase.local",
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "playwright-test",
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_playwright",
+      PLAYWRIGHT_MOCK_AUTH: "true",
     },
     reuseExistingServer: false,
     timeout: 120 * 1000,

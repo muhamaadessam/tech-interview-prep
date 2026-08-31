@@ -12,8 +12,8 @@ const emptyFilters: LibraryFilters = {
   favoriteOnly: false,
 };
 const searchFixtures: SearchableQuestion[] = [
-  { id: "fixture-001", slug: "fixture-one", topicIds: ["dart"], difficulty: "Junior", question: "What is const?", shortAnswer: "A compile-time constant." },
-  { id: "fixture-002", slug: "fixture-two", topicIds: ["dart"], difficulty: "Junior", question: "What is dynamic?", shortAnswer: "A runtime type escape hatch." },
+  { id: "fixture-001", slug: "fixture-one", trackId: "flutter", topicIds: ["dart"], difficulty: "Junior", question: "What is const?", shortAnswer: "A compile-time constant." },
+  { id: "fixture-002", slug: "fixture-two", trackId: "flutter", topicIds: ["dart"], difficulty: "Junior", question: "What is dynamic?", shortAnswer: "A runtime type escape hatch." },
 ];
 
 test("library search matches question text and short answers", () => {
@@ -40,8 +40,8 @@ test("shareable query params include the active library filters", () => {
 test("full interview filters multiple topics and includes lower difficulty levels", () => {
   const fixtures: SearchableQuestion[] = [
     ...searchFixtures,
-    { id: "fixture-003", slug: "fixture-three", topicIds: ["oop"], difficulty: "Mid", question: "What is a class?", shortAnswer: "A type." },
-    { id: "fixture-004", slug: "fixture-four", topicIds: ["solid"], difficulty: "Senior", question: "What is DIP?", shortAnswer: "Depend on abstractions." },
+    { id: "fixture-003", slug: "fixture-three", trackId: "flutter", topicIds: ["oop"], difficulty: "Mid", question: "What is a class?", shortAnswer: "A type." },
+    { id: "fixture-004", slug: "fixture-four", trackId: "flutter", topicIds: ["solid"], difficulty: "Senior", question: "What is DIP?", shortAnswer: "Depend on abstractions." },
   ];
 
   assert.deepEqual(

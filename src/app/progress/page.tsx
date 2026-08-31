@@ -15,7 +15,7 @@ export default function ProgressPage({ locale = "ar" }: { locale?: Locale }) {
         <h1>{copy.progressTitle}</h1>
         <p>{copy.progressDescription}</p>
       </header>
-      <ProgressDashboard questions={questions.map((question) => ({ id: question.id, slug: question.slug, question: getQuestionTranslation(question, locale).question }))} locale={locale} />
+      <ProgressDashboard questions={questions.map((question) => ({ id: question.id, slug: question.slug, trackId: question.trackId, question: getQuestionTranslation(question, locale).question }))} locale={locale} />
     </section>
   );
 }

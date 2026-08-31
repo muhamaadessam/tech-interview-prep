@@ -8,6 +8,8 @@ import { difficultyOptions, fromSearchParams, questionHasTopic } from "../../con
 import { AnswerContent } from "../answer-content";
 import { AnswerDisclosure, QuestionControls } from "../question-controls";
 import { localizedHref, messages, topicName } from "../../i18n";
+import { scopeCatalogue } from "../../tracks/active-track";
+import { ActiveTrackRecovery, ActiveTrackSelector, useActiveTrack } from "../active-track";
 
 type SessionSelection = { topic: string; difficulty: DifficultyLevel | "" };
 
@@ -16,6 +18,7 @@ export function StudySession({ questions, topics, locale = "ar" }: { questions: 
   const [selection, setSelection] = useState<SessionSelection>({ topic: "", difficulty: "" });
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
+  const { phase, activeTrack, invalidTrack, trackHref } = useActiveTrack();
 
   useEffect(() => {
     function syncFromUrl() {
@@ -27,12 +30,14 @@ export function StudySession({ questions, topics, locale = "ar" }: { questions: 
     setIsHydrated(true);
 
     window.addEventListener("popstate", syncFromUrl);
-    return () => window.removeEventListener("popstate", syncFromUrl);
+    window.addEventListener("urlchange", syncFromUrl);
+    return () => { window.removeEventListener("popstate", syncFromUrl); window.removeEventListener("urlchange", syncFromUrl); };
   }, []);
 
-  const selectedTopic = topics.find((candidate) => candidate.slug === selection.topic || candidate.id === selection.topic);
-  const sessionQuestions = selection.topic && selection.difficulty && selectedTopic
-    ? questions.filter((question) => questionHasTopic(question, selectedTopic.slug, topics) && question.difficulty === selection.difficulty)
+  const scoped = activeTrack ? scopeCatalogue(activeTrack.id, selection.topic, topics, questions) : null;
+  const selectedTopic = scoped?.topics.find((candidate) => candidate.slug === selection.topic || candidate.id === selection.topic);
+  const sessionQuestions = selection.topic && selection.difficulty && selectedTopic && scoped
+    ? scoped.questions.filter((question) => questionHasTopic(question, selectedTopic.slug, scoped.topics) && question.difficulty === selection.difficulty)
     : [];
   const question = sessionQuestions[currentIndex];
 
@@ -43,6 +48,7 @@ export function StudySession({ questions, topics, locale = "ar" }: { questions: 
     const params = new URLSearchParams();
     if (next.topic) params.set("topic", next.topic);
     if (next.difficulty) params.set("difficulty", next.difficulty);
+    if (activeTrack) params.set("track", activeTrack.slug);
     const query = params.toString();
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
   }
@@ -52,17 +58,20 @@ export function StudySession({ questions, topics, locale = "ar" }: { questions: 
   return (
     <section className="shell section">
       <header className="page-header">
-        <Link className="text-link" href={localizedHref(locale, "/questions")}>{copy.backLibrary}</Link>
+        <Link className="text-link" href={localizedHref(locale, trackHref("/questions"))}>{copy.backLibrary}</Link>
         <h1>{copy.sessionTitle}</h1>
         <p>{copy.sessionDescription}</p>
       </header>
+
+      <ActiveTrackSelector locale={locale} />
+      {phase !== "ready" || invalidTrack || !activeTrack ? null : scoped?.invalidTopic ? <ActiveTrackRecovery locale={locale} invalidTopic /> : !scoped?.topics.length ? <div className="empty-state"><h2>{copy.emptyTrackTitle}</h2><p>{copy.emptyTrackDescription}</p></div> : <>
 
       <div className="session-filters">
         <label>
           {copy.topic}
           <select value={selection.topic} onChange={(event) => updateSelection({ topic: event.target.value })}>
             <option value="">{copy.chooseTopic}</option>
-            {topics.map((topic) => <option key={topic.id} value={topic.slug}>{topicName(locale, topic.id)}</option>)}
+            {scoped.topics.map((topic) => <option key={topic.id} value={topic.slug}>{topicName(locale, topic.id)}</option>)}
           </select>
         </label>
         <label>
@@ -93,6 +102,7 @@ export function StudySession({ questions, topics, locale = "ar" }: { questions: 
       ) : (
         <div className="empty-state"><h2>{selection.topic || selection.difficulty ? copy.noCombination : copy.startStudy}</h2><p>{copy.selectSession}</p></div>
       )}
+      </>}
     </section>
   );
 }

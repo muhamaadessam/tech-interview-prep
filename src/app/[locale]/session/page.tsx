@@ -8,7 +8,7 @@ export function generateStaticParams() { return [{ locale: "ar" }, { locale: "en
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const locale = (await params).locale as Locale;
-  return localizedMetadata(locale, "/session", locale === "ar" ? "جلسة مراجعة" : "Review session", locale === "ar" ? "جلسة مراجعة لأسئلة Flutter." : "A focused Flutter interview review session.");
+  return localizedMetadata(locale, "/session", locale === "ar" ? "جلسة مراجعة" : "Review session", locale === "ar" ? "جلسة مراجعة في المسار النشط." : "A focused review session in the Active Track.");
 }
 
 export default async function LocalizedSession({ params }: { params: Promise<{ locale: string }> }) {

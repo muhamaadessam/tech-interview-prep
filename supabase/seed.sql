@@ -8,6 +8,12 @@ insert into public.track_locales (track_id, locale, name) values ('flutter', 'ar
 
 insert into public.track_locales (track_id, locale, name) values ('flutter', 'en', 'Flutter') on conflict (track_id, locale) do update set name = excluded.name;
 
+insert into public.tracks (id, slug) values ('backend', 'backend') on conflict (id) do update set slug = excluded.slug;
+
+insert into public.track_locales (track_id, locale, name) values ('backend', 'ar', 'Backend') on conflict (track_id, locale) do update set name = excluded.name;
+
+insert into public.track_locales (track_id, locale, name) values ('backend', 'en', 'Backend') on conflict (track_id, locale) do update set name = excluded.name;
+
 insert into public.topics (id, slug, track_id) values ('dart', 'dart', 'flutter') on conflict (id) do update set slug = excluded.slug, track_id = excluded.track_id;
 
 insert into public.topic_locales (topic_id, locale, name) values ('dart', 'ar', 'Dart') on conflict (topic_id, locale) do update set name = excluded.name;

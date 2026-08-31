@@ -8,6 +8,7 @@ import { localeDirection, localeFromPathname, localizedHref, messages, type Loca
 import { ThemeToggle } from "./theme-toggle";
 import { BrandLogo } from "./logo";
 import { ClerkControls } from "./clerk-controls";
+import { useActiveTrack } from "./active-track";
 
 const paths = [["home", "/"], ["topics", "/topics"], ["questions", "/questions"], ["interview", "/interview"], ["progress", "/progress"], ["submit", "/submissions"], ["moderator", "/moderator"]] as const;
 
@@ -19,6 +20,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const routePathname = usePathname() ?? "/";
   const [pathname, setPathname] = useState(routePathname);
   const [query, setQuery] = useState("");
+  const { trackHref } = useActiveTrack();
 
   useEffect(() => {
     const sync = () => {
@@ -60,7 +62,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <span dir={locale === "ar" ? "rtl" : "ltr"}>{copy.brandName}</span>
           </Link>
           <div className="nav-links">
-            {paths.map(([key, path]) => <Link key={path} href={localizedHref(locale, path)}>{copy[key]}</Link>)}
+            {paths.map(([key, path]) => <Link key={path} href={localizedHref(locale, ["/topics", "/questions", "/interview"].includes(path) ? trackHref(path) : path)}>{copy[key]}</Link>)}
           </div>
           <div className="nav-actions">
             <ClerkControls locale={locale} />

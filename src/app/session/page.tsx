@@ -3,7 +3,7 @@ import { StudySession } from "./study-session";
 import type { Locale } from "../../content/questions";
 import { localizedMetadata } from "../metadata";
 
-export const metadata = localizedMetadata("ar", "/session", "جلسة مراجعة", "جلسة مراجعة لأسئلة Flutter.");
+export const metadata = localizedMetadata("ar", "/session", "جلسة مراجعة", "جلسة مراجعة في المسار النشط.");
 
 export default function SessionPage({ locale = "ar" }: { locale?: Locale }) {
   return <StudySession questions={questions} topics={topics} locale={locale} />;

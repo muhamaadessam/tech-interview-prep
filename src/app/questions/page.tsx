@@ -4,7 +4,7 @@ import { getQuestionTranslation, type Locale } from "../../content/questions";
 import { messages, topicName } from "../../i18n";
 import { localizedMetadata } from "../metadata";
 
-export const metadata = localizedMetadata("ar", "/questions", "مكتبة الأسئلة", "مكتبة أسئلة مقابلات Flutter.");
+export const metadata = localizedMetadata("ar", "/questions", "مكتبة الأسئلة", "مكتبة أسئلة المقابلات في المسار النشط.");
 
 export default function QuestionsPage({ locale = "ar" }: { locale?: Locale }) {
   const copy = messages[locale];
@@ -18,7 +18,7 @@ export default function QuestionsPage({ locale = "ar" }: { locale?: Locale }) {
       <QuestionLibrary
         questions={questions.map((question) => {
           const translation = getQuestionTranslation(question, locale);
-          return { id: question.id, slug: question.slug, topicIds: question.topicIds, difficulty: question.difficulty, question: translation.question, shortAnswer: translation.shortAnswer };
+          return { id: question.id, slug: question.slug, trackId: question.trackId, topicIds: question.topicIds, difficulty: question.difficulty, question: translation.question, shortAnswer: translation.shortAnswer };
         })}
         topics={topics.map((topic) => ({ ...topic, name: topicName(locale, topic.id) }))}
         locale={locale}

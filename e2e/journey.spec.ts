@@ -110,13 +110,13 @@ test.describe("Discovery, study session, and progress journey", () => {
     await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
     await expect(page.getByRole("heading", { name: "Walk into the interview with your answers organized." })).toBeVisible();
     await page.getByRole("link", { name: "Question Library" }).click();
-    await expect(page).toHaveURL(/\/en\/questions\/$/);
+    await expect(page).toHaveURL(/\/en\/questions\/\?track=flutter$/);
     await expect(page.getByLabel("Search questions")).toBeVisible();
     await page.getByText("What should a Flutter developer know about Final Vs Const In Dart?").click();
-    await expect(page).toHaveURL(/\/en\/questions\/final-vs-const-in-dart\/$/);
+    await expect(page).toHaveURL(/\/en\/questions\/final-vs-const-in-dart\/\?track=flutter$/);
     await expect(page.getByRole("heading", { name: "What should a Flutter developer know about Final Vs Const In Dart?" })).toBeVisible();
     await page.getByRole("link", { name: "العربية" }).click();
-    await expect(page).toHaveURL(/\/ar\/questions\/final-vs-const-in-dart\/$/);
+    await expect(page).toHaveURL(/\/ar\/questions\/final-vs-const-in-dart\/\?track=flutter$/);
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
   });
 });
