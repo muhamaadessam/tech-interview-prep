@@ -1,2 +1,2 @@
-export const siteUrl = "https://muhamaadessam.github.io/tech-interview-prep";
+export const siteUrl = "https://tech-interview-prep-1ux.pages.dev";
 export const themeKey = "tech-interview-prep:theme";
