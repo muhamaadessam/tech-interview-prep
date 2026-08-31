@@ -29,7 +29,7 @@ function EnabledClerkControls({ locale, myTracksHref, moderatorHref }: { locale:
 
   return (
     <div className="auth-controls">
-      {!isSignedIn ? <><AuthDialogTrigger locale={locale} className="auth-button">{copy.signIn}</AuthDialogTrigger><AuthDialogTrigger locale={locale} mode="signUp" className="auth-button auth-button-primary">{copy.signUp}</AuthDialogTrigger></> : <><Link className="auth-button" href={myTracksHref}>{copy.myTracks}</Link>{moderator && <Link className="auth-button" href={moderatorHref}>{copy.moderator}</Link>}<AccountMenu locale={locale} myTracksHref={myTracksHref} moderatorHref={moderatorHref} showModerator={false} /></>}
+      {!isSignedIn ? <><AuthDialogTrigger locale={locale} className="auth-button">{copy.signIn}</AuthDialogTrigger><AuthDialogTrigger locale={locale} mode="signUp" className="auth-button auth-button-primary">{copy.signUp}</AuthDialogTrigger></> : <>{moderator && <Link className="auth-button" href={moderatorHref}>{copy.moderator}</Link>}<AccountMenu locale={locale} myTracksHref={myTracksHref} moderatorHref={moderatorHref} showModerator={false} /></>}
     </div>
   );
 }

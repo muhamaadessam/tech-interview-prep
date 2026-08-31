@@ -114,12 +114,21 @@ export function AccountMenu({ locale, myTracksHref, moderatorHref, showModerator
   const { signOut } = useClerk();
   const [open, setOpen] = useState(false);
   const email = user?.primaryEmailAddress?.emailAddress ?? user?.username ?? "";
-  const initial = (email || "U").slice(0, 1).toUpperCase();
+  const displayName = user?.fullName || user?.username || email || "User";
+  const username = user?.username ? `@${user.username}` : "";
+  const initial = (displayName || "U").slice(0, 1).toUpperCase();
   const copy = messages[locale];
   return <div className="auth-account">
-    <button className="auth-avatar" type="button" aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen((value) => !value)}>{initial}</button>
+    <button className="auth-profile-trigger" type="button" aria-label={`${copy.account}: ${displayName}`} aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen((value) => !value)}>
+      <span className="auth-avatar" aria-hidden="true">{user?.imageUrl ? <img src={user.imageUrl} alt="" referrerPolicy="no-referrer" /> : initial}</span>
+      <span className="auth-profile-name">{displayName}</span>
+    </button>
     {open && <div className="auth-account-menu" role="menu">
-      {email && <span className="auth-account-email">{email}</span>}
+      <div className="auth-account-profile">
+        <strong>{displayName}</strong>
+        {username && <span dir="ltr">{username}</span>}
+        {email && <span dir="ltr">{email}</span>}
+      </div>
       <Link href={myTracksHref} role="menuitem" onClick={() => setOpen(false)}>{copy.myTracks}</Link>
       {showModerator && <Link href={moderatorHref} role="menuitem" onClick={() => setOpen(false)}>{copy.moderator}</Link>}
       <button type="button" role="menuitem" onClick={() => void signOut()}>{locale === "ar" ? "تسجيل الخروج" : "Sign out"}</button>

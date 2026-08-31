@@ -7,7 +7,7 @@ export const messages = {
   ar: {
     submitDifficultyNone: "غير محدد", submitTrackPreference: "اختر مسارًا نشطًا من تفضيلات المسارات.",
     brandName: "تحضير المقابلات التقنية",
-    home: "الرئيسية", topics: "الموضوعات", questions: "مكتبة الأسئلة", interview: "مقابلة كاملة", progress: "تقدمي", submit: "اقترح سؤالًا", moderator: "المراجعة", myTracks: "مساراتي",
+    home: "الرئيسية", topics: "الموضوعات", questions: "مكتبة الأسئلة", interview: "مقابلة كاملة", progress: "تقدمي", submit: "اقترح سؤالًا", moderator: "المراجعة", myTracks: "مساراتي", account: "الحساب",
     skip: "انتقل إلى المحتوى", menu: "القائمة", close: "إغلاق", theme: "تغيير المظهر", dark: "◐ الوضع الداكن", light: "☀ الوضع الفاتح", signIn: "تسجيل الدخول", signUp: "إنشاء حساب",
     libraryEyebrow: "مكتبة الأسئلة", libraryTitle: "مكتبة الأسئلة", libraryDescription: "راجع السؤال، جاوب بصوتك، وبعدها افتح التفاصيل وقارن إجابتك بشرح مدعوم بالمصدر الرسمي.",
     activeTrack: "المسار النشط", activeTrackLoading: "جاري تحميل المسار النشط…", activeTrackUnavailable: "تعذر تحميل المسار النشط", manageTrackPreferences: "إدارة تفضيلات المسارات", invalidTrackTitle: "المسار غير متاح", invalidTrackTopicTitle: "الموضوع لا ينتمي إلى هذا المسار", invalidTrackDescription: "غيّر المسار مع الحفاظ على سياق الصفحة، أو عدّل تفضيلات مساراتك.", changeTrackTo: "التغيير إلى", emptyTrackTitle: "لا يوجد محتوى في هذا المسار حاليًا", emptyTrackDescription: "المسار ما زال محددًا. اختر مسارًا آخر أو أدِر تفضيلاتك من غير تغيير صامت.",
@@ -24,7 +24,7 @@ export const messages = {
   en: {
     submitDifficultyNone: "Not specified", submitTrackPreference: "Choose one active Track Preference.",
     brandName: "Tech Interview Prep",
-    home: "Home", topics: "Topics", questions: "Question Library", interview: "Full Interview", progress: "Progress", submit: "Suggest a question", moderator: "Moderation", myTracks: "My Tracks",
+    home: "Home", topics: "Topics", questions: "Question Library", interview: "Full Interview", progress: "Progress", submit: "Suggest a question", moderator: "Moderation", myTracks: "My Tracks", account: "Account",
     skip: "Skip to content", menu: "Menu", close: "Close", theme: "Change theme", dark: "◐ Dark mode", light: "☀ Light mode", signIn: "Sign in", signUp: "Sign up",
     libraryEyebrow: "Question library", libraryTitle: "Question library", libraryDescription: "Answer out loud, open the details, and compare your reasoning with an answer backed by official sources.",
     activeTrack: "Active Track", activeTrackLoading: "Loading Active Track…", activeTrackUnavailable: "Active Track could not be loaded", manageTrackPreferences: "Manage Track Preferences", invalidTrackTitle: "This Track is unavailable", invalidTrackTopicTitle: "This Topic does not belong to the Active Track", invalidTrackDescription: "Change Track while keeping this page context, or manage your Track Preferences.", changeTrackTo: "Change to", emptyTrackTitle: "This Track has no content yet", emptyTrackDescription: "The Track remains selected. Choose another Track or manage preferences without a silent switch.",

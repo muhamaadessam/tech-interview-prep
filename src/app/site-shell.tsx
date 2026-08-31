@@ -76,7 +76,10 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <div className="nav-links">{links}</div>
             <div className="nav-actions">
               <ClerkControls locale={locale} myTracksHref={href("/my-tracks")} moderatorHref={href("/moderator")} />
-              <Link className="locale-switcher" href={switchHref}>{copy.language}</Link>
+              <Link className="locale-switcher icon-control" href={switchHref} aria-label={copy.language} title={copy.language}>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h7M7.5 5v2.2a8.3 8.3 0 0 1-4.1 7.1M5 10.8c1.5 1.8 3.4 3.1 5.8 3.9M14 4l-4 10m2.2-4h7.3M16 13.5l3.5 6.5M12.7 16h6.6" /></svg>
+                <span className="sr-only">{copy.language}</span>
+              </Link>
               <ThemeToggle locale={locale} />
             </div>
           </div>
@@ -84,7 +87,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
           <dialog ref={menu} id="mobile-navigation" className="mobile-navigation" aria-labelledby="mobile-navigation-title" onClose={() => { setMenuOpen(false); menuButton.current?.focus(); }}>
             <div className="mobile-navigation-header"><strong id="mobile-navigation-title">{copy.menu}</strong><button className="mobile-menu-close" type="button" autoFocus onClick={() => menu.current?.close()}>{copy.close}</button></div>
             <div className="mobile-navigation-links">{links}</div>
-            <div className="mobile-navigation-actions"><ClerkControls locale={locale} myTracksHref={href("/my-tracks")} moderatorHref={href("/moderator")} /><Link className="locale-switcher" href={switchHref} onClick={() => menu.current?.close()}>{copy.language}</Link><ThemeToggle locale={locale} /></div>
+            <div className="mobile-navigation-actions"><ClerkControls locale={locale} myTracksHref={href("/my-tracks")} moderatorHref={href("/moderator")} /><Link className="locale-switcher icon-control" href={switchHref} aria-label={copy.language} title={copy.language} onClick={() => menu.current?.close()}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h7M7.5 5v2.2a8.3 8.3 0 0 1-4.1 7.1M5 10.8c1.5 1.8 3.4 3.1 5.8 3.9M14 4l-4 10m2.2-4h7.3M16 13.5l3.5 6.5M12.7 16h6.6" /></svg><span className="sr-only">{copy.language}</span></Link><ThemeToggle locale={locale} /></div>
           </dialog>
         </nav>
       </header>
