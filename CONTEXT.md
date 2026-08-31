@@ -70,6 +70,14 @@ It is a review record, not the catalogue source of truth and not proof that a
 Submission is published.
 _Avoid_: Pull request, publication record
 
+**Community Interview Question**:
+An Interview Question created from a reviewed Submission and published in its Track's community collection. It keeps its contributor attribution and can be promoted permanently into the public catalogue after reaching the configured unique-Account Like threshold.
+_Avoid_: User question, unreviewed submission
+
+**Question Like**:
+One Account's positive vote for a Community Interview Question. An Account may Like a question at most once, cannot Like its own contribution, and Likes are not used for public-catalogue questions.
+_Avoid_: Rating, review, approval
+
 **Account**:
 An authenticated identity used to own Question Progress, Favorites, and Submissions. Anonymous learners may browse without an Account.
 _Avoid_: Profile when referring to identity or access
