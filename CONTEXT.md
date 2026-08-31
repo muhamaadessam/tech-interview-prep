@@ -29,11 +29,11 @@ A learner's local study state for an Interview Question: Not Started, Reviewing,
 _Avoid_: Completion, status
 
 **Asked Marker**:
-An Account's self-reported indication that an Interview Question was asked in one of their interviews. It is independent of Question Progress and can be toggled on or off.
+An Account's self-reported non-negative count of how many times an Interview Question was asked in their interviews. The Account changes it with increment/decrement controls; it is independent of Question Progress and Favorites.
 _Avoid_: Question Progress, review status
 
 **Interview Frequency**:
-The number of unique Accounts that have enabled an Asked Marker for an Interview Question. It is an aggregate discovery signal, not a verified count of real-world interviews.
+The sum of Asked Marker counts across Accounts for an Interview Question. It is an aggregate discovery signal, not a verified count of real-world interviews.
 _Avoid_: Rating, popularity score
 
 **Study Session**:
