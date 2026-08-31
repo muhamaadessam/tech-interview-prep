@@ -7,6 +7,7 @@ import { messages, type Locale } from "../../i18n";
 import { submitQuestion, SubmissionError, type SubmissionResult } from "../../submissions/api";
 import { ActiveTrackSelector, useActiveTrack } from "../active-track";
 import { AuthDialogTrigger } from "../auth-dialog";
+import { LoadingPlaceholder } from "../loading-placeholder";
 
 type TopicOption = { id: string; trackId: string; name: string };
 
@@ -68,7 +69,7 @@ function AuthenticatedSubmissionForm({ locale, topics }: { locale: Locale; topic
     }
   }
 
-  if (!isLoaded) return <p className="empty-state">{copy.submitLoading}</p>;
+  if (!isLoaded) return <LoadingPlaceholder variant="form" />;
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.submitSignInRequired}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
   if (!verified) return <p className="empty-state">{copy.submitEmailRequired}</p>;
   if (phase !== "ready" || !activeTrack) return <ActiveTrackSelector locale={locale} />;

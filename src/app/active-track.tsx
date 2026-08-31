@@ -113,7 +113,7 @@ export function useActiveTrack(): ActiveTrackValue {
 export function ActiveTrackSelector({ locale }: { locale: Locale }) {
   const { phase, authenticated, activeTrack, selectableTracks, invalidTrack, setActiveTrack, retry } = useActiveTrack();
   const copy = messages[locale];
-  if (phase === "loading") return <LoadingPlaceholder />;
+  if (phase === "loading") return <LoadingPlaceholder variant="track" />;
   if (phase === "error") return <div className="empty-state"><h2>{copy.activeTrackUnavailable}</h2><button className="button primary" type="button" onClick={retry}>{copy.tracksRetry}</button></div>;
   if (invalidTrack) return <ActiveTrackRecovery locale={locale} />;
   if (!activeTrack) return <div className="empty-state"><h2>{copy.emptyTrackTitle}</h2><p>{copy.emptyTrackDescription}</p>{authenticated && <Link className="button" href={localizedHref(locale, "/my-tracks")}>{copy.manageTrackPreferences}</Link>}</div>;

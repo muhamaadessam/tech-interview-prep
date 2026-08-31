@@ -9,6 +9,7 @@ import { AnswerDisclosure, QuestionControls } from "../../question-controls";
 import { DatabaseQuestionNotFound, loadDatabaseQuestion, type DatabaseQuestion } from "../../../questions/database";
 import { formatDate, localizedHref, messages, type Locale } from "../../../i18n";
 import { ActiveTrackRecovery, ActiveTrackSelector, useActiveTrack } from "../../active-track";
+import { LoadingPlaceholder } from "../../loading-placeholder";
 
 type State = { status: "loading" } | { status: "not-found" } | { status: "error" } | { status: "ready"; question: DatabaseQuestion };
 
@@ -30,7 +31,7 @@ export function DatabaseQuestionView({ locale }: { locale: Locale }) {
 
   if (phase !== "ready") return <section className="shell section"><ActiveTrackSelector locale={locale} /></section>;
   if (invalidTrack || !activeTrack) return <section className="shell section"><ActiveTrackRecovery locale={locale} /></section>;
-  if (state.status === "loading") return <section className="shell section"><p role="status">{copy.databaseQuestionLoading}</p></section>;
+  if (state.status === "loading") return <section className="shell section"><LoadingPlaceholder variant="question" /></section>;
   if (state.status === "not-found") return <section className="shell section"><header className="page-header"><span className="eyebrow">{copy.databaseQuestionEyebrow}</span><h1>{copy.notFound}</h1><p>{copy.databaseQuestionNotFound}</p><Link className="button" href={localizedHref(locale, trackHref("/questions"))}>{copy.backLibrary}</Link></header></section>;
   if (state.status === "error") return <section className="shell section"><header className="page-header"><span className="eyebrow">{copy.databaseQuestionEyebrow}</span><h1>{copy.databaseQuestionError}</h1><p>{copy.databaseQuestionErrorDescription}</p><button className="button primary" type="button" onClick={load}>{copy.databaseQuestionRetry}</button></header></section>;
 

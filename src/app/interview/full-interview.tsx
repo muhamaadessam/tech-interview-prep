@@ -75,7 +75,7 @@ export function FullInterview({ questions, topics, locale = "ar" }: { questions:
     updateSelection({ topicValues });
   }
 
-  if (!isHydrated) return <section className="shell section"><LoadingPlaceholder /></section>;
+  if (!isHydrated) return <section className="shell section"><LoadingPlaceholder variant="interview" /></section>;
 
   return (
     <section className="shell section interview-page">

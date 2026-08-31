@@ -7,6 +7,7 @@ import { messages, type Locale } from "../../i18n";
 import { AdvisoryError, runAdvisory } from "../../advisory/api";
 import { ModerationError, moderationRequest, type ModerationStatus, type ModerationSubmission } from "../../moderation/api";
 import { AuthDialogTrigger } from "../auth-dialog";
+import { LoadingPlaceholder } from "../loading-placeholder";
 
 const statuses: ModerationStatus[] = ["pending", "issue_created", "in_review", "changes_requested", "approved"];
 
@@ -20,7 +21,7 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const [status, setStatus] = useState<ModerationStatus>("pending");
   const [rows, setRows] = useState<ModerationSubmission[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reason, setReason] = useState<Record<string, string>>({});
   const [advisory, setAdvisory] = useState<Record<string, string>>({});
@@ -50,21 +51,21 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
     catch (caught) { setAdvisory((current) => ({ ...current, [submissionId]: "failed" })); setError(caught instanceof AdvisoryError ? caught.code : "advisory_unavailable"); }
   }
 
-  if (!isLoaded) return <p className="empty-state">{copy.moderatorLoading}</p>;
+  if (!isLoaded) return <LoadingPlaceholder variant="moderator" />;
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.moderatorSignIn}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
 
   return <div className="moderator-console">
     <div className="moderator-toolbar"><label>{copy.moderatorStatus}<select value={status} onChange={(event) => setStatus(event.target.value as ModerationStatus)}>{statuses.map((value) => <option key={value} value={value}>{statusLabel(value, locale)}</option>)}</select></label><button className="button" type="button" onClick={() => void load()} disabled={loading}>{loading ? copy.moderatorLoading : copy.moderatorRefresh}</button></div>
     {error && <p className="form-error" role="alert">{error}</p>}
     {!loading && !rows.length && <p className="empty-state">{copy.moderatorEmpty}</p>}
-    <div className="moderator-list">{rows.map((row) => <article className="card moderator-card" key={row.id}>
+    {loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{rows.map((row) => <article className="card moderator-card" key={row.id}>
       <div className="meta"><span className="chip">{row.difficulty}</span><span className="chip">{statusLabel(row.status, locale)}</span>{row.github_issue_url && <a className="text-link" href={row.github_issue_url} target="_blank" rel="noreferrer">GitHub #{row.github_issue_number}</a>}</div>
       <h2>{row.payload.question ?? "—"}</h2><p>{row.payload.shortAnswer ?? ""}</p>
       {row.review_notes && <p className="field-hint">{row.review_notes}</p>}
       <label>{copy.moderatorReason}<textarea value={reason[row.id] ?? ""} onChange={(event) => setReason((current) => ({ ...current, [row.id]: event.target.value }))} maxLength={500} /></label>
       <div className="actions"><button className="button" type="button" onClick={() => void act(row.id, "changes_requested")}>{copy.moderatorChanges}</button><button className="button danger" type="button" onClick={() => void act(row.id, "reject_submission")}>{copy.moderatorReject}</button>{row.github_issue_number && <button className="button" type="button" onClick={() => void reviewWithAi(row.id)} disabled={advisory[row.id] === "running"}>{advisory[row.id] === "running" ? (locale === "ar" ? "جاري المراجعة…" : "Reviewing…") : (locale === "ar" ? "مراجعة بالذكاء الاصطناعي" : "Run AI advisory review")}</button>}</div>
       {advisory[row.id] === "completed" && <p className="form-status" role="status">{locale === "ar" ? "تمت إضافة المراجعة الاستشارية إلى Issue." : "Advisory review added to the Issue."}</p>}
-    </article>)}</div>
+    </article>)}</div>}
   </div>;
 }
 

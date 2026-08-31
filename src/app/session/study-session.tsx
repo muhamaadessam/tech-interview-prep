@@ -10,6 +10,7 @@ import { AnswerDisclosure, QuestionControls } from "../question-controls";
 import { localizedHref, messages, topicName } from "../../i18n";
 import { scopeCatalogue } from "../../tracks/active-track";
 import { ActiveTrackRecovery, ActiveTrackSelector, useActiveTrack } from "../active-track";
+import { LoadingPlaceholder } from "../loading-placeholder";
 
 type SessionSelection = { topic: string; difficulty: DifficultyLevel | "" };
 
@@ -53,7 +54,7 @@ export function StudySession({ questions, topics, locale = "ar" }: { questions: 
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
   }
 
-  if (!isHydrated) return <section className="shell section"><p>{copy.preparing}</p></section>;
+  if (!isHydrated) return <section className="shell section"><LoadingPlaceholder variant="session" /></section>;
 
   return (
     <section className="shell section">
