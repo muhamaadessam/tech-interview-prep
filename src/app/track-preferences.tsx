@@ -103,7 +103,9 @@ function TrackPreferencesManager({ locale, mode, userId, getToken }: { locale: L
     else if (!event.shiftKey && document.activeElement === controls.at(-1)) { event.preventDefault(); controls[0].focus(); }
   }
 
-  if (phase === "done") return null;
+  // Keep the page usable while Clerk/Supabase resolve preferences. The modal
+  // only appears once we know onboarding is actually required.
+  if (phase === "done" || (mode === "gate" && phase === "loading")) return null;
 
   const unavailableContent = unavailableTracks.length > 0 && <fieldset className="track-options unavailable-tracks"><legend>{copy.unavailableTracksLegend}</legend>{unavailableTracks.map((track) => <div key={track.id} className="unavailable-track"><span>{track.name}</span><small>{copy.trackUnavailable}</small></div>)}</fieldset>;
   const content = <div className="track-preferences-card">
