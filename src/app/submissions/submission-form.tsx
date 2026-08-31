@@ -3,13 +3,13 @@
 import { useAuth, useUser } from "@clerk/react";
 import { useEffect, useState } from "react";
 
-import { messages, type Locale } from "../../i18n";
+import { formatNumber, messages, type Locale } from "../../i18n";
 import { submitQuestion, SubmissionError, type SubmissionResult } from "../../submissions/api";
 import { ActiveTrackSelector, useActiveTrack } from "../active-track";
 import { AuthDialogTrigger } from "../auth-dialog";
 import { LoadingPlaceholder } from "../loading-placeholder";
 
-type TopicOption = { id: string; trackId: string; name: string };
+type TopicOption = { id: string; trackId: string; name: string; questionCount: number };
 
 export function SubmissionForm({ locale, topics, clerkEnabled }: { locale: Locale; topics: TopicOption[]; clerkEnabled: boolean }) {
   if (!clerkEnabled) return <p className="empty-state">{locale === "ar" ? "إرسال الأسئلة يحتاج إعداد تسجيل الدخول أولًا." : "Question submissions require authentication setup first."}</p>;
@@ -80,7 +80,7 @@ function AuthenticatedSubmissionForm({ locale, topics }: { locale: Locale; topic
     <form className="submission-form" onSubmit={submit}>
       <div className="submission-grid">
         <label>{copy.submitTrack}<select value={activeTrack.id} onChange={(event) => setActiveTrack(event.target.value)}>{selectableTracks.map((track) => <option key={track.id} value={track.id}>{track.name}</option>)}</select></label>
-        <fieldset className="submission-topics"><legend>{copy.submitTopics}</legend><div className="topic-options">{trackTopics.map((topic) => <label key={topic.id}><input type="checkbox" checked={selectedTopics.includes(topic.id)} onChange={() => toggleTopic(topic.id)} />{topic.name}</label>)}</div></fieldset>
+        <fieldset className="submission-topics"><legend>{copy.submitTopics}<span className="topic-count" aria-live="polite">{selectedTopics.length} {copy.selected}</span></legend><div className="topic-options">{trackTopics.map((topic) => { const selected = selectedTopics.includes(topic.id); return <label className="topic-option" key={topic.id}><input className="sr-only" type="checkbox" checked={selected} onChange={() => toggleTopic(topic.id)} /><span className="topic-option-copy"><strong>{topic.name}</strong><small>{formatNumber(topic.questionCount, locale)} {copy.available}</small></span><span className="topic-option-mark" aria-hidden="true">{selected ? "✓" : "+"}</span></label>; })}</div></fieldset>
         <label>{copy.submitQuestion}<textarea required maxLength={500} value={form.question} onChange={(event) => update("question", event.target.value)} /></label>
         <label>{copy.submitShortAnswer}<textarea maxLength={1000} value={form.shortAnswer} onChange={(event) => update("shortAnswer", event.target.value)} /></label>
         <label>{copy.submitExplanation}<textarea maxLength={5000} value={form.explanation} onChange={(event) => update("explanation", event.target.value)} /></label>
