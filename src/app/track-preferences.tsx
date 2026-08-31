@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { localeFromPathname, messages, type Locale } from "../i18n";
 import { loadTrackPreferences, resolveTrackSelection, saveTrackPreferences, validateTrackPreferences, type TrackOption } from "../tracks/preferences";
 import { AuthDialogTrigger } from "./auth-dialog";
+import { LoadingPlaceholder } from "./loading-placeholder";
 
 type Phase = "loading" | "saving" | "error" | "recovery" | "edit" | "success" | "done";
 
@@ -25,7 +26,7 @@ export function MyTracks({ locale, clerkEnabled }: { locale: Locale; clerkEnable
 function AuthenticatedMyTracks({ locale }: { locale: Locale }) {
   const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const copy = messages[locale];
-  if (!isLoaded) return <p className="empty-state" role="status">{copy.tracksLoading}</p>;
+  if (!isLoaded) return <LoadingPlaceholder className="page-loading" />;
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.tracksSignIn}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
   return <TrackPreferencesManager locale={locale} mode="page" userId={userId} getToken={getToken} />;
 }
@@ -109,7 +110,8 @@ function TrackPreferencesManager({ locale, mode, userId, getToken }: { locale: L
 
   const unavailableContent = unavailableTracks.length > 0 && <fieldset className="track-options unavailable-tracks"><legend>{copy.unavailableTracksLegend}</legend>{unavailableTracks.map((track) => <div key={track.id} className="unavailable-track"><span>{track.name}</span><small>{copy.trackUnavailable}</small></div>)}</fieldset>;
   const content = <div className="track-preferences-card">
-    {(phase === "loading" || phase === "saving") && <><h2 ref={heading} tabIndex={-1}>{phase === "saving" ? copy.tracksSaving : copy.tracksLoading}</h2><p className="track-status" role="status">{phase === "saving" ? copy.tracksSaving : copy.tracksLoading}</p></>}
+    {phase === "loading" && <LoadingPlaceholder />}
+    {phase === "saving" && <><h2 ref={heading} tabIndex={-1}>{copy.tracksSaving}</h2><p className="track-status" role="status">{copy.tracksSaving}</p></>}
     {phase === "error" && <><h2 ref={heading} tabIndex={-1}>{copy.tracksUnavailable}</h2><div className="actions"><button className="button primary" type="button" onClick={() => void load()}>{copy.tracksRetry}</button>{mode === "gate" && <button className="button" type="button" onClick={() => setPhase("done")}>{copy.continueBrowsing}</button>}</div></>}
     {phase === "recovery" && <><span className="eyebrow">{copy.onboardingEyebrow}</span><h2 ref={heading} tabIndex={-1}>{copy.tracksRecoveryTitle}</h2><p>{copy.tracksRecoveryDescription}</p>{unavailableContent}<button className="button primary" type="button" onClick={() => { setOnboarding(true); setPhase("edit"); }}>{copy.tracksRecoveryAction}</button></>}
     {phase === "success" && <><h2 ref={heading} tabIndex={-1}>{copy.tracksSaved}</h2><button className="button primary" type="button" onClick={() => setPhase("done")}>{copy.tracksContinue}</button></>}

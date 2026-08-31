@@ -9,6 +9,7 @@ import { tracks } from "../content/questions";
 import { localeFromPathname, localizedHref, messages, type Locale } from "../i18n";
 import { resolveActiveTrack, withQueryContext } from "../tracks/active-track";
 import { loadTrackPreferences, type TrackPreferenceState } from "../tracks/preferences";
+import { LoadingPlaceholder } from "./loading-placeholder";
 
 type Phase = "loading" | "ready" | "error";
 type ActiveTrackValue = {
@@ -112,7 +113,7 @@ export function useActiveTrack(): ActiveTrackValue {
 export function ActiveTrackSelector({ locale }: { locale: Locale }) {
   const { phase, authenticated, activeTrack, selectableTracks, invalidTrack, setActiveTrack, retry } = useActiveTrack();
   const copy = messages[locale];
-  if (phase === "loading") return <p role="status">{copy.activeTrackLoading}</p>;
+  if (phase === "loading") return <LoadingPlaceholder />;
   if (phase === "error") return <div className="empty-state"><h2>{copy.activeTrackUnavailable}</h2><button className="button primary" type="button" onClick={retry}>{copy.tracksRetry}</button></div>;
   if (invalidTrack) return <ActiveTrackRecovery locale={locale} />;
   if (!activeTrack) return <div className="empty-state"><h2>{copy.emptyTrackTitle}</h2><p>{copy.emptyTrackDescription}</p>{authenticated && <Link className="button" href={localizedHref(locale, "/my-tracks")}>{copy.manageTrackPreferences}</Link>}</div>;

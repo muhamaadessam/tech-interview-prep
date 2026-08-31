@@ -10,6 +10,7 @@ import { AnswerDisclosure, QuestionControls } from "../question-controls";
 import { localizedHref, messages, topicName } from "../../i18n";
 import { scopeCatalogue } from "../../tracks/active-track";
 import { ActiveTrackRecovery, ActiveTrackSelector, useActiveTrack } from "../active-track";
+import { LoadingPlaceholder } from "../loading-placeholder";
 
 type InterviewSelection = { topicValues: string[]; difficulty: DifficultyLevel | ""; invalidTopics: boolean };
 
@@ -74,7 +75,7 @@ export function FullInterview({ questions, topics, locale = "ar" }: { questions:
     updateSelection({ topicValues });
   }
 
-  if (!isHydrated) return <section className="shell section"><p>{copy.preparingInterview}</p></section>;
+  if (!isHydrated) return <section className="shell section"><LoadingPlaceholder /></section>;
 
   return (
     <section className="shell section interview-page">
