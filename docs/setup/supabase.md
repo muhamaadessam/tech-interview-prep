@@ -1,6 +1,6 @@
 # Supabase setup
 
-This project remains a static Next.js export on GitHub Pages. Supabase supplies
+This project remains a static Next.js export on Cloudflare Pages. Supabase supplies
 the database, Row Level Security, and Edge Functions; Clerk owns authentication.
 The browser only receives the public Supabase URL and two publishable keys.
 
@@ -13,7 +13,7 @@ The browser only receives the public Supabase URL and two publishable keys.
    expose a service-role key.
 2. Configure Google and email/password providers in Clerk. Allow these exact
    origins: `http://localhost:3000` and
-   `https://muhamaadessam.github.io/tech-interview-prep`.
+   `https://tech-interview-prep-1ux.pages.dev`.
 3. Configure Clerk's native Supabase integration before enabling RLS policies that
    depend on the signed-in Clerk user.
 4. Store these Edge Function secrets: `CLERK_SECRET_KEY`,
@@ -92,7 +92,7 @@ Do not bypass the catalogue constraints with direct client writes.
 
 - Anonymous catalogue reads work with RLS enabled.
 - A Google account and a confirmed email/password account can sign in and sign
-  out through Clerk from localhost and GitHub Pages.
+  out through Clerk from localhost and Cloudflare Pages.
 - An unconfirmed account cannot submit a question.
 - Browser bundles contain no service-role key, GitHub token, or private key.
 - A failed Edge Function call does not lose the stored Submission and can be
