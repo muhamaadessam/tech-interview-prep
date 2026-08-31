@@ -2,6 +2,7 @@ import { pathToFileURL } from "node:url";
 
 import Fastify, { type FastifyInstance } from "fastify";
 import { AuthError, createClerkAuth, type ClerkAuth } from "./auth.ts";
+import { createAccountPolicy, createSupabaseAccountRoleStore, PolicyError, type AccountRoleStore } from "./account-policy.ts";
 
 type LogSink = { info?: (line: string) => void; error?: (line: string) => void };
 
@@ -10,18 +11,24 @@ export type ServerOptions = {
   ready?: boolean | (() => boolean | Promise<boolean>);
   logger?: LogSink;
   auth?: ClerkAuth;
+  policy?: ReturnType<typeof createAccountPolicy>;
 };
 
 function requestId(value: unknown): string {
   return typeof value === "string" && /^[a-zA-Z0-9._:-]{1,120}$/.test(value) ? value : crypto.randomUUID();
 }
 
-export async function buildServer({ allowedOrigins, ready = true, logger = console, auth }: ServerOptions): Promise<FastifyInstance> {
+export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy }: ServerOptions): Promise<FastifyInstance> {
   const origins = new Set(allowedOrigins.filter(Boolean));
   const startedAt = new WeakMap<object, bigint>();
   const app = Fastify({ logger: false, genReqId: (request) => requestId(request.headers["x-request-id"]) });
   app.decorateRequest("account", null);
   app.decorate("authenticate", auth?.preHandler ?? (async () => { throw new AuthError("auth_not_configured"); }));
+  const unavailablePolicy = async () => { throw new PolicyError("policy_not_configured", 503); };
+  app.decorate("requireAuthenticated", policy?.requireAuthenticated ?? unavailablePolicy);
+  app.decorate("requireModerator", policy?.requireModerator ?? unavailablePolicy);
+  app.decorate("requireConfirmedEmail", policy?.requireConfirmedEmail ?? unavailablePolicy);
+  app.decorate("requireOwnership", policy?.requireOwnership ?? unavailablePolicy);
 
   app.addHook("onRequest", async (request, reply) => {
     startedAt.set(request, process.hrtime.bigint());
@@ -68,6 +75,10 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
       reply.code(error.statusCode).send({ error: error.code });
       return;
     }
+    if (error instanceof PolicyError) {
+      reply.code(error.statusCode).send({ error: error.code });
+      return;
+    }
     const statusCode = typeof error === "object" && error !== null && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 500;
     logger.error?.(JSON.stringify({ error: "request_failed", statusCode }));
     reply.code(statusCode >= 400 ? statusCode : 500).send({ error: "internal_error" });
@@ -79,7 +90,11 @@ async function main() {
   const jwksUrl = process.env.CLERK_JWKS_URL;
   const issuer = process.env.CLERK_JWT_ISSUER;
   const auth = jwksUrl && issuer ? createClerkAuth({ jwksUrl, issuer }) : undefined;
-  const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth });
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const roleStore: AccountRoleStore | undefined = supabaseUrl && serviceRoleKey ? createSupabaseAccountRoleStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
+  const policy = roleStore ? createAccountPolicy(roleStore) : undefined;
+  const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy });
   const port = Number(process.env.PORT ?? 3000);
   await app.listen({ host: "0.0.0.0", port: Number.isInteger(port) && port > 0 ? port : 3000 });
 }
@@ -87,6 +102,10 @@ async function main() {
 declare module "fastify" {
   interface FastifyInstance {
     authenticate: ClerkAuth["preHandler"];
+    requireAuthenticated: ReturnType<typeof createAccountPolicy>["requireAuthenticated"];
+    requireModerator: ReturnType<typeof createAccountPolicy>["requireModerator"];
+    requireConfirmedEmail: ReturnType<typeof createAccountPolicy>["requireConfirmedEmail"];
+    requireOwnership: ReturnType<typeof createAccountPolicy>["requireOwnership"];
   }
 }
 

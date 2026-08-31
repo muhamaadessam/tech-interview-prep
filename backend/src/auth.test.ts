@@ -5,6 +5,7 @@ import test from "node:test";
 import { exportJWK, SignJWT } from "jose";
 
 import { createClerkAuth } from "./auth.ts";
+import { createAccountPolicy } from "./account-policy.ts";
 import { buildServer } from "./server.ts";
 
 const issuer = "https://clerk.example";
@@ -33,8 +34,9 @@ test("valid Clerk JWT creates trusted request context through the HTTP seam", as
   const key = await keyPair("key-1");
   const jwks = await jwksServer(() => [key.jwk]);
   const auth = createClerkAuth({ jwksUrl: jwks.url, issuer });
-  const app = await buildServer({ allowedOrigins: [], logger: { info: () => undefined }, auth });
-  app.get("/v1/protected", { preHandler: app.authenticate }, async (request) => ({ sub: request.account?.sub }));
+  const policy = createAccountPolicy({ getRole: async () => ({ role: "learner", suspended: false }) });
+  const app = await buildServer({ allowedOrigins: [], logger: { info: () => undefined }, auth, policy });
+  app.get("/v1/protected", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request) => ({ sub: request.account?.sub }));
 
   const response = await app.inject({ method: "GET", url: "/v1/protected", headers: { authorization: `Bearer ${await token(key.privateKey, "key-1")}` } });
   assert.equal(response.statusCode, 200);
