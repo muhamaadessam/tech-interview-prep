@@ -330,12 +330,13 @@ h3 { line-height: 1.45; }
 .unavailable-track { display: flex; min-width: 0; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; padding-inline: 10px; overflow-wrap: anywhere; color: var(--muted); }
 .unavailable-track small { font-weight: 800; }
 .track-status { color: var(--muted); }
-.loading-placeholder { display: flex; min-height: 56px; align-items: center; justify-content: center; gap: 7px; }
-.loading-placeholder span { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); animation: loading-pulse 900ms ease-in-out infinite alternate; }
-.loading-placeholder span:nth-child(2) { animation-delay: 150ms; }
-.loading-placeholder span:nth-child(3) { animation-delay: 300ms; }
+.loading-placeholder { display: grid; align-content: center; justify-items: end; gap: 10px; min-height: 56px; padding: 8px 0; }
+.loading-skeleton { display: block; height: 12px; border-radius: 999px; background: linear-gradient(105deg, var(--surface-soft) 20%, color-mix(in srgb, var(--brand) 24%, var(--surface)) 40%, var(--surface-soft) 60%); background-size: 220% 100%; animation: loading-shimmer 1.35s linear infinite; }
+.loading-skeleton-wide { width: min(88%, 620px); }
+.loading-skeleton-medium { width: min(64%, 440px); }
+.loading-skeleton-short { width: min(42%, 280px); }
 .page-loading { min-height: 180px; }
-@keyframes loading-pulse { from { opacity: .25; transform: translateY(0); } to { opacity: 1; transform: translateY(-5px); } }
+@keyframes loading-shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
 .active-track-selector { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 16px; margin-block-end: 24px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-soft); }
 .active-track-selector label { display: flex; min-width: 0; align-items: center; gap: 10px; color: var(--muted); font-weight: 800; }
 .active-track-selector select { min-width: 160px; max-width: 100%; min-height: 40px; padding-inline: 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); font: inherit; }
@@ -387,5 +388,6 @@ h3 { line-height: 1.45; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .loading-skeleton { animation: none; }
   .button:hover, .button:focus-visible { transform: none; }
 }
