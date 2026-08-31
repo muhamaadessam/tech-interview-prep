@@ -19,7 +19,8 @@ test("desktop navigation groups catalogue and account actions without exposing M
 
   await expect(page.getByRole("link", { name: "Tech Interview Prep — Home" })).toBeVisible();
   await expect(page.locator(".desktop-navigation").getByRole("link", { name: "Question Library" })).toBeVisible();
-  await expect(page.locator(".desktop-navigation").getByRole("link", { name: "My Tracks" })).toBeVisible();
+  await page.locator(".desktop-navigation .auth-profile-trigger").click();
+  await expect(page.getByRole("menu").getByRole("menuitem", { name: "My Tracks" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Moderation" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Menu" })).toBeHidden();
 });

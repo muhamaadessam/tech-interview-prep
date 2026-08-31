@@ -60,7 +60,7 @@ function QuestionLibraryContent({ questions, topics, locale = "ar", auth, clerkE
     setCommunityLoading(true); setCommunityError(false);
     loadCommunityQuestions({ trackId: activeTrack.id, locale, userId, getToken }).then((rows) => { if (!cancelled) setCommunity(rows); }).catch(() => { if (!cancelled) setCommunityError(true); }).finally(() => { if (!cancelled) setCommunityLoading(false); });
     return () => { cancelled = true; };
-  }, [activeTrack, filters.scope, locale, getToken, userId]);
+  }, [activeTrack, locale, getToken, userId]);
 
   function updateFilters(update: Partial<LibraryFilters>) {
     const next = { ...filters, ...update };

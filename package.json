@@ -12,6 +12,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && node scripts/fix-locale-html.mjs",
+    "load:test": "node scripts/load-test.mjs",
     "release:check": "npm run typecheck && npm test && npm run supabase:seed:check && npm run build && git diff --check",
     "typecheck": "tsc --noEmit",
     "supabase:seed": "node --experimental-strip-types scripts/generate-supabase-seed.ts",
