@@ -37,8 +37,16 @@ The flow shown after sign-in when an Account has no active Track Preferences. It
 _Avoid_: Setup wizard, profile form
 
 **Track Preference**:
-One or more active Tracks selected by an Account and stored as its personalization source of truth. An Account must keep at least one Track Preference. Removing one changes personalized views but does not delete historical progress, favorites, or Submissions. When multiple preferred Tracks are available, the Account chooses the single Track that owns a Submission.
+One or more active Tracks selected by an Account and stored as its personalization source of truth. An Account must keep at least one Track Preference. Removing one changes personalized views but does not delete historical progress, favorites, or Submissions. An Account selects one preferred Track as its Default Track. When multiple preferred Tracks are available, the Account chooses the single Track that owns a Submission.
 _Avoid_: Category filter, specialty
+
+**Default Track**:
+The Track Preference selected by an Account in My Tracks as the starting context for personalized content. It is a persistent preference, distinct from a temporary Active Track chosen within a page.
+_Avoid_: Primary category, global filter
+
+**Active Track**:
+The Track currently scoping a track-sensitive page, such as Topics, the Question Library, a Study Session, a Full Interview, or a Submission. For an Account it must be one of its Track Preferences; for an anonymous visitor it may be any active Track. A valid Track in the URL takes precedence over the Default Track for that page.
+_Avoid_: Default track, selected topic
 
 **Review**:
 The moderation process that evaluates a Submission for correctness, clarity, attribution, and fit before it becomes a published Interview Question.
