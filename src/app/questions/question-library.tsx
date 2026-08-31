@@ -41,6 +41,7 @@ export function QuestionLibrary({ questions, topics, locale = "ar" }: { question
   useEffect(() => {
     if (!activeTrack) { setCommunity([]); return; }
     let cancelled = false;
+    setCommunity([]);
     setCommunityLoading(true); setCommunityError(false);
     loadCommunityQuestions({ trackId: activeTrack.id, locale, userId, getToken }).then((rows) => { if (!cancelled) setCommunity(rows); }).catch(() => { if (!cancelled) setCommunityError(true); }).finally(() => { if (!cancelled) setCommunityLoading(false); });
     return () => { cancelled = true; };
@@ -60,7 +61,7 @@ export function QuestionLibrary({ questions, topics, locale = "ar" }: { question
     if (!activeTrack) return [];
     if (filters.scope === "community") return community.filter((question) => question.visibility === "community");
     const publicQuestions = questions.filter((question) => question.trackId === activeTrack.id).map((question) => ({ ...question, visibility: "public" as const, likeCount: 0, likedByViewer: false }));
-    const promoted = community.filter((question) => Boolean(question.promotedAt));
+    const promoted = community.filter((question) => question.trackId === activeTrack.id && Boolean(question.promotedAt));
     return [...publicQuestions, ...promoted.filter((question) => !publicQuestions.some((item) => item.id === question.id))];
   }, [activeTrack, community, filters.scope, questions]);
   const scopedTopics = scoped?.topics ?? [];

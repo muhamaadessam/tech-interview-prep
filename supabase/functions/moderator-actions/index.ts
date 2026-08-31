@@ -93,7 +93,7 @@ async function handle(request: Request): Promise<Response> {
       return response({ submissions: rows });
     }
     if (action === "list_community_questions") {
-      const rows = await (await db("/rest/v1/interview_questions?select=id,slug,track_id,visibility,community_contributor_username,community_published_at,community_unpublished_at,promoted_at,promotion_like_count,published_revision_id,source_submission_id&community_unpublished_at=is.null&or=(visibility.eq.community,promoted_at.not.is.null)&order=community_published_at.desc.nullslast&limit=100", key)).json();
+      const rows = await (await db("/rest/v1/interview_questions?select=id,slug,track_id,visibility,community_contributor_username,community_published_at,community_unpublished_at,promoted_at,promotion_like_count,published_revision_id,source_submission_id&or=(visibility.eq.community,promoted_at.not.is.null)&order=community_published_at.desc.nullslast&limit=100", key)).json();
       return response({ questions: rows });
     }
     if (action === "suspend_account" || action === "reinstate_account") {
@@ -149,6 +149,9 @@ async function handle(request: Request): Promise<Response> {
     if (action === "unpublish_question") {
       const questionId = text(body.questionId, 120);
       if (!questionId || !reason) return response({ error: "payload_invalid" }, 400);
+      const current = await (await db(`/rest/v1/interview_questions?select=id,visibility&id=eq.${encodeURIComponent(questionId)}&limit=1`, key)).json() as Array<{ id: string; visibility: string }>;
+      if (!current[0]) return response({ error: "not_found" }, 404);
+      if (current[0].visibility !== "community") return response({ error: "question_not_community" }, 409);
       const updated = await (await db(`/rest/v1/interview_questions?id=eq.${encodeURIComponent(questionId)}`, key, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ community_unpublished_at: new Date().toISOString() }) })).json() as Array<{ id: string }>;
       if (!updated.length) return response({ error: "not_found" }, 404);
       await audit(key, actor, action, "question", questionId, reason);
