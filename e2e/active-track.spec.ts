@@ -71,6 +71,14 @@ test("Study Session stays within one Topic and Full Interview includes multiple 
   await expect(page.getByText("The selected level includes every lower level.")).toBeVisible();
 });
 
+test("switching Active Track clears the previous session Topic", async ({ page }) => {
+  await page.goto("/en/session/?track=flutter&topic=dart&difficulty=Junior");
+  await expect(page.getByText(/Question 1 of \d+/)).toBeVisible();
+  await page.getByLabel("Active Track").selectOption("backend");
+  await expect(page).toHaveURL(/\/en\/session\/\?track=backend&difficulty=Junior$/);
+  await expect(page.getByRole("heading", { name: "This Track has no content yet" })).toBeVisible();
+});
+
 test("Arabic and English keep Track context with RTL and LTR direction", async ({ page }) => {
   await page.goto("/ar/topics/?track=flutter");
   await expect(page.locator("html")).toHaveAttribute("lang", "ar");

@@ -24,6 +24,8 @@ The browser only receives the public Supabase URL and two publishable keys.
    needs Issues: write for this repository.
    Also set `CLERK_JWKS_URL` and `CLERK_JWT_ISSUER` to the same Clerk instance;
    these are required for function-side JWT verification.
+   Set `OPENAI_API_KEY` only as a Supabase Edge Function secret when enabling the
+   moderator-triggered AI advisory review; never expose it to the browser.
 
 ## Local configuration
 
@@ -61,6 +63,7 @@ supabase db query --file supabase/seed.sql
 supabase functions deploy submit-question
 supabase functions deploy moderator-actions
 supabase functions deploy account-delete
+supabase functions deploy ai-advisory
 ```
 
 The `submit-question` function performs its own Clerk JWT verification (the
@@ -89,6 +92,13 @@ Publishing remains deliberately gated on a complete bilingual revision: a
 moderator must create Arabic and English `question_revision_locales` rows and
 select the immutable revision through `interview_questions.published_revision_id`.
 Do not bypass the catalogue constraints with direct client writes.
+
+The `ai-advisory` function is a moderator-only, server-side OpenAI `gpt-5-mini`
+review. It reads one immutable Submission Revision, redacts obvious email/phone
+values, stores the bounded result, and adds at most one marked advisory comment
+to the existing GitHub Issue. It never changes moderation state, labels, Issue
+status, revisions, or publication. Provider failures are retryable and leave the
+Submission and its `needs-review` Issue untouched.
 
 ## Acceptance checks
 

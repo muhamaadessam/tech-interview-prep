@@ -196,6 +196,9 @@ verify_jwt = false
 [functions.account-delete]
 verify_jwt = false
 
+[functions.ai-advisory]
+verify_jwt = false
+
 # Configure passkey sign-ins.
 # [auth.passkey]
 # enabled = false

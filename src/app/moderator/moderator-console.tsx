@@ -4,6 +4,7 @@ import { SignInButton, useAuth } from "@clerk/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { messages, type Locale } from "../../i18n";
+import { AdvisoryError, runAdvisory } from "../../advisory/api";
 import { ModerationError, moderationRequest, type ModerationStatus, type ModerationSubmission } from "../../moderation/api";
 
 const statuses: ModerationStatus[] = ["pending", "issue_created", "in_review", "changes_requested", "approved"];
@@ -21,6 +22,7 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [reason, setReason] = useState<Record<string, string>>({});
+  const [advisory, setAdvisory] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -41,6 +43,12 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
     catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
   }
 
+  async function reviewWithAi(submissionId: string) {
+    setAdvisory((current) => ({ ...current, [submissionId]: "running" }));
+    try { const result = await runAdvisory({ getToken, submissionId }); setAdvisory((current) => ({ ...current, [submissionId]: result.status })); }
+    catch (caught) { setAdvisory((current) => ({ ...current, [submissionId]: "failed" })); setError(caught instanceof AdvisoryError ? caught.code : "advisory_unavailable"); }
+  }
+
   if (!isLoaded) return <p className="empty-state">{copy.moderatorLoading}</p>;
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.moderatorSignIn}</h2><SignInButton mode="modal"><button className="button primary" type="button">{copy.signIn}</button></SignInButton></div>;
 
@@ -53,7 +61,8 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
       <h2>{row.payload.question ?? "—"}</h2><p>{row.payload.shortAnswer ?? ""}</p>
       {row.review_notes && <p className="field-hint">{row.review_notes}</p>}
       <label>{copy.moderatorReason}<textarea value={reason[row.id] ?? ""} onChange={(event) => setReason((current) => ({ ...current, [row.id]: event.target.value }))} maxLength={500} /></label>
-      <div className="actions"><button className="button" type="button" onClick={() => void act(row.id, "changes_requested")}>{copy.moderatorChanges}</button><button className="button danger" type="button" onClick={() => void act(row.id, "reject_submission")}>{copy.moderatorReject}</button></div>
+      <div className="actions"><button className="button" type="button" onClick={() => void act(row.id, "changes_requested")}>{copy.moderatorChanges}</button><button className="button danger" type="button" onClick={() => void act(row.id, "reject_submission")}>{copy.moderatorReject}</button>{row.github_issue_number && <button className="button" type="button" onClick={() => void reviewWithAi(row.id)} disabled={advisory[row.id] === "running"}>{advisory[row.id] === "running" ? (locale === "ar" ? "جاري المراجعة…" : "Reviewing…") : (locale === "ar" ? "مراجعة بالذكاء الاصطناعي" : "Run AI advisory review")}</button>}</div>
+      {advisory[row.id] === "completed" && <p className="form-status" role="status">{locale === "ar" ? "تمت إضافة المراجعة الاستشارية إلى Issue." : "Advisory review added to the Issue."}</p>}
     </article>)}</div>
   </div>;
 }
