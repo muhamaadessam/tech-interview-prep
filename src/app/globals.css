@@ -294,7 +294,7 @@ h3 { line-height: 1.45; }
 .moderator-card textarea { min-height: 84px; resize: vertical; }
 .submission-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .submission-grid > label, .submission-topics { display: grid; gap: 7px; color: var(--muted); font-weight: 800; }
-.submission-grid input, .submission-grid select, .submission-grid textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
+.submission-grid input:not(.sr-only), .submission-grid select, .submission-grid textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
 .submission-grid textarea { min-height: 120px; resize: vertical; }
 .submission-grid input:focus-visible, .submission-grid select:focus-visible, .submission-grid textarea:focus-visible { outline: 3px solid color-mix(in srgb, var(--brand) 45%, transparent); outline-offset: 1px; }
 .submission-grid > label:not(:nth-child(1)):not(:nth-child(6)), .submission-topics { grid-column: 1 / -1; }
