@@ -283,7 +283,7 @@ h3 { line-height: 1.45; }
 .topic-option:has(input:checked) .topic-option-mark { border-color: var(--brand); background: var(--brand); color: var(--on-brand); }
 .button:disabled { cursor: not-allowed; opacity: .48; transform: none; }
 
-.submission-form { display: grid; gap: 22px; max-width: 860px; padding: 24px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); }
+.submission-form { display: grid; width: min(1280px, 100%); gap: 22px; margin-inline: auto; padding: 24px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); }
 .moderator-console { display: grid; gap: 20px; }
 .moderator-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
 .moderator-toolbar label, .moderator-card label { display: grid; gap: 6px; color: var(--muted); font-weight: 800; }
