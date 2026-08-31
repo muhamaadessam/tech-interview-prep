@@ -26,6 +26,8 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   const [reason, setReason] = useState<Record<string, string>>({});
   const [advisory, setAdvisory] = useState<Record<string, string>>({});
   const [questionIds, setQuestionIds] = useState<Record<string, string>>({});
+  const [communityMode, setCommunityMode] = useState(false);
+  const [communityRows, setCommunityRows] = useState<Array<{ id: string; slug: string; visibility: string; promoted_at: string | null; community_contributor_username: string | null }>>([]);
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -37,6 +39,20 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   }, [getToken, status]);
 
   useEffect(() => { if (isSignedIn) void load(); }, [isSignedIn, load]);
+
+  async function loadCommunity() {
+    setCommunityMode(true); setLoading(true); setError("");
+    try { const response = await moderationRequest<{ questions: typeof communityRows }>({ getToken, body: { action: "list_community_questions" } }); setCommunityRows(response.questions ?? []); }
+    catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
+    finally { setLoading(false); }
+  }
+
+  async function moderateCommunity(questionId: string, action: "unpublish_question" | "republish_question") {
+    const note = reason[questionId]?.trim();
+    if (action === "unpublish_question" && !note) return;
+    try { await moderationRequest({ getToken, body: { action, questionId, ...(note ? { reason: note } : {}) } }); await loadCommunity(); }
+    catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
+  }
 
   async function act(submissionId: string, action: "changes_requested" | "reject_submission") {
     const note = reason[submissionId]?.trim();
@@ -64,10 +80,10 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.moderatorSignIn}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
 
   return <div className="moderator-console">
-    <div className="moderator-toolbar"><label>{copy.moderatorStatus}<select value={status} onChange={(event) => setStatus(event.target.value as ModerationStatus)}>{statuses.map((value) => <option key={value} value={value}>{statusLabel(value, locale)}</option>)}</select></label><button className="button" type="button" onClick={() => void load()} disabled={loading}>{loading ? copy.moderatorLoading : copy.moderatorRefresh}</button></div>
+    <div className="moderator-toolbar"><label>{copy.moderatorStatus}<select value={status} onChange={(event) => { setCommunityMode(false); setStatus(event.target.value as ModerationStatus); }}>{statuses.map((value) => <option key={value} value={value}>{statusLabel(value, locale)}</option>)}</select></label><button className="button" type="button" onClick={() => void load()} disabled={loading}>{loading ? copy.moderatorLoading : copy.moderatorRefresh}</button><button className="button" type="button" onClick={() => void loadCommunity()} disabled={loading}>{locale === "ar" ? "أسئلة المجتمع" : "Community questions"}</button></div>
     {error && <p className="form-error" role="alert">{error}</p>}
-    {!loading && !rows.length && <p className="empty-state">{copy.moderatorEmpty}</p>}
-    {loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{rows.map((row) => <article className="card moderator-card" key={row.id}>
+    {!communityMode && !loading && !rows.length && <p className="empty-state">{copy.moderatorEmpty}</p>}
+    {communityMode ? loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{communityRows.map((row) => <article className="card moderator-card" key={row.id}><div className="meta"><span className="chip">{row.visibility}</span>{row.promoted_at && <span className="chip">{copy.promoted}</span>}</div><h2>{row.slug}</h2><p>{row.community_contributor_username ? `@${row.community_contributor_username}` : copy.contributor}</p><label>{copy.moderatorReason}<textarea value={reason[row.id] ?? ""} onChange={(event) => setReason((current) => ({ ...current, [row.id]: event.target.value }))} maxLength={500} /></label><div className="actions"><button className="button danger" type="button" onClick={() => void moderateCommunity(row.id, "unpublish_question")}>{locale === "ar" ? "إخفاء" : "Unpublish"}</button><button className="button" type="button" onClick={() => void moderateCommunity(row.id, "republish_question")}>{locale === "ar" ? "إعادة النشر" : "Republish"}</button></div></article>)}</div> : loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{rows.map((row) => <article className="card moderator-card" key={row.id}>
       <div className="meta"><span className="chip">{row.difficulty}</span><span className="chip">{statusLabel(row.status, locale)}</span>{row.github_issue_url && <a className="text-link" href={row.github_issue_url} target="_blank" rel="noreferrer">GitHub #{row.github_issue_number}</a>}</div>
       <h2>{row.payload.question ?? "—"}</h2><p>{row.payload.shortAnswer ?? ""}</p>
       {row.review_notes && <p className="field-hint">{row.review_notes}</p>}
