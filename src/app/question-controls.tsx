@@ -24,6 +24,7 @@ export function QuestionControls({ questionId, locale = "ar" }: { questionId: st
   const [askedLoading, setAskedLoading] = useState(true);
   const [askedBusy, setAskedBusy] = useState(false);
   const [askedError, setAskedError] = useState("");
+  const [askedAvailable, setAskedAvailable] = useState(true);
 
   useEffect(() => {
     const load = () => {
@@ -39,9 +40,10 @@ export function QuestionControls({ questionId, locale = "ar" }: { questionId: st
     if (!authLoaded) return;
     let current = true;
     setAskedLoading(true);
+    setAskedAvailable(true);
     loadAskedMarkerStates({ questionIds: [questionId], userId, getToken }).then((states) => {
       if (current) setAsked(states[questionId] ?? { personalCount: isSignedIn ? 0 : null, interviewFrequency: 0 });
-    }).catch(() => { if (current) setAskedError(messages[locale].askedMarkerUnavailable); }).finally(() => { if (current) setAskedLoading(false); });
+    }).catch(() => { if (current) { setAskedAvailable(false); setAskedError(""); } }).finally(() => { if (current) setAskedLoading(false); });
     return () => { current = false; };
   }, [authLoaded, getToken, isSignedIn, locale, questionId, userId]);
 
@@ -86,11 +88,11 @@ export function QuestionControls({ questionId, locale = "ar" }: { questionId: st
         />
         {messages[locale].favorite}
       </label>
-      <div className="asked-marker" aria-live="polite">
+      {askedAvailable ? <div className="asked-marker" aria-live="polite">
         <div className="asked-marker-summary"><span>{messages[locale].interviewFrequency}: {askedLoading ? "…" : formatNumber(asked.interviewFrequency, locale)}</span>{isSignedIn ? <span>{messages[locale].askedMarker}: {askedLoading ? "…" : formatNumber(asked.personalCount ?? 0, locale)}</span> : null}</div>
         {isSignedIn ? <div className="asked-marker-actions"><button className="button icon-control" type="button" onClick={() => void changeAsked(-1)} disabled={askedBusy || askedLoading || !asked.personalCount} aria-label={`${messages[locale].decreaseAsked} (${asked.personalCount ?? 0})`}>−</button><button className="button icon-control" type="button" onClick={() => void changeAsked(1)} disabled={askedBusy || askedLoading} aria-label={`${messages[locale].increaseAsked} (${asked.personalCount ?? 0})`}>+</button></div> : <AuthDialogTrigger locale={locale} className="text-link">{messages[locale].signInToMarkAsked}</AuthDialogTrigger>}
         {askedError && <p className="form-error" role="alert">{askedError}</p>}
-      </div>
+      </div> : null}
     </div>
   );
 }
