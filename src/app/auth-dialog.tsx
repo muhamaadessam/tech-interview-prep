@@ -121,7 +121,6 @@ export function AccountMenu({ locale, myTracksHref, moderatorHref, showModerator
   return <div className="auth-account">
     <button className="auth-profile-trigger" type="button" aria-label={`${copy.account}: ${displayName}`} aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen((value) => !value)}>
       <span className="auth-avatar" aria-hidden="true">{user?.imageUrl ? <img src={user.imageUrl} alt="" referrerPolicy="no-referrer" /> : initial}</span>
-      <span className="auth-profile-name">{displayName}</span>
     </button>
     {open && <div className="auth-account-menu" role="menu">
       <div className="auth-account-profile">
