@@ -16,6 +16,10 @@ _Avoid_: Category, section
 A technical prompt belonging to one Track and one or more Topics in that Track. Its learning material can include a short answer, detailed explanation, code example, common mistakes, follow-up questions, official sources, and a last-reviewed date.
 _Avoid_: Card, item
 
+**Follow-up Question**:
+A prompt shown from an Interview Question that points to another published Interview Question in the same catalogue. Its target question owns the answer and learning material; the follow-up label is localized presentation content.
+_Avoid_: Free-text follow-up, linked card
+
 **Difficulty Level**:
 The expected interview depth of an Interview Question: Junior, Mid, or Senior.
 _Avoid_: User level, experience level
@@ -23,6 +27,14 @@ _Avoid_: User level, experience level
 **Question Progress**:
 A learner's local study state for an Interview Question: Not Started, Reviewing, or Mastered. Saving a question as a favorite is independent of this state.
 _Avoid_: Completion, status
+
+**Asked Marker**:
+An Account's self-reported indication that an Interview Question was asked in one of their interviews. It is independent of Question Progress and can be toggled on or off.
+_Avoid_: Question Progress, review status
+
+**Interview Frequency**:
+The number of unique Accounts that have enabled an Asked Marker for an Interview Question. It is an aggregate discovery signal, not a verified count of real-world interviews.
+_Avoid_: Rating, popularity score
 
 **Study Session**:
 An ordered set of Interview Questions selected by Topic and Difficulty Level for focused review.
