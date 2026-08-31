@@ -33,11 +33,11 @@ A proposed Interview Question sent by an authenticated contributor. Its Track an
 _Avoid_: User question, draft question
 
 **Onboarding**:
-The first-run flow where an Account chooses one or more Tracks to personalize Topics and contribution defaults. An Account can revisit these choices later.
+The flow shown after sign-in when an Account has no active Track Preferences. It requires at least one active Track before completion, may preselect the only available Track, and appears again only when no selected Track remains active. Public catalogue browsing does not require completing Onboarding.
 _Avoid_: Setup wizard, profile form
 
 **Track Preference**:
-One or more Tracks selected by an Account for personalization. When a Submission has multiple preferred Tracks available, the Account chooses the single Track that owns that Submission.
+One or more active Tracks selected by an Account and stored as its personalization source of truth. An Account must keep at least one Track Preference. Removing one changes personalized views but does not delete historical progress, favorites, or Submissions. When multiple preferred Tracks are available, the Account chooses the single Track that owns a Submission.
 _Avoid_: Category filter, specialty
 
 **Review**:
