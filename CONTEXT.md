@@ -71,7 +71,7 @@ Submission is published.
 _Avoid_: Pull request, publication record
 
 **Community Interview Question**:
-An Interview Question created from a reviewed Submission and published in its Track's community collection. It keeps its contributor attribution and can be promoted permanently into the public catalogue after reaching the configured unique-Account Like threshold.
+An Interview Question created from a reviewed Submission and explicitly published by a Moderator in its Track's community collection. It keeps its contributor attribution and can be promoted permanently into the public catalogue after reaching the configured unique-Account Like threshold; promotion does not create a second Interview Question.
 _Avoid_: User question, unreviewed submission
 
 **Question Like**:
