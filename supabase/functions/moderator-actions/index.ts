@@ -92,6 +92,10 @@ async function handle(request: Request): Promise<Response> {
       const rows = await (await db(`/rest/v1/submissions?select=id,status,track_id,topic_ids,difficulty,payload,review_notes,github_issue_number,github_issue_url,created_at&status=eq.${encodeURIComponent(status)}&order=created_at.asc&limit=50`, key)).json();
       return response({ submissions: rows });
     }
+    if (action === "list_community_questions") {
+      const rows = await (await db("/rest/v1/interview_questions?select=id,slug,track_id,visibility,community_contributor_username,community_published_at,community_unpublished_at,promoted_at,promotion_like_count,published_revision_id,source_submission_id&community_unpublished_at=is.null&or=(visibility.eq.community,promoted_at.not.is.null)&order=community_published_at.desc.nullslast&limit=100", key)).json();
+      return response({ questions: rows });
+    }
     if (action === "suspend_account" || action === "reinstate_account") {
       const target = text(body.targetUserId, 200);
       if (!target) return response({ error: "payload_invalid" }, 400);
@@ -117,12 +121,45 @@ async function handle(request: Request): Promise<Response> {
       await audit(key, actor, action, "submission", submissionId, reason, { github_closed: closed });
       return response({ ok: true, githubClosed: closed });
     }
+    if (action === "publish_submission") {
+      const submissionId = text(body.submissionId, 80);
+      const questionId = text(body.questionId, 120);
+      if (!submissionId || !questionId) return response({ error: "payload_invalid" }, 400);
+      const submissions = await (await db(`/rest/v1/submissions?select=id,status,track_id,submitted_by,display_name,github_issue_number,published_question_id&id=eq.${encodeURIComponent(submissionId)}&limit=1`, key)).json() as Array<{ id: string; status: string; track_id: string; submitted_by: string; display_name: string | null; github_issue_number: number | null; published_question_id: string | null }>;
+      const submission = submissions[0];
+      if (!submission) return response({ error: "not_found" }, 404);
+      if (submission.status === "published") {
+        if (submission.published_question_id === questionId) return response({ ok: true, status: "published", questionId });
+        return response({ error: "submission_already_published" }, 409);
+      }
+      if (submission.status !== "approved") return response({ error: "submission_not_approved" }, 409);
+      const questions = await (await db(`/rest/v1/interview_questions?select=id,track_id,published_revision_id,visibility,source_submission_id&id=eq.${encodeURIComponent(questionId)}&limit=1`, key)).json() as Array<{ id: string; track_id: string; published_revision_id: string | null; visibility: string; source_submission_id: string | null }>;
+      const question = questions[0];
+      if (!question) return response({ error: "question_not_found" }, 404);
+      if (question.track_id !== submission.track_id) return response({ error: "track_mismatch" }, 409);
+      if (!question.published_revision_id) return response({ error: "question_revision_required" }, 409);
+      if (question.source_submission_id && question.source_submission_id !== submissionId) return response({ error: "question_already_linked" }, 409);
+      const closed = await closeGithubIssue(submission.github_issue_number);
+      if (!closed) return response({ error: "github_close_failed", retryable: true }, 503);
+      await db(`/rest/v1/interview_questions?id=eq.${encodeURIComponent(questionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ visibility: "community", source_submission_id: submissionId, community_contributor_user_id: submission.submitted_by, community_contributor_username: submission.display_name || "Community contributor", community_published_at: new Date().toISOString() }) });
+      await db(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "published", published_question_id: questionId, reviewed_by: actor, reviewed_at: new Date().toISOString(), last_error: null }) });
+      await audit(key, actor, action, "question", questionId, null, { submission_id: submissionId, github_closed: closed });
+      return response({ ok: true, status: "published", questionId });
+    }
     if (action === "unpublish_question") {
       const questionId = text(body.questionId, 120);
       if (!questionId || !reason) return response({ error: "payload_invalid" }, 400);
-      const updated = await (await db(`/rest/v1/interview_questions?id=eq.${encodeURIComponent(questionId)}`, key, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ published_revision_id: null }) })).json() as Array<{ id: string }>;
+      const updated = await (await db(`/rest/v1/interview_questions?id=eq.${encodeURIComponent(questionId)}`, key, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ community_unpublished_at: new Date().toISOString() }) })).json() as Array<{ id: string }>;
       if (!updated.length) return response({ error: "not_found" }, 404);
       await audit(key, actor, action, "question", questionId, reason);
+      return response({ ok: true });
+    }
+    if (action === "republish_question") {
+      const questionId = text(body.questionId, 120);
+      if (!questionId) return response({ error: "payload_invalid" }, 400);
+      const updated = await (await db(`/rest/v1/interview_questions?id=eq.${encodeURIComponent(questionId)}&published_revision_id=not.is.null`, key, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ community_unpublished_at: null, visibility: "community", community_published_at: new Date().toISOString() }) })).json() as Array<{ id: string }>;
+      if (!updated.length) return response({ error: "question_not_ready" }, 409);
+      await audit(key, actor, action, "question", questionId, null);
       return response({ ok: true });
     }
     return response({ error: "unsupported_action" }, 400);

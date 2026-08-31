@@ -25,6 +25,7 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   const [error, setError] = useState("");
   const [reason, setReason] = useState<Record<string, string>>({});
   const [advisory, setAdvisory] = useState<Record<string, string>>({});
+  const [questionIds, setQuestionIds] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true); setError("");
@@ -51,6 +52,14 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
     catch (caught) { setAdvisory((current) => ({ ...current, [submissionId]: "failed" })); setError(caught instanceof AdvisoryError ? caught.code : "advisory_unavailable"); }
   }
 
+  async function publish(submissionId: string) {
+    const questionId = questionIds[submissionId]?.trim();
+    if (!questionId) return;
+    setError("");
+    try { await moderationRequest({ getToken, body: { action: "publish_submission", submissionId, questionId } }); await load(); }
+    catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
+  }
+
   if (!isLoaded) return <LoadingPlaceholder variant="moderator" />;
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.moderatorSignIn}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
 
@@ -63,7 +72,8 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
       <h2>{row.payload.question ?? "—"}</h2><p>{row.payload.shortAnswer ?? ""}</p>
       {row.review_notes && <p className="field-hint">{row.review_notes}</p>}
       <label>{copy.moderatorReason}<textarea value={reason[row.id] ?? ""} onChange={(event) => setReason((current) => ({ ...current, [row.id]: event.target.value }))} maxLength={500} /></label>
-      <div className="actions"><button className="button" type="button" onClick={() => void act(row.id, "changes_requested")}>{copy.moderatorChanges}</button><button className="button danger" type="button" onClick={() => void act(row.id, "reject_submission")}>{copy.moderatorReject}</button>{row.github_issue_number && <button className="button" type="button" onClick={() => void reviewWithAi(row.id)} disabled={advisory[row.id] === "running"}>{advisory[row.id] === "running" ? (locale === "ar" ? "جاري المراجعة…" : "Reviewing…") : (locale === "ar" ? "مراجعة بالذكاء الاصطناعي" : "Run AI advisory review")}</button>}</div>
+      {row.status === "approved" && <label>{locale === "ar" ? "معرّف السؤال المنشور" : "Published question ID"}<input value={questionIds[row.id] ?? ""} onChange={(event) => setQuestionIds((current) => ({ ...current, [row.id]: event.target.value }))} placeholder="question-id" /></label>}
+      <div className="actions"><button className="button" type="button" onClick={() => void act(row.id, "changes_requested")}>{copy.moderatorChanges}</button><button className="button danger" type="button" onClick={() => void act(row.id, "reject_submission")}>{copy.moderatorReject}</button>{row.status === "approved" && <button className="button primary" type="button" onClick={() => void publish(row.id)}>{locale === "ar" ? "نشر في المجتمع" : "Publish to community"}</button>}{row.github_issue_number && <button className="button" type="button" onClick={() => void reviewWithAi(row.id)} disabled={advisory[row.id] === "running"}>{advisory[row.id] === "running" ? (locale === "ar" ? "جاري المراجعة…" : "Reviewing…") : (locale === "ar" ? "مراجعة بالذكاء الاصطناعي" : "Run AI advisory review")}</button>}</div>
       {advisory[row.id] === "completed" && <p className="form-status" role="status">{locale === "ar" ? "تمت إضافة المراجعة الاستشارية إلى Issue." : "Advisory review added to the Issue."}</p>}
     </article>)}</div>}
   </div>;

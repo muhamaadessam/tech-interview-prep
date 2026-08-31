@@ -36,10 +36,16 @@ async function handle(request: Request): Promise<Response> {
     const anonymousId = `deleted:${await pseudonymousUserId(userId)}`;
     const submissions = await (await db(`/rest/v1/submissions?select=id,status&submitted_by=eq.${encodeURIComponent(userId)}`, key)).json() as Array<{ id: string; status: string }>;
     const published = submissions.filter((submission) => submission.status === "published").map((submission) => submission.id);
+    const communityQuestions = await (await db(`/rest/v1/interview_questions?select=id&community_contributor_user_id=eq.${encodeURIComponent(userId)}`, key)).json() as Array<{ id: string }>;
+    const communityQuestionIds = communityQuestions.map((question) => question.id);
+    if (communityQuestionIds.length) {
+      await db(`/rest/v1/interview_questions?id=in.(${communityQuestionIds.map(encodeURIComponent).join(",")})`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ community_contributor_user_id: anonymousId, community_contributor_username: "Community contributor" }) });
+    }
     if (published.length) {
       await db(`/rest/v1/submissions?id=in.(${published.map(encodeURIComponent).join(",")})`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ submitted_by: anonymousId, display_name: "Community contributor" }) });
       await db(`/rest/v1/submission_revisions?submission_id=in.(${published.map(encodeURIComponent).join(",")})`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ submitted_by: anonymousId }) });
     }
+    await db(`/rest/v1/question_likes?account_id=eq.${encodeURIComponent(userId)}`, key, { method: "DELETE", headers: { Prefer: "return=minimal" } });
     await db(`/rest/v1/submissions?submitted_by=eq.${encodeURIComponent(userId)}&status=neq.published`, key, { method: "DELETE", headers: { Prefer: "return=minimal" } });
     await db(`/rest/v1/question_progress?user_id=eq.${encodeURIComponent(userId)}`, key, { method: "DELETE" });
     await db(`/rest/v1/favorites?user_id=eq.${encodeURIComponent(userId)}`, key, { method: "DELETE" });

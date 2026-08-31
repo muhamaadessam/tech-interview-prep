@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit",
     "supabase:seed": "node --experimental-strip-types scripts/generate-supabase-seed.ts",
     "supabase:seed:check": "node --experimental-strip-types scripts/generate-supabase-seed.ts --check",
-    "test": "node --experimental-strip-types --test src/content/content.test.ts src/content/question-search.test.ts src/study/progress.test.ts src/submissions/validation.test.ts src/submissions/review-issue.test.ts src/moderation/api.test.ts src/tracks/preferences.test.ts src/tracks/active-track.test.ts src/advisory/review.test.ts",
+    "test": "node --experimental-strip-types --test src/content/content.test.ts src/content/question-search.test.ts src/study/progress.test.ts src/submissions/validation.test.ts src/submissions/review-issue.test.ts src/moderation/api.test.ts src/tracks/preferences.test.ts src/tracks/active-track.test.ts src/advisory/review.test.ts src/community/likes.test.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

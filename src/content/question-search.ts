@@ -1,12 +1,15 @@
 import type { InterviewQuestion, DifficultyLevel, Topic } from "./questions.ts";
 import type { QuestionProgress, SavedQuestions } from "../study/progress.ts";
 
+export type LibraryScope = "public" | "community";
+
 export type LibraryFilters = {
   search: string;
   topic: string;
   difficulty: DifficultyLevel | "";
   progress: QuestionProgress | "";
   favoriteOnly: boolean;
+  scope?: LibraryScope;
 };
 
 export type SearchableQuestion = Pick<InterviewQuestion, "id" | "slug" | "trackId" | "topicIds" | "difficulty" | "question" | "shortAnswer">;
@@ -18,12 +21,12 @@ export function questionHasTopic(question: SearchableQuestion, topicValue: strin
   return availableTopics.some((topic) => question.topicIds.includes(topic.id) && (topic.slug === topicValue || topic.id === topicValue));
 }
 
-export function filterQuestions(
-  interviewQuestions: SearchableQuestion[],
+export function filterQuestions<T extends SearchableQuestion>(
+  interviewQuestions: T[],
   filters: LibraryFilters,
   saved: SavedQuestions,
   availableTopics: Pick<Topic, "id" | "slug">[],
-): SearchableQuestion[] {
+): T[] {
   const search = filters.search.trim().toLocaleLowerCase();
 
   return interviewQuestions.filter((question) => {
@@ -51,6 +54,7 @@ export function filterInterviewQuestions<T extends SearchableQuestion>(
 
 export function toSearchParams(filters: LibraryFilters): URLSearchParams {
   const params = new URLSearchParams();
+  if (filters.scope === "community") params.set("scope", "community");
   if (filters.search.trim()) params.set("search", filters.search.trim());
   if (filters.topic) params.set("topic", filters.topic);
   if (filters.difficulty) params.set("difficulty", filters.difficulty);
@@ -59,7 +63,7 @@ export function toSearchParams(filters: LibraryFilters): URLSearchParams {
   return params;
 }
 
-export function fromSearchParams(params: URLSearchParams): Pick<LibraryFilters, "search" | "topic" | "difficulty" | "progress" | "favoriteOnly"> {
+export function fromSearchParams(params: URLSearchParams): Pick<LibraryFilters, "search" | "topic" | "difficulty" | "progress" | "favoriteOnly" | "scope"> {
   const difficulty = params.get("difficulty");
   const progress = params.get("progress");
   return {
@@ -68,5 +72,6 @@ export function fromSearchParams(params: URLSearchParams): Pick<LibraryFilters, 
     difficulty: difficulty && difficultyOptions.includes(difficulty as DifficultyLevel) ? difficulty as DifficultyLevel : "",
     progress: progress && ["not-started", "reviewing", "mastered"].includes(progress) ? progress as QuestionProgress : "",
     favoriteOnly: params.get("favorite") === "1",
+    scope: params.get("scope") === "community" ? "community" : "public",
   };
 }
