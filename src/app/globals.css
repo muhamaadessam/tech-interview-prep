@@ -59,7 +59,7 @@ body {
 a { color: inherit; }
 
 .shell {
-  width: min(1120px, calc(100% - 32px));
+  width: min(1600px, calc(100% - 48px));
   margin-inline: auto;
 }
 
