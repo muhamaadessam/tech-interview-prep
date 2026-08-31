@@ -1,11 +1,12 @@
 "use client";
 
-import { SignInButton, useAuth } from "@clerk/react";
+import { useAuth } from "@clerk/react";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 
 import { localeFromPathname, messages, type Locale } from "../i18n";
 import { loadTrackPreferences, resolveTrackSelection, saveTrackPreferences, validateTrackPreferences, type TrackOption } from "../tracks/preferences";
+import { AuthDialogTrigger } from "./auth-dialog";
 
 type Phase = "loading" | "saving" | "error" | "recovery" | "edit" | "success" | "done";
 
@@ -25,7 +26,7 @@ function AuthenticatedMyTracks({ locale }: { locale: Locale }) {
   const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const copy = messages[locale];
   if (!isLoaded) return <p className="empty-state" role="status">{copy.tracksLoading}</p>;
-  if (!isSignedIn) return <div className="empty-state"><h2>{copy.tracksSignIn}</h2><SignInButton mode="modal"><button className="button primary" type="button">{copy.signIn}</button></SignInButton></div>;
+  if (!isSignedIn) return <div className="empty-state"><h2>{copy.tracksSignIn}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
   return <TrackPreferencesManager locale={locale} mode="page" userId={userId} getToken={getToken} />;
 }
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { Show, SignInButton, SignUpButton, UserButton, useAuth } from "@clerk/react";
+import { useAuth } from "@clerk/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { messages, type Locale } from "../i18n";
 import { hasModeratorAccess } from "../moderation/api";
+import { AccountMenu, AuthDialogTrigger } from "./auth-dialog";
 
 const enabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
@@ -28,15 +29,7 @@ function EnabledClerkControls({ locale, myTracksHref, moderatorHref }: { locale:
 
   return (
     <div className="auth-controls">
-      <Show when="signed-out">
-        <SignInButton mode="modal">
-          <button className="auth-button" type="button">{copy.signIn}</button>
-        </SignInButton>
-        <SignUpButton mode="modal">
-          <button className="auth-button auth-button-primary" type="button">{copy.signUp}</button>
-        </SignUpButton>
-      </Show>
-      <Show when="signed-in"><Link className="auth-button" href={myTracksHref}>{copy.myTracks}</Link>{moderator && <Link className="auth-button" href={moderatorHref}>{copy.moderator}</Link>}<UserButton /></Show>
+      {!isSignedIn ? <><AuthDialogTrigger locale={locale} className="auth-button">{copy.signIn}</AuthDialogTrigger><AuthDialogTrigger locale={locale} mode="signUp" className="auth-button auth-button-primary">{copy.signUp}</AuthDialogTrigger></> : <><Link className="auth-button" href={myTracksHref}>{copy.myTracks}</Link>{moderator && <Link className="auth-button" href={moderatorHref}>{copy.moderator}</Link>}<AccountMenu locale={locale} myTracksHref={myTracksHref} moderatorHref={moderatorHref} showModerator={false} /></>}
     </div>
   );
 }

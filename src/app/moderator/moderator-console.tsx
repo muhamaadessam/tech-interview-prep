@@ -1,11 +1,12 @@
 "use client";
 
-import { SignInButton, useAuth } from "@clerk/react";
+import { useAuth } from "@clerk/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { messages, type Locale } from "../../i18n";
 import { AdvisoryError, runAdvisory } from "../../advisory/api";
 import { ModerationError, moderationRequest, type ModerationStatus, type ModerationSubmission } from "../../moderation/api";
+import { AuthDialogTrigger } from "../auth-dialog";
 
 const statuses: ModerationStatus[] = ["pending", "issue_created", "in_review", "changes_requested", "approved"];
 
@@ -50,7 +51,7 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   }
 
   if (!isLoaded) return <p className="empty-state">{copy.moderatorLoading}</p>;
-  if (!isSignedIn) return <div className="empty-state"><h2>{copy.moderatorSignIn}</h2><SignInButton mode="modal"><button className="button primary" type="button">{copy.signIn}</button></SignInButton></div>;
+  if (!isSignedIn) return <div className="empty-state"><h2>{copy.moderatorSignIn}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
 
   return <div className="moderator-console">
     <div className="moderator-toolbar"><label>{copy.moderatorStatus}<select value={status} onChange={(event) => setStatus(event.target.value as ModerationStatus)}>{statuses.map((value) => <option key={value} value={value}>{statusLabel(value, locale)}</option>)}</select></label><button className="button" type="button" onClick={() => void load()} disabled={loading}>{loading ? copy.moderatorLoading : copy.moderatorRefresh}</button></div>

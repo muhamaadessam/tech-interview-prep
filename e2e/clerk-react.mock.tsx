@@ -23,4 +23,11 @@ export function Show({ when, children }: { when: "signed-in" | "signed-out"; chi
 export function SignInButton({ children }: { children: ReactNode }) { return children; }
 export function SignUpButton({ children }: { children: ReactNode }) { return children; }
 export function UserButton() { return null; }
+export function useClerk() { return { signOut: async () => { localStorage.removeItem("playwright-authenticated"); } }; }
+export function useSignIn() {
+  return { fetchStatus: "idle", signIn: { status: "complete", password: async () => ({ error: null }), sso: async () => ({ error: null }), finalize: async () => {} } };
+}
+export function useSignUp() {
+  return { fetchStatus: "idle", signUp: { status: "missing_requirements", unverifiedFields: ["email_address"], password: async () => ({ error: null }), sso: async () => ({ error: null }), verifications: { sendEmailCode: async () => ({ error: null }), verifyEmailCode: async () => ({ error: null }) }, finalize: async () => {} } };
+}
 export function AuthenticateWithRedirectCallback() { return null; }
