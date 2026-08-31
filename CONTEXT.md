@@ -29,7 +29,7 @@ An ordered set of Interview Questions selected by Topic and Difficulty Level for
 _Avoid_: Quiz, mock interview
 
 **Submission**:
-A proposed Interview Question sent by an authenticated contributor. Its Track and question are required; Topics and learning material are optional enrichment. A Submission is not part of the public catalogue until it passes Review.
+A proposed Interview Question sent by an authenticated contributor. Its Track, question, and CC BY publication consent are required; Topics, Difficulty Level, and learning material are optional enrichment. A Submission is not part of the public catalogue until it passes Review.
 _Avoid_: User question, draft question
 
 **Onboarding**:
