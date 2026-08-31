@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 import Fastify, { type FastifyInstance } from "fastify";
 import { AuthError, createClerkAuth, type ClerkAuth } from "./auth.ts";
 import { createAccountPolicy, createSupabaseAccountRoleStore, PolicyError, type AccountRoleStore } from "./account-policy.ts";
+import { createSupabaseTrackStore, TrackStoreError, type TrackStore } from "./tracks.ts";
 
 type LogSink = { info?: (line: string) => void; error?: (line: string) => void };
 
@@ -12,6 +13,7 @@ export type ServerOptions = {
   logger?: LogSink;
   auth?: ClerkAuth;
   policy?: ReturnType<typeof createAccountPolicy>;
+  tracks?: TrackStore;
 };
 
 export function accountPolicyEnabled(value = process.env.ACCOUNT_POLICY_ENABLED): boolean {
@@ -26,7 +28,7 @@ function requestId(value: unknown): string {
   return typeof value === "string" && /^[a-zA-Z0-9._:-]{1,120}$/.test(value) ? value : crypto.randomUUID();
 }
 
-export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy }: ServerOptions): Promise<FastifyInstance> {
+export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks }: ServerOptions): Promise<FastifyInstance> {
   const origins = new Set(allowedOrigins.filter(Boolean));
   const startedAt = new WeakMap<object, bigint>();
   const app = Fastify({ logger: false, genReqId: (request) => requestId(request.headers["x-request-id"]) });
@@ -77,6 +79,23 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     if (!isReady) return reply.code(503).send({ status: "not_ready" });
     return { status: "ready" };
   });
+  app.get("/v1/tracks", async (request, reply) => {
+    if (!tracks) return reply.code(503).send({ error: "tracks_not_configured" });
+    const locale = typeof (request.query as { locale?: unknown }).locale === "string" ? (request.query as { locale: string }).locale : "en";
+    return { tracks: await tracks.listTracks(locale) };
+  });
+  app.get("/v1/me/track-preferences", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request, reply) => {
+    if (!tracks) return reply.code(503).send({ error: "tracks_not_configured" });
+    const locale = typeof (request.query as { locale?: unknown }).locale === "string" ? (request.query as { locale: string }).locale : "en";
+    return tracks.getPreferences(request.account!.sub, locale);
+  });
+  app.put("/v1/me/track-preferences", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request, reply) => {
+    if (!tracks) return reply.code(503).send({ error: "tracks_not_configured" });
+    const body = request.body as { trackIds?: unknown; defaultTrackId?: unknown };
+    if (!Array.isArray(body?.trackIds) || !body.trackIds.every((id) => typeof id === "string") || typeof body.defaultTrackId !== "string") return reply.code(400).send({ error: "invalid_track_preferences" });
+    await tracks.savePreferences(request.account!.sub, body.trackIds, body.defaultTrackId, request.account!.token);
+    return reply.code(204).send();
+  });
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof AuthError) {
@@ -85,6 +104,10 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     }
     if (error instanceof PolicyError) {
       reply.code(error.statusCode).send({ error: error.code });
+      return;
+    }
+    if (error instanceof TrackStoreError) {
+      reply.code(error.status).send({ error: error.code });
       return;
     }
     const statusCode = typeof error === "object" && error !== null && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 500;
@@ -102,7 +125,8 @@ async function main() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const roleStore: AccountRoleStore | undefined = supabaseUrl && serviceRoleKey ? createSupabaseAccountRoleStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const policy = accountPolicyEnabled() && roleStore ? createAccountPolicy(roleStore) : undefined;
-  const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy });
+  const tracks = supabaseUrl && serviceRoleKey ? createSupabaseTrackStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
+  const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks });
   const port = Number(process.env.PORT ?? 3000);
   await app.listen({ host: "0.0.0.0", port: Number.isInteger(port) && port > 0 ? port : 3000 });
 }

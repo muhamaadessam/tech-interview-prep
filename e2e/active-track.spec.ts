@@ -4,6 +4,11 @@ type Preference = { trackId: "flutter" | "backend"; isDefault: boolean };
 
 async function authenticate(page: Page, preferences: Preference[]) {
   await page.addInitScript(() => localStorage.setItem("playwright-authenticated", "true"));
+  await page.route("http://127.0.0.1:3001/v1/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/tracks")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ tracks: [{ id: "flutter", slug: "flutter", name: "Flutter" }, { id: "backend", slug: "backend", name: "Backend" }] }) });
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ tracks: preferences.map(({ trackId }) => ({ id: trackId, name: trackId === "flutter" ? "Flutter" : "Backend" })), preferences, unavailableTracks: [] }) });
+  });
   await page.route("https://mock.supabase.local/rest/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname.split("/rest/v1/")[1];
     const body = path.startsWith("tracks")
@@ -17,6 +22,18 @@ async function authenticate(page: Page, preferences: Preference[]) {
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
 }
+
+test("anonymous Track catalogue can be served by the Node migration route", async ({ page }) => {
+  test.skip(process.env.NEXT_PUBLIC_NODE_API_ENABLED !== "true", "run with npm run test:e2e:node");
+  let nodeRequests = 0;
+  await page.route("http://127.0.0.1:3001/v1/tracks?locale=en", async (route) => {
+    nodeRequests += 1;
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ tracks: [{ id: "backend", slug: "backend", name: "Backend" }] }) });
+  });
+  await page.goto("/en/topics/");
+  await expect(page.getByLabel("Active Track")).toHaveValue("backend");
+  expect(nodeRequests).toBeGreaterThan(0);
+});
 
 test("anonymous browsing exposes active Tracks and keeps a temporary Track in shareable links", async ({ page }) => {
   const preferenceWrites: string[] = [];

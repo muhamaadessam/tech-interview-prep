@@ -1,7 +1,7 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import type { FastifyRequest } from "fastify";
 
-export type AccountContext = { sub: string; claims: JWTPayload };
+export type AccountContext = { sub: string; claims: JWTPayload; token?: string };
 
 export type ClerkAuthOptions = {
   jwksUrl: string;
@@ -40,7 +40,7 @@ export function createClerkAuth(options: ClerkAuthOptions): ClerkAuth {
 
         const { payload } = await jwtVerify(match[1], jwks, { issuer: options.issuer, algorithms: ["RS256"] });
         if (typeof payload.sub !== "string" || payload.sub.length === 0) throw new AuthError("invalid_subject");
-        request.account = { sub: payload.sub, claims: payload };
+        request.account = { sub: payload.sub, claims: payload, token: match[1] };
       } catch (error) {
         if (error instanceof AuthError) throw error;
         throw new AuthError("invalid_token");

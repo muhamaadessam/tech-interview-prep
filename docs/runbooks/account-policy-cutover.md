@@ -6,12 +6,13 @@ server-only `SUPABASE_SERVICE_ROLE_KEY` to resolve `account_roles`; those values
 must never be exposed to the static frontend.
 
 Migrated handlers select `selectRoute(accountPolicyEnabled(), nodeHandler,
-legacyHandler)`. The current frontend has no migrated business route yet, so it
-continues using the existing Edge Function path; this flag is the rollback seam
-for the first Track/Account route.
+legacyHandler)`. Track Preferences now use the Node route when
+`NEXT_PUBLIC_NODE_API_ENABLED=true`; disabling that frontend flag is the rollback
+seam to the existing Supabase path.
 
-To roll back without a schema change, set `ACCOUNT_POLICY_ENABLED=false` and
-restart the backend. The frontend remains on its existing Edge Function paths;
+To roll back without a schema change, set `ACCOUNT_POLICY_ENABLED=false`, set
+`NEXT_PUBLIC_NODE_API_ENABLED=false`, rebuild the static frontend, and restart
+the backend. The frontend then uses its existing Supabase/Edge Function paths;
 the deployed Edge Functions (`submit-question`, `moderator-actions`,
 `account-delete`, and `ai-advisory`) remain the rollback implementations.
 

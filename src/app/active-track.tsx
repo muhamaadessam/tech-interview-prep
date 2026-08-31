@@ -8,8 +8,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { tracks } from "../content/questions";
 import { localeFromPathname, localizedHref, messages, type Locale } from "../i18n";
 import { resolveActiveTrack, withQueryContext } from "../tracks/active-track";
-import { loadTrackPreferences, type TrackPreferenceState } from "../tracks/preferences";
+import { loadPublicTracks, loadTrackPreferences, type TrackPreferenceState } from "../tracks/preferences";
 import { LoadingPlaceholder } from "./loading-placeholder";
+import { nodeApiEnabled } from "../backend/api";
 
 type Phase = "loading" | "ready" | "error";
 type ActiveTrackValue = {
@@ -47,6 +48,7 @@ function ActiveTrackProvider({ children, authenticated, loading = false, userId,
   const requestedTrack = new URLSearchParams(query).get("track");
   const [urlReady, setUrlReady] = useState(false);
   const [preferences, setPreferences] = useState<TrackPreferenceState | null>(null);
+  const [publicTracks, setPublicTracks] = useState<typeof tracks>(tracks);
   const [phase, setPhase] = useState<Phase>(loading || authenticated ? "loading" : "ready");
   const [reload, setReload] = useState(0);
 
@@ -70,15 +72,34 @@ function ActiveTrackProvider({ children, authenticated, loading = false, userId,
   }, [authenticated, getToken, loading, locale, reload, userId]);
 
   useEffect(() => {
+    if (loading || authenticated || !nodeApiEnabled()) return;
+    let current = true;
+    loadPublicTracks({ locale }).then((options) => {
+      if (!current) return;
+      const dynamicTracks = options.flatMap((option) => option.slug ? [{ id: option.id, slug: option.slug, name: option.name }] : []);
+      setPublicTracks(dynamicTracks);
+    }).catch(() => { if (current) setPublicTracks(tracks); });
+    return () => { current = false; };
+  }, [authenticated, loading, locale]);
+
+  useEffect(() => {
     const retry = () => setReload((value) => value + 1);
     window.addEventListener("track-preferences-changed", retry);
     return () => window.removeEventListener("track-preferences-changed", retry);
   }, []);
 
+  const catalogueTracks = useMemo(() => {
+    const source = authenticated && preferences ? preferences.tracks : publicTracks;
+    return source.flatMap((track) => {
+      const slug = track.slug ?? publicTracks.find(({ id }) => id === track.id)?.slug;
+      return slug ? [{ id: track.id, slug, name: track.name }] : [];
+    });
+  }, [authenticated, preferences, publicTracks]);
+
   const resolution = resolveActiveTrack({
     requestedTrack,
-    tracks,
-    activeTrackIds: authenticated ? (preferences?.tracks.map(({ id }) => id) ?? []) : tracks.map(({ id }) => id),
+    tracks: catalogueTracks,
+    activeTrackIds: authenticated ? (preferences?.tracks.map(({ id }) => id) ?? []) : catalogueTracks.map(({ id }) => id),
     preferenceTrackIds: preferences?.preferences.map(({ trackId }) => trackId) ?? [],
     defaultTrackId: preferences?.preferences.find(({ isDefault }) => isDefault)?.trackId ?? null,
     authenticated,

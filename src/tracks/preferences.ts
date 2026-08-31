@@ -2,8 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 
 import type { Locale } from "../i18n.ts";
 import { getSupabaseToken } from "../supabase/auth-token.ts";
+import { nodeApiUrl, nodeRequest } from "../backend/api.ts";
 
-export type TrackOption = { id: string; name: string };
+export type TrackOption = { id: string; name: string; slug?: string };
 export type TrackPreference = { trackId: string; isDefault: boolean };
 export type TrackPreferenceState = { tracks: TrackOption[]; preferences: TrackPreference[]; unavailableTracks: TrackOption[] };
 export type TrackSelection = { selected: string[]; defaultTrack: string; onboarding: boolean; recovery: boolean };
@@ -78,6 +79,13 @@ export async function loadTrackPreferences({
   getToken: TokenProvider;
   fetchImpl?: FetchLike;
 }): Promise<TrackPreferenceState> {
+  const nodeUrl = nodeApiUrl();
+  if (nodeUrl) {
+    const token = await getSupabaseToken(getToken);
+    if (!token) throw new TrackPreferencesError("unauthenticated", 401);
+    try { return await nodeRequest<TrackPreferenceState>({ path: `/me/track-preferences?locale=${encodeURIComponent(locale)}`, token, fetchImpl }); }
+    catch (error) { throw new TrackPreferencesError((error as { code?: string }).code ?? "track_preferences_unavailable", (error as { status?: number }).status ?? 503); }
+  }
   const client = await authenticatedClient(getToken, fetchImpl);
   const [tracksResult, preferencesResult] = await Promise.all([
     client.from("tracks").select("id,is_active,track_locales!inner(locale,name)").eq("is_active", true).eq("track_locales.locale", locale).order("id"),
@@ -114,10 +122,25 @@ export async function saveTrackPreferences({
 }): Promise<void> {
   const validation = validateTrackPreferences(trackIds, defaultTrackId);
   if (validation) throw new TrackPreferencesError(validation, 400);
+  const nodeUrl = nodeApiUrl();
+  if (nodeUrl) {
+    const token = await getSupabaseToken(getToken);
+    if (!token) throw new TrackPreferencesError("unauthenticated", 401);
+    try { await nodeRequest({ path: "/me/track-preferences", token, fetchImpl, init: { method: "PUT", body: JSON.stringify({ trackIds: [...new Set(trackIds)], defaultTrackId }) } }); }
+    catch (error) { throw new TrackPreferencesError((error as { code?: string }).code ?? "track_preferences_unavailable", (error as { status?: number }).status ?? 503); }
+    return;
+  }
   const client = await authenticatedClient(getToken, fetchImpl);
   const { error } = await client.rpc("set_track_preferences", {
     p_track_ids: [...new Set(trackIds)],
     p_default_track_id: defaultTrackId,
   });
   if (error) fail(error);
+}
+
+export async function loadPublicTracks({ locale, fetchImpl = fetch }: { locale: Locale; fetchImpl?: FetchLike }): Promise<TrackOption[]> {
+  const nodeUrl = nodeApiUrl();
+  if (!nodeUrl) throw new TrackPreferencesError("track_preferences_unavailable", 503);
+  try { return (await nodeRequest<{ tracks: TrackOption[] }>({ path: `/tracks?locale=${encodeURIComponent(locale)}`, fetchImpl })).tracks; }
+  catch (error) { throw new TrackPreferencesError((error as { code?: string }).code ?? "track_preferences_unavailable", (error as { status?: number }).status ?? 503); }
 }

@@ -60,13 +60,21 @@ test("Fastify, Clerk, Account policy, and Supabase adapter integrate through one
   const jwks = await jwksServer(() => [key.jwk]);
   let role = { role: "moderator", suspended: false };
   const roleStore = createSupabaseAccountRoleStore({ url: "https://db.example", serviceRoleKey: "service-secret", fetchImpl: async () => new Response(JSON.stringify([role]), { status: 200 }) });
-  const app = await buildServer({ allowedOrigins: [], auth: createClerkAuth({ jwksUrl: jwks.url, issuer }), policy: createAccountPolicy(roleStore) });
+  let saved: { userId: string; token?: string } | undefined;
+  const app = await buildServer({ allowedOrigins: [], auth: createClerkAuth({ jwksUrl: jwks.url, issuer }), policy: createAccountPolicy(roleStore), tracks: {
+    listTracks: async () => [{ id: "flutter", slug: "flutter", name: "Flutter" }],
+    getPreferences: async () => ({ tracks: [{ id: "flutter", slug: "flutter", name: "Flutter" }], preferences: [{ trackId: "flutter", isDefault: true }], unavailableTracks: [] }),
+    savePreferences: async (userId, _trackIds, _defaultTrackId, token) => { saved = { userId, token }; },
+  } });
   app.get("/v1/moderator", { preHandler: [app.authenticate, app.requireModerator] }, async () => ({ ok: true }));
   app.get("/v1/contribute", { preHandler: [app.authenticate, app.requireConfirmedEmail] }, async () => ({ ok: true }));
   const bearer = async (claims?: Record<string, unknown>) => `Bearer ${await token(key.privateKey, "key-1", claims)}`;
 
   assert.equal((await app.inject({ method: "GET", url: "/v1/moderator" })).statusCode, 401);
   assert.equal((await app.inject({ method: "GET", url: "/v1/moderator", headers: { authorization: await bearer() } })).statusCode, 200);
+  assert.equal((await app.inject({ method: "GET", url: "/v1/me/track-preferences?locale=en", headers: { authorization: await bearer() } })).statusCode, 200);
+  assert.equal((await app.inject({ method: "PUT", url: "/v1/me/track-preferences", headers: { authorization: await bearer(), "content-type": "application/json" }, payload: { trackIds: ["flutter"], defaultTrackId: "flutter" } })).statusCode, 204);
+  assert.equal(saved?.userId, "user_123");
   role = { role: "moderator", suspended: true };
   assert.equal((await app.inject({ method: "GET", url: "/v1/moderator", headers: { authorization: await bearer() } })).statusCode, 403);
   role = { role: "learner", suspended: false };

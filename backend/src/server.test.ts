@@ -20,6 +20,17 @@ test("versioned health and readiness routes are available", async () => {
   await app.close();
 });
 
+test("public Track route delegates to the configured store", async () => {
+  let locale = "";
+  const app = await buildServer({ allowedOrigins: [], tracks: { listTracks: async (value) => { locale = value; return [{ id: "flutter", slug: "flutter", name: "Flutter" }]; }, getPreferences: async () => ({ tracks: [], preferences: [], unavailableTracks: [] }), savePreferences: async () => undefined } });
+  const response = await app.inject({ method: "GET", url: "/v1/tracks?locale=ar" });
+
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.json(), { tracks: [{ id: "flutter", slug: "flutter", name: "Flutter" }] });
+  assert.equal(locale, "ar");
+  await app.close();
+});
+
 test("readiness is public and reports the configured process state", async () => {
   const app = await buildServer({ allowedOrigins: ["https://frontend.example"], ready: async () => true });
   const response = await app.inject({ method: "GET", url: "/ready" });
