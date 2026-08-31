@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 import type { Locale } from "../i18n.ts";
+import { getSupabaseToken } from "../supabase/auth-token.ts";
 
 export type TrackOption = { id: string; name: string };
 export type TrackPreference = { trackId: string; isDefault: boolean };
@@ -25,7 +26,7 @@ function config(): { url: string; key: string } | null {
 async function authenticatedClient(getToken: TokenProvider, fetchImpl: FetchLike) {
   const configured = config();
   if (!configured) throw new TrackPreferencesError("track_preferences_unavailable", 503);
-  const token = await getToken();
+  const token = await getSupabaseToken(getToken);
   if (!token) throw new TrackPreferencesError("unauthenticated", 401);
   return createClient(configured.url, configured.key, {
     accessToken: async () => token,

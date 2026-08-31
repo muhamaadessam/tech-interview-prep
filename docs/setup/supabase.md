@@ -18,6 +18,8 @@ The browser only receives the public Supabase URL and two publishable keys.
    `https://tech-interview-prep-1ux.pages.dev`.
 3. Configure Clerk's native Supabase integration before enabling RLS policies that
    depend on the signed-in Clerk user.
+   The Clerk session token must include `role: authenticated`; the repository uses
+   the `supabase` JWT template when available for browser RLS requests.
 4. Store these Edge Function secrets: `CLERK_SECRET_KEY`,
    `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY`,
    `GITHUB_REPOSITORY_OWNER`, and `GITHUB_REPOSITORY_NAME`. The GitHub App only

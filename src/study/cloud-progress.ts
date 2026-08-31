@@ -5,6 +5,7 @@ import {
   type SavedQuestions,
   type StudyStorage,
 } from "./progress.ts";
+import { getSupabaseToken } from "../supabase/auth-token.ts";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -76,7 +77,7 @@ export async function syncStudyProgress({
 }): Promise<{ synced: boolean; merged: SavedQuestions }> {
   const local = getSavedQuestions(storage, storageKey);
   if (!supabaseUrl || !supabaseKey) return { synced: false, merged: local };
-  const token = await getToken();
+  const token = await getSupabaseToken(getToken);
   if (!token) return { synced: false, merged: local };
 
   const progressResponse = await request(fetchImpl, `${supabaseUrl}/rest/v1/question_progress?select=question_id,progress&user_id=eq.${encodeURIComponent(userId)}`, token);
