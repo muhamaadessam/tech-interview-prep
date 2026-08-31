@@ -75,7 +75,7 @@ An Interview Question created from a reviewed Submission and explicitly publishe
 _Avoid_: User question, unreviewed submission
 
 **Question Like**:
-One Account's positive vote for a Community Interview Question. An Account may Like a question at most once, cannot Like its own contribution, and Likes are not used for public-catalogue questions.
+One confirmed Account's positive vote for a Community Interview Question. An Account may Like a question at most once, can undo the Like, cannot Like its own contribution, and Likes from suspended or deleted Accounts do not count. Likes are not used for public-catalogue questions.
 _Avoid_: Rating, review, approval
 
 **Account**:
