@@ -2,13 +2,16 @@
   "name": "tech-interview-prep-backend",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22 <23" },
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "dev": "node --experimental-strip-types --watch src/server.ts",
     "start": "node --experimental-strip-types src/server.ts",
-    "test": "node --experimental-strip-types --test src/server.test.ts"
+    "test": "node --experimental-strip-types --test src/server.test.ts src/auth.test.ts"
   },
   "dependencies": {
-    "fastify": "^5.6.0"
+    "fastify": "^5.6.0",
+    "jose": "^6.2.10"
   }
 }
