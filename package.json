@@ -9,10 +9,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build && node scripts/fix-locale-html.mjs",
+    "release:check": "npm run typecheck && npm test && npm run supabase:seed:check && npm run build && git diff --check",
     "typecheck": "tsc --noEmit",
     "supabase:seed": "node --experimental-strip-types scripts/generate-supabase-seed.ts",
     "supabase:seed:check": "node --experimental-strip-types scripts/generate-supabase-seed.ts --check",
-    "test": "node --experimental-strip-types --test src/content/content.test.ts src/content/question-search.test.ts src/study/progress.test.ts src/submissions/validation.test.ts",
+    "test": "node --experimental-strip-types --test src/content/content.test.ts src/content/question-search.test.ts src/study/progress.test.ts src/submissions/validation.test.ts src/moderation/api.test.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

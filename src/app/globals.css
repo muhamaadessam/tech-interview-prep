@@ -242,6 +242,14 @@ h3 { line-height: 1.45; }
 .button:disabled { cursor: not-allowed; opacity: .48; transform: none; }
 
 .submission-form { display: grid; gap: 22px; max-width: 860px; padding: 24px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: var(--shadow); }
+.moderator-console { display: grid; gap: 20px; }
+.moderator-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
+.moderator-toolbar label, .moderator-card label { display: grid; gap: 6px; color: var(--muted); font-weight: 800; }
+.moderator-toolbar select, .moderator-card textarea { min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
+.moderator-list { display: grid; gap: 16px; }
+.moderator-card { display: grid; gap: 12px; }
+.moderator-card h2, .moderator-card p { margin: 0; }
+.moderator-card textarea { min-height: 84px; resize: vertical; }
 .submission-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .submission-grid > label, .submission-topics { display: grid; gap: 7px; color: var(--muted); font-weight: 800; }
 .submission-grid input, .submission-grid select, .submission-grid textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
@@ -274,6 +282,7 @@ h3 { line-height: 1.45; }
   .interview-builder { grid-template-columns: 1fr; }
   .topic-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .submission-grid { grid-template-columns: 1fr; }
+  .moderator-toolbar { align-items: stretch; flex-direction: column; }
   .submission-grid > label, .submission-topics { grid-column: auto !important; }
   .library-toolbar { align-items: flex-start; flex-direction: column; }
   .section-header, .footer, .reset-panel { align-items: flex-start; flex-direction: column; }

@@ -81,10 +81,17 @@ async function handle(request: Request): Promise<Response> {
     const { key } = config();
     const roles = await (await db(`/rest/v1/account_roles?select=role,suspended&user_id=eq.${encodeURIComponent(actor)}&limit=1`, key)).json() as Array<{ role?: string; suspended?: boolean }>;
     if (roles[0]?.role !== "moderator" || roles[0]?.suspended) return response({ error: "moderator_required" }, 403);
-    const body = await request.json() as { action?: unknown; targetUserId?: unknown; submissionId?: unknown; questionId?: unknown; reason?: unknown };
+    const body = await request.json() as { action?: unknown; targetUserId?: unknown; submissionId?: unknown; questionId?: unknown; reason?: unknown; status?: unknown };
     const action = text(body.action, 60);
     const reason = text(body.reason);
     if (!action) return response({ error: "payload_invalid" }, 400);
+    if (action === "list_submissions") {
+      const allowed = ["pending", "issue_created", "in_review", "changes_requested", "approved"];
+      const status = text(body.status, 40) ?? "pending";
+      if (!allowed.includes(status)) return response({ error: "payload_invalid" }, 400);
+      const rows = await (await db(`/rest/v1/submissions?select=id,status,track_id,topic_ids,difficulty,payload,review_notes,github_issue_number,github_issue_url,created_at&status=eq.${encodeURIComponent(status)}&order=created_at.asc&limit=50`, key)).json();
+      return response({ submissions: rows });
+    }
     if (action === "suspend_account" || action === "reinstate_account") {
       const target = text(body.targetUserId, 200);
       if (!target) return response({ error: "payload_invalid" }, 400);
@@ -93,12 +100,17 @@ async function handle(request: Request): Promise<Response> {
       await audit(key, actor, action, "account", await pseudonymousUserId(target), reason);
       return response({ ok: true, action });
     }
-    if (action === "reject_submission") {
+    if (action === "changes_requested" || action === "reject_submission") {
       const submissionId = text(body.submissionId, 80);
       if (!submissionId || !reason) return response({ error: "payload_invalid" }, 400);
       const rows = await (await db(`/rest/v1/submissions?select=id,github_issue_number,status&id=eq.${encodeURIComponent(submissionId)}&limit=1`, key)).json() as Array<{ id: string; github_issue_number: number | null; status: string }>;
       if (!rows[0]) return response({ error: "not_found" }, 404);
       if (rows[0].status === "published") return response({ error: "use_unpublish_action" }, 409);
+      if (action === "changes_requested") {
+        await db(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "changes_requested", review_notes: reason, reviewed_by: actor, reviewed_at: new Date().toISOString() }) });
+        await audit(key, actor, action, "submission", submissionId, reason);
+        return response({ ok: true });
+      }
       const closed = await closeGithubIssue(rows[0].github_issue_number);
       if (!closed) return response({ error: "github_close_failed", retryable: true }, 503);
       await db(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "rejected", review_notes: reason, reviewed_by: actor, reviewed_at: new Date().toISOString(), closed_at: new Date().toISOString(), closed_by: actor }) });

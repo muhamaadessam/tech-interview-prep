@@ -1,0 +1,64 @@
+"use client";
+
+import { SignInButton, useAuth } from "@clerk/react";
+import { useCallback, useEffect, useState } from "react";
+
+import { messages, type Locale } from "../../i18n";
+import { ModerationError, moderationRequest, type ModerationStatus, type ModerationSubmission } from "../../moderation/api";
+
+const statuses: ModerationStatus[] = ["pending", "issue_created", "in_review", "changes_requested", "approved"];
+
+export function ModeratorConsole({ locale, clerkEnabled }: { locale: Locale; clerkEnabled: boolean }) {
+  if (!clerkEnabled) return <p className="empty-state">{locale === "ar" ? "لوحة المشرف تحتاج إعداد تسجيل الدخول." : "The moderator console needs authentication setup."}</p>;
+  return <AuthenticatedModeratorConsole locale={locale} />;
+}
+
+function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
+  const copy = messages[locale];
+  const { isLoaded, isSignedIn, getToken } = useAuth();
+  const [status, setStatus] = useState<ModerationStatus>("pending");
+  const [rows, setRows] = useState<ModerationSubmission[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [reason, setReason] = useState<Record<string, string>>({});
+
+  const load = useCallback(async () => {
+    setLoading(true); setError("");
+    try {
+      const response = await moderationRequest<{ submissions: ModerationSubmission[] }>({ getToken, body: { action: "list_submissions", status } });
+      setRows(response.submissions ?? []);
+    } catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
+    finally { setLoading(false); }
+  }, [getToken, status]);
+
+  useEffect(() => { if (isSignedIn) void load(); }, [isSignedIn, load]);
+
+  async function act(submissionId: string, action: "changes_requested" | "reject_submission") {
+    const note = reason[submissionId]?.trim();
+    if (!note) return;
+    setError("");
+    try { await moderationRequest({ getToken, body: { action, submissionId, reason: note } }); setReason((current) => ({ ...current, [submissionId]: "" })); await load(); }
+    catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
+  }
+
+  if (!isLoaded) return <p className="empty-state">{copy.moderatorLoading}</p>;
+  if (!isSignedIn) return <div className="empty-state"><h2>{copy.moderatorSignIn}</h2><SignInButton mode="modal"><button className="button primary" type="button">{copy.signIn}</button></SignInButton></div>;
+
+  return <div className="moderator-console">
+    <div className="moderator-toolbar"><label>{copy.moderatorStatus}<select value={status} onChange={(event) => setStatus(event.target.value as ModerationStatus)}>{statuses.map((value) => <option key={value} value={value}>{statusLabel(value, locale)}</option>)}</select></label><button className="button" type="button" onClick={() => void load()} disabled={loading}>{loading ? copy.moderatorLoading : copy.moderatorRefresh}</button></div>
+    {error && <p className="form-error" role="alert">{error}</p>}
+    {!loading && !rows.length && <p className="empty-state">{copy.moderatorEmpty}</p>}
+    <div className="moderator-list">{rows.map((row) => <article className="card moderator-card" key={row.id}>
+      <div className="meta"><span className="chip">{row.difficulty}</span><span className="chip">{statusLabel(row.status, locale)}</span>{row.github_issue_url && <a className="text-link" href={row.github_issue_url} target="_blank" rel="noreferrer">GitHub #{row.github_issue_number}</a>}</div>
+      <h2>{row.payload.question ?? "—"}</h2><p>{row.payload.shortAnswer ?? ""}</p>
+      {row.review_notes && <p className="field-hint">{row.review_notes}</p>}
+      <label>{copy.moderatorReason}<textarea value={reason[row.id] ?? ""} onChange={(event) => setReason((current) => ({ ...current, [row.id]: event.target.value }))} maxLength={500} /></label>
+      <div className="actions"><button className="button" type="button" onClick={() => void act(row.id, "changes_requested")}>{copy.moderatorChanges}</button><button className="button danger" type="button" onClick={() => void act(row.id, "reject_submission")}>{copy.moderatorReject}</button></div>
+    </article>)}</div>
+  </div>;
+}
+
+function statusLabel(status: ModerationStatus, locale: Locale): string {
+  const labels = { ar: { pending: "قيد الانتظار", issue_created: "Issue منشأ", in_review: "قيد المراجعة", changes_requested: "مطلوب تعديل", approved: "مقبول", rejected: "مرفوض", published: "منشور", failed: "فشل" }, en: { pending: "Pending", issue_created: "Issue created", in_review: "In review", changes_requested: "Changes requested", approved: "Approved", rejected: "Rejected", published: "Published", failed: "Failed" } } as const;
+  return labels[locale][status];
+}

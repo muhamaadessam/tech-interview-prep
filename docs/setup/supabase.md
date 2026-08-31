@@ -72,7 +72,9 @@ Submission revisions and rate-limit counters are service-role-only tables; the
 browser can read only its own Submission rows.
 
 The `moderator-actions` function is the only write path for suspensions,
-rejections, and unpublishing. The `account-delete` function removes private
+requesting changes, rejections, and unpublishing. It also serves the
+oldest-first moderator queue used by `/ar/moderator` and `/en/moderator`. The
+`account-delete` function removes private
 account data and unpublished submissions, anonymizes published attribution,
 records an append-only audit event, and then deletes the Clerk account. Both
 functions require the same Clerk JWT settings and service-role key; GitHub App
@@ -80,6 +82,11 @@ secrets are needed for closing review Issues after a rejection. Audit rows carry
 a 12-month expiry and are never exposed to browser roles. If Clerk deletion
 temporarily fails, the function returns a retryable error after the database
 cleanup; published attribution remains anonymized.
+
+Publishing remains deliberately gated on a complete bilingual revision: a
+moderator must create Arabic and English `question_revision_locales` rows and
+select the immutable revision through `interview_questions.published_revision_id`.
+Do not bypass the catalogue constraints with direct client writes.
 
 ## Acceptance checks
 

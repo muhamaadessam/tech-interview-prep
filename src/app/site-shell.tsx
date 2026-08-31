@@ -9,7 +9,7 @@ import { ThemeToggle } from "./theme-toggle";
 import { BrandLogo } from "./logo";
 import { ClerkControls } from "./clerk-controls";
 
-const paths = [["home", "/"], ["topics", "/topics"], ["questions", "/questions"], ["interview", "/interview"], ["progress", "/progress"], ["submit", "/submissions"]] as const;
+const paths = [["home", "/"], ["topics", "/topics"], ["questions", "/questions"], ["interview", "/interview"], ["progress", "/progress"], ["submit", "/submissions"], ["moderator", "/moderator"]] as const;
 
 function unprefixedPath(pathname: string): string {
   return pathname === "/en" || pathname === "/ar" ? "/" : pathname.replace(/^\/(?:en|ar)(?=\/)/, "") || "/";
