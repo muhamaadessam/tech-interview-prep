@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
@@ -13,29 +14,34 @@ test("Track Preferences require a selected Default Track", () => {
 });
 
 test("Onboarding preselects the only active Track and detects unavailable preferences", () => {
-  assert.deepEqual(resolveTrackSelection({ tracks: [{ id: "flutter", name: "Flutter" }], preferences: [] }), {
+  assert.deepEqual(resolveTrackSelection({ tracks: [{ id: "flutter", name: "Flutter" }], preferences: [], unavailableTracks: [] }), {
     selected: ["flutter"], defaultTrack: "flutter", onboarding: true, recovery: false,
   });
-  assert.deepEqual(resolveTrackSelection({ tracks: [{ id: "backend", name: "Backend" }], preferences: [{ trackId: "flutter", isDefault: true }] }), {
+  assert.deepEqual(resolveTrackSelection({ tracks: [{ id: "backend", name: "Backend" }], preferences: [{ trackId: "flutter", isDefault: true }], unavailableTracks: [{ id: "flutter", name: "Flutter" }] }), {
     selected: ["backend"], defaultTrack: "backend", onboarding: true, recovery: true,
   });
 });
 
-test("active Tracks and Account preferences load through authenticated REST", async () => {
+test("active and historical unavailable Track Preferences load through the authenticated Supabase client", async () => {
   const urls: string[] = [];
   const result = await loadTrackPreferences({
     userId: "user/one",
     locale: "en",
     getToken: async () => "clerk-token",
-    fetchImpl: async (url, init) => {
+    fetchImpl: async (input, init) => {
+      const url = String(input);
       urls.push(url);
-      assert.equal((init?.headers as Record<string, string>).Authorization, "Bearer clerk-token");
+      assert.equal(new Headers(init?.headers).get("Authorization"), "Bearer clerk-token");
       return Response.json(url.includes("account_track_preferences")
-        ? [{ track_id: "flutter", is_default: true }]
+        ? [{ track_id: "flutter", is_default: true, tracks: { id: "flutter", is_active: false, track_locales: [{ name: "Flutter" }] } }]
         : [{ id: "flutter", track_locales: [{ name: "Flutter" }] }]);
     },
   });
-  assert.deepEqual(result, { tracks: [{ id: "flutter", name: "Flutter" }], preferences: [{ trackId: "flutter", isDefault: true }] });
+  assert.deepEqual(result, {
+    tracks: [{ id: "flutter", name: "Flutter" }],
+    preferences: [{ trackId: "flutter", isDefault: true }],
+    unavailableTracks: [{ id: "flutter", name: "Flutter" }],
+  });
   assert.ok(urls.some((url) => url.includes("is_active=eq.true")));
   assert.ok(urls.some((url) => url.includes("user_id=eq.user%2Fone")));
 });
@@ -46,7 +52,7 @@ test("saving Track Preferences uses the authorized atomic RPC and deduplicates T
     trackIds: ["flutter", "flutter"],
     defaultTrackId: "flutter",
     getToken: async () => "clerk-token",
-    fetchImpl: async (url, init) => { request = { url, init }; return new Response(null, { status: 204 }); },
+    fetchImpl: async (input, init) => { request = { url: String(input), init }; return new Response(null, { status: 204 }); },
   });
   assert.match(request?.url ?? "", /\/rest\/v1\/rpc\/set_track_preferences$/);
   assert.deepEqual(JSON.parse(String(request?.init?.body)), { p_track_ids: ["flutter"], p_default_track_id: "flutter" });
@@ -57,4 +63,11 @@ test("saving cannot remove the last active Track Preference", async () => {
     saveTrackPreferences({ trackIds: [], defaultTrackId: "", getToken: async () => "clerk-token" }),
     (error: unknown) => error instanceof TrackPreferencesError && error.code === "tracks_required",
   );
+});
+
+test("the database contract isolates Accounts and preserves unavailable historical Track Preferences", async () => {
+  const migration = await readFile(new URL("../../supabase/migrations/20260831000000_track_preferences.sql", import.meta.url), "utf8");
+  assert.match(migration, /account_track_preferences_owner_read[\s\S]*user_id = public\.current_clerk_user_id\(\)/);
+  assert.match(migration, /tracks_public_read[\s\S]*is_active[\s\S]*account_track_preferences[\s\S]*current_clerk_user_id\(\)/);
+  assert.match(migration, /delete from public\.account_track_preferences[\s\S]*tracks[\s\S]*is_active/);
 });

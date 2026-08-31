@@ -11,9 +11,9 @@ type Phase = "loading" | "saving" | "error" | "recovery" | "edit" | "success" | 
 
 export function TrackPreferencesGate() {
   const pathname = usePathname() ?? "/";
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   if (!isLoaded || !isSignedIn || /\/my-tracks\/?$/.test(pathname)) return null;
-  return <TrackPreferencesManager locale={localeFromPathname(pathname)} mode="gate" />;
+  return <TrackPreferencesManager locale={localeFromPathname(pathname)} mode="gate" userId={userId} getToken={getToken} />;
 }
 
 export function MyTracks({ locale, clerkEnabled }: { locale: Locale; clerkEnabled: boolean }) {
@@ -22,18 +22,18 @@ export function MyTracks({ locale, clerkEnabled }: { locale: Locale; clerkEnable
 }
 
 function AuthenticatedMyTracks({ locale }: { locale: Locale }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const copy = messages[locale];
   if (!isLoaded) return <p className="empty-state" role="status">{copy.tracksLoading}</p>;
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.tracksSignIn}</h2><SignInButton mode="modal"><button className="button primary" type="button">{copy.signIn}</button></SignInButton></div>;
-  return <TrackPreferencesManager locale={locale} mode="page" />;
+  return <TrackPreferencesManager locale={locale} mode="page" userId={userId} getToken={getToken} />;
 }
 
-function TrackPreferencesManager({ locale, mode }: { locale: Locale; mode: "gate" | "page" }) {
+function TrackPreferencesManager({ locale, mode, userId, getToken }: { locale: Locale; mode: "gate" | "page"; userId: string | null | undefined; getToken: ReturnType<typeof useAuth>["getToken"] }) {
   const copy = messages[locale];
-  const { userId, getToken } = useAuth();
   const [phase, setPhase] = useState<Phase>("loading");
   const [tracks, setTracks] = useState<TrackOption[]>([]);
+  const [unavailableTracks, setUnavailableTracks] = useState<TrackOption[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [defaultTrack, setDefaultTrack] = useState("");
   const [validation, setValidation] = useState("");
@@ -51,6 +51,7 @@ function TrackPreferencesManager({ locale, mode }: { locale: Locale; mode: "gate
       const state = await loadTrackPreferences({ userId, locale, getToken });
       const selection = resolveTrackSelection(state);
       setTracks(state.tracks);
+      setUnavailableTracks(state.unavailableTracks);
       setOnboarding(selection.onboarding);
       setSelected(selection.selected);
       setDefaultTrack(selection.defaultTrack);
@@ -103,10 +104,11 @@ function TrackPreferencesManager({ locale, mode }: { locale: Locale; mode: "gate
 
   if (phase === "done") return null;
 
+  const unavailableContent = unavailableTracks.length > 0 && <fieldset className="track-options unavailable-tracks"><legend>{copy.unavailableTracksLegend}</legend>{unavailableTracks.map((track) => <div key={track.id} className="unavailable-track"><span>{track.name}</span><small>{copy.trackUnavailable}</small></div>)}</fieldset>;
   const content = <div className="track-preferences-card">
     {(phase === "loading" || phase === "saving") && <><h2 ref={heading} tabIndex={-1}>{phase === "saving" ? copy.tracksSaving : copy.tracksLoading}</h2><p className="track-status" role="status">{phase === "saving" ? copy.tracksSaving : copy.tracksLoading}</p></>}
     {phase === "error" && <><h2 ref={heading} tabIndex={-1}>{copy.tracksUnavailable}</h2><div className="actions"><button className="button primary" type="button" onClick={() => void load()}>{copy.tracksRetry}</button>{mode === "gate" && <button className="button" type="button" onClick={() => setPhase("done")}>{copy.continueBrowsing}</button>}</div></>}
-    {phase === "recovery" && <><span className="eyebrow">{copy.onboardingEyebrow}</span><h2 ref={heading} tabIndex={-1}>{copy.tracksRecoveryTitle}</h2><p>{copy.tracksRecoveryDescription}</p><button className="button primary" type="button" onClick={() => { setOnboarding(true); setPhase("edit"); }}>{copy.tracksRecoveryAction}</button></>}
+    {phase === "recovery" && <><span className="eyebrow">{copy.onboardingEyebrow}</span><h2 ref={heading} tabIndex={-1}>{copy.tracksRecoveryTitle}</h2><p>{copy.tracksRecoveryDescription}</p>{unavailableContent}<button className="button primary" type="button" onClick={() => { setOnboarding(true); setPhase("edit"); }}>{copy.tracksRecoveryAction}</button></>}
     {phase === "success" && <><h2 ref={heading} tabIndex={-1}>{copy.tracksSaved}</h2><button className="button primary" type="button" onClick={() => setPhase("done")}>{copy.tracksContinue}</button></>}
     {phase === "edit" && <form onSubmit={submit} noValidate>
       <span className="eyebrow">{copy.onboardingEyebrow}</span>
@@ -115,10 +117,11 @@ function TrackPreferencesManager({ locale, mode }: { locale: Locale; mode: "gate
       {!tracks.length ? <div className="empty-state"><h3>{copy.noActiveTracksTitle}</h3><p>{copy.noActiveTracksDescription}</p></div> : <>
         <fieldset className="track-options"><legend>{copy.tracksLegend}</legend>{tracks.map((track) => <label key={track.id}><input type="checkbox" checked={selected.includes(track.id)} onChange={() => toggle(track.id)} /> <span>{track.name}</span></label>)}</fieldset>
         <fieldset className="track-options"><legend>{copy.defaultTrackLegend}</legend><p className="field-hint">{copy.defaultTrackHint}</p>{tracks.filter((track) => selected.includes(track.id)).map((track) => <label key={track.id}><input type="radio" name="default-track" value={track.id} checked={defaultTrack === track.id} onChange={() => { setDefaultTrack(track.id); setValidation(""); setSaved(false); }} /> <span>{track.name}</span></label>)}</fieldset>
-        {validation && <p className="form-error" role="alert">{validation}</p>}
-        {saved && <p className="form-success" role="status">{copy.tracksSaved}</p>}
-        <button className="button primary" type="submit">{copy.tracksSave}</button>
       </>}
+      {unavailableContent}
+      {validation && <p className="form-error" role="alert">{validation}</p>}
+      {saved && <p className="form-success" role="status">{copy.tracksSaved}</p>}
+      <div className="actions">{tracks.length > 0 && <button className="button primary" type="submit">{copy.tracksSave}</button>}{mode === "gate" && onboarding && <button className="button" type="button" onClick={() => setPhase("done")}>{copy.continueBrowsing}</button>}</div>
     </form>}
   </div>;
 

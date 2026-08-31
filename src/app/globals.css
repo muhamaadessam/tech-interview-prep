@@ -295,6 +295,8 @@ h3 { line-height: 1.45; }
 .track-options label { display: flex; min-height: 44px; align-items: center; gap: 8px; padding-inline: 10px; border-radius: 8px; cursor: pointer; }
 .track-options label:hover, .track-options label:focus-within { background: var(--surface-soft); }
 .track-options input { width: 18px; height: 18px; }
+.unavailable-track { display: flex; min-height: 44px; align-items: center; justify-content: space-between; gap: 12px; padding-inline: 10px; color: var(--muted); }
+.unavailable-track small { font-weight: 800; }
 .track-status { color: var(--muted); }
 
 :where(a, button, input, select):focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }

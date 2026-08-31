@@ -60,10 +60,22 @@ begin
   end if;
 
   perform pg_advisory_xact_lock(hashtextextended(account_id, 0));
-  delete from public.account_track_preferences where user_id = account_id;
+  update public.account_track_preferences
+  set is_default = false
+  where user_id = account_id and is_default;
+
+  delete from public.account_track_preferences preference
+  using public.tracks track
+  where preference.user_id = account_id
+    and preference.track_id = track.id
+    and track.is_active
+    and not (preference.track_id = any(selected_ids));
+
   insert into public.account_track_preferences (user_id, track_id, is_default)
   select account_id, selected.track_id, selected.track_id = p_default_track_id
-  from unnest(selected_ids) as selected(track_id);
+  from unnest(selected_ids) as selected(track_id)
+  on conflict (user_id, track_id) do update
+  set is_default = excluded.is_default;
 end;
 $$;
 
@@ -108,10 +120,31 @@ for each row execute function public.reassign_unavailable_default_track();
 
 drop policy if exists tracks_public_read on public.tracks;
 create policy tracks_public_read on public.tracks
-for select to anon, authenticated using (is_active);
+for select to anon, authenticated using (
+  is_active
+  or exists (
+    select 1
+    from public.account_track_preferences preference
+    where preference.track_id = id
+      and preference.user_id = public.current_clerk_user_id()
+  )
+);
 
 drop policy if exists track_locales_public_read on public.track_locales;
 create policy track_locales_public_read on public.track_locales
 for select to anon, authenticated using (
-  exists (select 1 from public.tracks track where track.id = track_id and track.is_active)
+  exists (
+    select 1
+    from public.tracks track
+    where track.id = track_id
+      and (
+        track.is_active
+        or exists (
+          select 1
+          from public.account_track_preferences preference
+          where preference.track_id = track.id
+            and preference.user_id = public.current_clerk_user_id()
+        )
+      )
+  )
 );
