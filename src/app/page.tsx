@@ -11,7 +11,7 @@ export default function HomePage({ locale = "ar" }: { locale?: Locale }) {
   return (
     <>
       <section className="shell hero">
-        <div>
+        <div className="hero-copy">
           <span className="eyebrow">{copy.homeEyebrow}</span>
           <h1>{copy.homeTitle}</h1>
           <p className="lead">{copy.homeLead}</p>
