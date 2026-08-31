@@ -7,7 +7,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { tracks } from "../content/questions";
 import { localeFromPathname, localizedHref, messages, type Locale } from "../i18n";
-import { resolveActiveTrack, withTrack } from "../tracks/active-track";
+import { resolveActiveTrack, withQueryContext } from "../tracks/active-track";
 import { loadTrackPreferences, type TrackPreferenceState } from "../tracks/preferences";
 
 type Phase = "loading" | "ready" | "error";
@@ -42,14 +42,15 @@ function ActiveTrackProvider({ children, authenticated, loading = false, userId,
 }) {
   const pathname = usePathname() ?? "/";
   const locale = localeFromPathname(pathname);
-  const [requestedTrack, setRequestedTrack] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const requestedTrack = new URLSearchParams(query).get("track");
   const [urlReady, setUrlReady] = useState(false);
   const [preferences, setPreferences] = useState<TrackPreferenceState | null>(null);
   const [phase, setPhase] = useState<Phase>(loading || authenticated ? "loading" : "ready");
   const [reload, setReload] = useState(0);
 
   useEffect(() => {
-    const sync = () => { setRequestedTrack(new URLSearchParams(window.location.search).get("track")); setUrlReady(true); };
+    const sync = () => { setQuery(window.location.search); setUrlReady(true); };
     sync();
     window.addEventListener("popstate", sync);
     window.addEventListener("urlchange", sync);
@@ -96,9 +97,9 @@ function ActiveTrackProvider({ children, authenticated, loading = false, userId,
     authenticated,
     ...resolution,
     setActiveTrack,
-    trackHref: (path) => resolution.activeTrack ? withTrack(path, resolution.activeTrack.slug) : path,
+    trackHref: (path) => withQueryContext(path, query, resolution.activeTrack?.slug),
     retry: () => setReload((current) => current + 1),
-  }), [authenticated, phase, preferences, resolution, setActiveTrack, urlReady]);
+  }), [authenticated, phase, preferences, query, resolution, setActiveTrack, urlReady]);
   return <ActiveTrackContext.Provider value={value}>{children}</ActiveTrackContext.Provider>;
 }
 

@@ -44,8 +44,14 @@ export function scopeCatalogue<T extends Pick<Topic, "trackId" | "id" | "slug">,
 }
 
 export function withTrack(path: string, trackSlug: string): string {
+  return withQueryContext(path, "", trackSlug);
+}
+
+export function withQueryContext(path: string, contextQuery: string, trackSlug?: string): string {
   const [pathname, query = ""] = path.split("?", 2);
-  const params = new URLSearchParams(query);
-  params.set("track", trackSlug);
-  return `${pathname}?${params}`;
+  const params = new URLSearchParams(contextQuery);
+  new URLSearchParams(query).forEach((value, key) => params.set(key, value));
+  if (trackSlug) params.set("track", trackSlug);
+  const suffix = params.toString();
+  return suffix ? `${pathname}?${suffix}` : pathname;
 }

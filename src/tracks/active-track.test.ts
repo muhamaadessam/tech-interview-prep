@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { InterviewQuestion, Topic, Track } from "../content/questions.ts";
-import { resolveActiveTrack, scopeCatalogue, withTrack } from "./active-track.ts";
+import { resolveActiveTrack, scopeCatalogue, withQueryContext, withTrack } from "./active-track.ts";
 
 const tracks: Track[] = [
   { id: "flutter", slug: "flutter", name: "Flutter" },
@@ -82,4 +82,5 @@ test("invalid explicit Track and cross-Track Topic preserve invalid context", ()
 test("shareable links preserve Track alongside existing query parameters", () => {
   assert.equal(withTrack("/questions?topic=dart", "flutter"), "/questions?topic=dart&track=flutter");
   assert.equal(withTrack("/session", "flutter"), "/session?track=flutter");
+  assert.equal(withQueryContext("/questions?topic=oop", "?track=flutter&topic=dart&view=compact", "backend"), "/questions?track=backend&topic=oop&view=compact");
 });

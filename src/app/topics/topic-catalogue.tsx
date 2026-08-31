@@ -19,7 +19,7 @@ export function TopicCatalogue({ locale }: { locale: Locale }) {
         const count = scoped.questions.filter((question) => question.topicIds.includes(topic.id)).length;
         return <Link key={topic.id} className="card card-link" href={localizedHref(locale, trackHref(`/questions?topic=${topic.slug}`))}>
           <h2 dir="ltr">{topicName(locale, topic.id)}</h2>
-          <p>{count} {copy.availableQuestions}</p>
+          <p><span className="chip">{count} {copy.availableQuestions}</span></p>
           <span className="text-link">{copy.viewQuestions}</span>
         </Link>;
       })}</div>}

@@ -47,3 +47,23 @@ export async function moderationRequest<T>({
   if (!result.ok) throw new ModerationError(typeof response.error === "string" ? response.error : "moderation_unavailable", result.status);
   return response as T;
 }
+
+export async function hasModeratorAccess({
+  userId,
+  getToken,
+  fetchImpl = fetch,
+}: {
+  userId: string;
+  getToken: () => Promise<string | null>;
+  fetchImpl?: typeof fetch;
+}): Promise<boolean> {
+  const config = supabaseConfig();
+  const token = await getToken();
+  if (!config || !token) return false;
+  const result = await fetchImpl(`${config.url}/rest/v1/account_roles?select=role,suspended&user_id=eq.${encodeURIComponent(userId)}&limit=1`, {
+    headers: { apikey: config.key, Authorization: `Bearer ${token}` },
+  });
+  if (!result.ok) return false;
+  const [account] = await result.json() as Array<{ role?: string; suspended?: boolean }>;
+  return account?.role === "moderator" && account.suspended !== true;
+}

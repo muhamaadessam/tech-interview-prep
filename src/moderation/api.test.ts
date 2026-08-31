@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ModerationError, moderationRequest } from "./api.ts";
+import { hasModeratorAccess, ModerationError, moderationRequest } from "./api.ts";
 
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://supabase.example";
 process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "publishable";
@@ -26,4 +26,11 @@ test("moderationRequest reports function errors", async () => {
     moderationRequest({ getToken: async () => "token", body: { action: "list_submissions" }, fetchImpl: async () => new Response(JSON.stringify({ error: "moderator_required" }), { status: 403 }) }),
     (error: unknown) => error instanceof ModerationError && error.code === "moderator_required" && error.status === 403,
   );
+});
+
+test("navigation access fails closed for ordinary and suspended Accounts", async () => {
+  const check = (body: unknown) => hasModeratorAccess({ userId: "account-1", getToken: async () => "token", fetchImpl: async () => new Response(JSON.stringify(body), { status: 200 }) });
+  assert.equal(await check([{ role: "moderator", suspended: false }]), true);
+  assert.equal(await check([{ role: "learner", suspended: false }]), false);
+  assert.equal(await check([{ role: "moderator", suspended: true }]), false);
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 import { localeDirection, localeFromPathname, localizedHref, messages, type Locale } from "../i18n";
@@ -10,7 +10,8 @@ import { BrandLogo } from "./logo";
 import { ClerkControls } from "./clerk-controls";
 import { useActiveTrack } from "./active-track";
 
-const paths = [["home", "/"], ["topics", "/topics"], ["questions", "/questions"], ["interview", "/interview"], ["progress", "/progress"], ["submit", "/submissions"], ["moderator", "/moderator"]] as const;
+const cataloguePaths = [["topics", "/topics"], ["questions", "/questions"], ["interview", "/interview"]] as const;
+const activityPaths = [["progress", "/progress"], ["submit", "/submissions"]] as const;
 
 function unprefixedPath(pathname: string): string {
   return pathname === "/en" || pathname === "/ar" ? "/" : pathname.replace(/^\/(?:en|ar)(?=\/)/, "") || "/";
@@ -20,6 +21,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const routePathname = usePathname() ?? "/";
   const [pathname, setPathname] = useState(routePathname);
   const [query, setQuery] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menu = useRef<HTMLDialogElement>(null);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const { trackHref } = useActiveTrack();
 
   useEffect(() => {
@@ -51,24 +55,37 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const copy = messages[locale];
   const targetLocale: Locale = locale === "ar" ? "en" : "ar";
   const switchHref = `${localizedHref(targetLocale, unprefixedPath(pathname))}${query}`;
+  const href = (path: string) => localizedHref(locale, trackHref(path));
+  const links = <>{cataloguePaths.map(([key, path]) => <Link key={path} href={href(path)} onClick={() => menu.current?.close()}>{copy[key]}</Link>)}<span className="nav-divider" aria-hidden="true" />{activityPaths.map(([key, path]) => <Link key={path} href={href(path)} onClick={() => menu.current?.close()}>{copy[key]}</Link>)}</>;
+
+  function openMenu() {
+    menu.current?.showModal();
+    setMenuOpen(true);
+  }
 
   return (
     <>
       <a className="skip-link" href="#main-content">{copy.skip}</a>
       <header className="site-header">
         <nav className="shell nav" aria-label={locale === "ar" ? "التنقل الرئيسي" : "Main navigation"}>
-          <Link className="brand" href={localizedHref(locale)} aria-label={`${copy.brandName} — ${copy.home}`}>
+          <Link className="brand" href={href("/")} aria-label={`${copy.brandName} — ${copy.home}`}>
             <BrandLogo />
             <span dir={locale === "ar" ? "rtl" : "ltr"}>{copy.brandName}</span>
           </Link>
-          <div className="nav-links">
-            {paths.map(([key, path]) => <Link key={path} href={localizedHref(locale, ["/topics", "/questions", "/interview"].includes(path) ? trackHref(path) : path)}>{copy[key]}</Link>)}
+          <div className="desktop-navigation">
+            <div className="nav-links">{links}</div>
+            <div className="nav-actions">
+              <ClerkControls locale={locale} myTracksHref={href("/my-tracks")} moderatorHref={href("/moderator")} />
+              <Link className="locale-switcher" href={switchHref}>{copy.language}</Link>
+              <ThemeToggle locale={locale} />
+            </div>
           </div>
-          <div className="nav-actions">
-            <ClerkControls locale={locale} />
-            <Link className="locale-switcher" href={switchHref}>{copy.language}</Link>
-            <ThemeToggle locale={locale} />
-          </div>
+          <button ref={menuButton} className="mobile-menu-button" type="button" aria-haspopup="dialog" aria-controls="mobile-navigation" aria-expanded={menuOpen} onClick={openMenu}>{copy.menu}</button>
+          <dialog ref={menu} id="mobile-navigation" className="mobile-navigation" aria-labelledby="mobile-navigation-title" onClose={() => { setMenuOpen(false); menuButton.current?.focus(); }}>
+            <div className="mobile-navigation-header"><strong id="mobile-navigation-title">{copy.menu}</strong><button className="mobile-menu-close" type="button" autoFocus onClick={() => menu.current?.close()}>{copy.close}</button></div>
+            <div className="mobile-navigation-links">{links}</div>
+            <div className="mobile-navigation-actions"><ClerkControls locale={locale} myTracksHref={href("/my-tracks")} moderatorHref={href("/moderator")} /><Link className="locale-switcher" href={switchHref} onClick={() => menu.current?.close()}>{copy.language}</Link><ThemeToggle locale={locale} /></div>
+          </dialog>
         </nav>
       </header>
       <main id="main-content">{children}</main>
