@@ -267,6 +267,36 @@ h3 { line-height: 1.45; }
 .form-error { background: #fff1f0; color: #a32116; }
 .text-button { border: 0; background: transparent; color: inherit; font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
 
+.track-preferences-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 24px;
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  backdrop-filter: blur(12px);
+}
+.track-preferences-card {
+  width: min(680px, 100%);
+  padding: clamp(24px, 5vw, 40px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.track-preferences-card h2 { margin-block: 14px 10px; }
+.track-preferences-card > form { display: grid; gap: 18px; }
+.track-preferences-card > form > :where(h2, p) { margin: 0; }
+.track-preferences-card > form > p { color: var(--muted); }
+.track-options { display: grid; gap: 6px; margin: 0; padding: 16px; border: 1px solid var(--border); border-radius: 14px; }
+.track-options legend { padding-inline: 6px; font-weight: 800; }
+.track-options label { display: flex; min-height: 44px; align-items: center; gap: 8px; padding-inline: 10px; border-radius: 8px; cursor: pointer; }
+.track-options label:hover, .track-options label:focus-within { background: var(--surface-soft); }
+.track-options input { width: 18px; height: 18px; }
+.track-status { color: var(--muted); }
+
 :where(a, button, input, select):focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
 
 .footer { display: flex; justify-content: space-between; gap: 24px; padding-block: 28px; border-top: 1px solid var(--border); color: var(--muted); font-size: .9rem; }
