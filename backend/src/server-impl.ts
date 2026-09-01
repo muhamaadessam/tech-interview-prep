@@ -108,6 +108,9 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     if (!isReady) return reply.code(503).send({ status: "not_ready" });
     return { status: "ready" };
   });
+  app.get("/v1/me/email-verification", { preHandler: [app.authenticate] }, async (request) => ({
+    verified: request.account!.claims.email_verified === true || request.account!.claims.email_verified === "true",
+  }));
   app.get("/v1/tracks", async (request, reply) => {
     if (!tracks) return reply.code(503).send({ error: "tracks_not_configured" });
     const locale = typeof (request.query as { locale?: unknown }).locale === "string" ? (request.query as { locale: string }).locale : "en";
