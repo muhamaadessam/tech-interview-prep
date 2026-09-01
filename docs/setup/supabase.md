@@ -8,8 +8,8 @@ URLs and credentials are backend-only.
 
 1. Production project: `aptxrianhyxvdjnuyruo` (`eu-central-1`). Store
    `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` only in the Vercel backend.
-   GitHub Pages receives only `NEXT_PUBLIC_API_URL` and Clerk's publishable key.
-   The Cloudflare Pages deployment currently uses Clerk Development until a
+   Cloudflare Pages receives only `NEXT_PUBLIC_API_URL` and Clerk's publishable
+   key. The Cloudflare Pages deployment currently uses Clerk Development until a
    custom domain is available and verified in Clerk Production.
 2. Configure Google and email/password providers in Clerk. Allow these exact
    origins: `http://localhost:3000` and

@@ -54,16 +54,15 @@ Indexes are additive; leaving them in place is safe during rollback.
 
 ## First staging deployment
 
-The repository includes a Render blueprint at `/render.yaml`. Populate its
-secret values in the host dashboard (never in the blueprint), deploy the
-backend from the `backend/` root, then apply migrations from a controlled
-operator environment:
+Configure the Vercel project with `backend/` as its root and populate its secret
+values in the dashboard. Apply migrations from a controlled operator
+environment before promoting the backend deployment:
 
 ```sh
 supabase db push
 npm run supabase:seed:check
 ```
 
-Verify `GET /v1/ready` before routing frontend traffic. Start with one paid
-replica, capture the baseline, then increase replicas only when CPU, event-loop
-delay, or pool wait is the measured bottleneck.
+Verify `GET /v1/ready` before routing frontend traffic. Capture the baseline and
+change capacity only when CPU, event-loop delay, or pool wait is the measured
+bottleneck.

@@ -37,7 +37,7 @@ The product name is Tech Interview Prep. The voice is clear, practical, Arabic-f
 
 ## Evidence on Hand
 
-The repository contains 100 permanent Flutter/Dart interview questions across 14 Topics, bilingual copy, official source links, Study Sessions, progress and favorites, Submission and Moderator surfaces, Supabase migrations/functions, and a live Cloudflare Pages deployment.
+The repository contains 100 permanent Flutter/Dart interview questions across 14 Topics, bilingual copy, official source links, Study Sessions, progress and favorites, Submission and Moderator surfaces, Supabase migrations, and a live Cloudflare Pages deployment backed by the Node API on Vercel.
 
 ## Product Principles
 
