@@ -5,6 +5,7 @@ import { AuthError, createClerkAuth, type ClerkAuth } from "./auth.ts";
 import { createAccountPolicy, createSupabaseAccountRoleStore, PolicyError, type AccountRoleStore } from "./account-policy.ts";
 import { createSupabaseTrackStore, TrackStoreError, type TrackStore } from "./tracks.ts";
 import { createSupabaseCatalogueStore, CatalogueError, type CatalogueStore } from "./catalogue.ts";
+import { createSupabaseLearnerStateStore, LearnerStateError, type LearnerState } from "./learner-state.ts";
 
 type LogSink = { info?: (line: string) => void; error?: (line: string) => void };
 
@@ -16,6 +17,7 @@ export type ServerOptions = {
   policy?: ReturnType<typeof createAccountPolicy>;
   tracks?: TrackStore;
   catalogue?: CatalogueStore;
+  learnerState?: { read: (userId: string) => Promise<LearnerState>; write: (userId: string, state: LearnerState) => Promise<void>; adjustAsked: (questionId: string, delta: -1 | 1, accessToken?: string) => Promise<{ personalCount: number | null; interviewFrequency: number }> };
 };
 
 export function accountPolicyEnabled(value = process.env.ACCOUNT_POLICY_ENABLED): boolean {
@@ -30,7 +32,7 @@ function requestId(value: unknown): string {
   return typeof value === "string" && /^[a-zA-Z0-9._:-]{1,120}$/.test(value) ? value : crypto.randomUUID();
 }
 
-export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue }: ServerOptions): Promise<FastifyInstance> {
+export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue, learnerState }: ServerOptions): Promise<FastifyInstance> {
   const origins = new Set(allowedOrigins.filter(Boolean));
   const startedAt = new WeakMap<object, bigint>();
   const app = Fastify({ logger: false, genReqId: (request) => requestId(request.headers["x-request-id"]) });
@@ -105,6 +107,31 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     if (typeof slug !== "string" || !slug || (locale !== "ar" && locale !== "en")) return reply.code(400).send({ error: "invalid_question_request" });
     return catalogue.getQuestion(slug, locale);
   });
+  app.get("/v1/me/learner-state", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request, reply) => {
+    if (!learnerState) return reply.code(503).send({ error: "learner_state_not_configured" });
+    return learnerState.read(request.account!.sub);
+  });
+  app.put("/v1/me/learner-state", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request, reply) => {
+    if (!learnerState) return reply.code(503).send({ error: "learner_state_not_configured" });
+    const body = request.body as { progress?: unknown; favorites?: unknown };
+    if (!Array.isArray(body?.progress) || !Array.isArray(body?.favorites)) return reply.code(400).send({ error: "invalid_learner_state" });
+    const progress = body.progress.flatMap((row) => {
+      if (!row || typeof row !== "object") return [];
+      const value = row as { questionId?: unknown; progress?: unknown };
+      return typeof value.questionId === "string" && (value.progress === "not-started" || value.progress === "reviewing" || value.progress === "mastered") ? [{ questionId: value.questionId, progress: value.progress as LearnerState["progress"][number]["progress"] }] : [];
+    });
+    const favorites = body.favorites.filter((id): id is string => typeof id === "string");
+    if (progress.length !== body.progress.length || favorites.length !== body.favorites.length) return reply.code(400).send({ error: "invalid_learner_state" });
+    await learnerState.write(request.account!.sub, { progress, favorites });
+    return reply.code(204).send();
+  });
+  app.post("/v1/questions/:questionId/asked-marker", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request, reply) => {
+    if (!learnerState) return reply.code(503).send({ error: "learner_state_not_configured" });
+    const questionId = (request.params as { questionId?: unknown }).questionId;
+    const delta = (request.body as { delta?: unknown })?.delta;
+    if (typeof questionId !== "string" || !questionId || (delta !== -1 && delta !== 1)) return reply.code(400).send({ error: "invalid_asked_marker" });
+    return learnerState.adjustAsked(questionId, delta, request.account!.token);
+  });
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof AuthError) {
@@ -120,6 +147,10 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
       return;
     }
     if (error instanceof CatalogueError) {
+      reply.code(error.status).send({ error: error.code });
+      return;
+    }
+    if (error instanceof LearnerStateError) {
       reply.code(error.status).send({ error: error.code });
       return;
     }
@@ -140,7 +171,8 @@ async function main() {
   const policy = accountPolicyEnabled() && roleStore ? createAccountPolicy(roleStore) : undefined;
   const tracks = supabaseUrl && serviceRoleKey ? createSupabaseTrackStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const catalogue = supabaseUrl && serviceRoleKey ? createSupabaseCatalogueStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
-  const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue });
+  const learnerState = supabaseUrl && serviceRoleKey ? createSupabaseLearnerStateStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
+  const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue, learnerState });
   const port = Number(process.env.PORT ?? 3000);
   await app.listen({ host: "0.0.0.0", port: Number.isInteger(port) && port > 0 ? port : 3000 });
 }

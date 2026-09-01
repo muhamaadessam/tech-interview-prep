@@ -6,6 +6,7 @@ import {
   type StudyStorage,
 } from "./progress.ts";
 import { getSupabaseToken } from "../supabase/auth-token.ts";
+import { nodeApiUrl, nodeRequest } from "../backend/api.ts";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -19,7 +20,7 @@ const progressRank: Record<QuestionProgress, number> = {
 export type CloudProgressRow = { question_id: string; progress: QuestionProgress };
 export type CloudFavoriteRow = { question_id: string };
 
-type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
+type FetchLike = typeof fetch;
 type TokenProvider = (options?: { template?: string }) => Promise<string | null>;
 
 export function mergeSavedQuestions(local: SavedQuestions, remote: SavedQuestions): SavedQuestions {
@@ -76,6 +77,18 @@ export async function syncStudyProgress({
   storageKey?: string;
 }): Promise<{ synced: boolean; merged: SavedQuestions }> {
   const local = getSavedQuestions(storage, storageKey);
+  if (nodeApiUrl() && mode === "merge") {
+    const token = await getSupabaseToken(getToken);
+    if (!token) return { synced: false, merged: local };
+    const remote = await nodeRequest<{ progress: Array<{ questionId: string; progress: QuestionProgress }>; favorites: string[] }>({ path: "/me/learner-state", token, fetchImpl });
+    const remoteSaved: SavedQuestions = {};
+    for (const row of remote.progress) remoteSaved[row.questionId] = { progress: row.progress, favorite: false };
+    for (const id of remote.favorites) remoteSaved[id] = { progress: remoteSaved[id]?.progress ?? "not-started", favorite: true };
+    const merged = mergeSavedQuestions(local, remoteSaved);
+    await nodeRequest({ path: "/me/learner-state", token, fetchImpl, init: { method: "PUT", body: JSON.stringify({ progress: Object.entries(merged).map(([questionId, state]) => ({ questionId, progress: state.progress })), favorites: Object.entries(merged).filter(([, state]) => state.favorite).map(([questionId]) => questionId) }) } });
+    saveSavedQuestions(storage, merged, storageKey);
+    return { synced: true, merged };
+  }
   if (!supabaseUrl || !supabaseKey) return { synced: false, merged: local };
   const token = await getSupabaseToken(getToken);
   if (!token) return { synced: false, merged: local };

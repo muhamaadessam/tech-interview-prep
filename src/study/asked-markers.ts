@@ -1,9 +1,10 @@
 import { getSupabaseToken, type SupabaseTokenProvider } from "../supabase/auth-token.ts";
+import { nodeApiUrl, nodeRequest } from "../backend/api.ts";
 
 export type AskedMarkerState = { personalCount: number | null; interviewFrequency: number };
 export type AskedMarkerStates = Record<string, AskedMarkerState>;
 
-type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
+type FetchLike = typeof fetch;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -41,6 +42,12 @@ export async function loadAskedMarkerStates({ questionIds, userId, getToken, fet
 }
 
 export async function adjustAskedMarker({ questionId, delta, getToken, fetchImpl = fetch }: { questionId: string; delta: -1 | 1; getToken: SupabaseTokenProvider; fetchImpl?: FetchLike }): Promise<AskedMarkerState> {
+  if (nodeApiUrl()) {
+    const token = await getSupabaseToken(getToken);
+    if (!token) throw new Error("unauthenticated");
+    try { return await nodeRequest<AskedMarkerState>({ path: `/questions/${encodeURIComponent(questionId)}/asked-marker`, token, fetchImpl, init: { method: "POST", body: JSON.stringify({ delta }) } }); }
+    catch (error) { throw new Error((error as { code?: string }).code ?? "asked_marker_unavailable"); }
+  }
   const { url, key } = config();
   const token = await getSupabaseToken(getToken);
   if (!token) throw new Error("unauthenticated");
