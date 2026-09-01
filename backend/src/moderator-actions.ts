@@ -50,7 +50,8 @@ export async function handleModerator(request: Request, fetchImpl: FetchLike = f
   try {
     const { key } = config();
     const roles = await (await query(`/rest/v1/account_roles?select=role,suspended&user_id=eq.${encodeURIComponent(actor)}&limit=1`, key)).json() as Array<{ role?: string; suspended?: boolean }>;
-    if (roles[0]?.role !== "moderator" || roles[0]?.suspended) return response({ error: "moderator_required" }, 403);
+    const configuredModerators = (process.env.MODERATOR_USER_IDS ?? "").split(",").map((id) => id.trim()).filter(Boolean);
+    if ((!configuredModerators.includes(actor) && roles[0]?.role !== "moderator") || roles[0]?.suspended) return response({ error: "moderator_required" }, 403);
     const body = await request.json() as { action?: unknown; targetUserId?: unknown; submissionId?: unknown; questionId?: unknown; reason?: unknown; status?: unknown; targetQuestionIds?: unknown; mode?: unknown; document?: unknown };
     const action = text(body.action, 60);
     const reason = text(body.reason);
