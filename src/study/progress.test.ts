@@ -88,7 +88,6 @@ test("cloud sync leaves local state untouched when no authenticated token is ava
 
 test("cloud sync uses Node learner-state read/merge/write when enabled", async () => {
   process.env.NEXT_PUBLIC_API_URL = "https://api.example";
-  process.env.NEXT_PUBLIC_NODE_API_ENABLED = "true";
   try {
     const storage = memoryStorage();
     saveQuestionState(storage, "dart-001", { progress: "reviewing" });
@@ -96,7 +95,7 @@ test("cloud sync uses Node learner-state read/merge/write when enabled", async (
     const result = await syncStudyProgress({ storage, userId: "user_test", getToken: async () => "token", fetchImpl: async (input, init) => { urls.push(`${init?.method ?? "GET"} ${String(input)}`); return init?.method === "PUT" ? new Response(null, { status: 204 }) : Response.json({ progress: [{ questionId: "dart-001", progress: "mastered" }], favorites: ["dart-002"] }); } });
     assert.equal(result.merged["dart-001"].progress, "mastered");
     assert.ok(urls.some((url) => url.endsWith("/v1/me/learner-state")));
-  } finally { delete process.env.NEXT_PUBLIC_API_URL; delete process.env.NEXT_PUBLIC_NODE_API_ENABLED; }
+  } finally { delete process.env.NEXT_PUBLIC_API_URL; }
 });
 
 test("account-scoped cache does not leak progress between accounts", () => {

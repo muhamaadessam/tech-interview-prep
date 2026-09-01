@@ -7,24 +7,12 @@ async function authenticate(page: Page, preferences: Preference[]) {
   await page.route("http://127.0.0.1:3001/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path.endsWith("/tracks")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ tracks: [{ id: "flutter", slug: "flutter", name: "Flutter" }, { id: "backend", slug: "backend", name: "Backend" }] }) });
+    if (path.endsWith("/learner-state")) return route.fulfill({ status: route.request().method() === "PUT" ? 204 : 200, contentType: "application/json", body: route.request().method() === "PUT" ? "" : JSON.stringify({ progress: [], favorites: [] }) });
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ tracks: preferences.map(({ trackId }) => ({ id: trackId, name: trackId === "flutter" ? "Flutter" : "Backend" })), preferences, unavailableTracks: [] }) });
-  });
-  await page.route("https://mock.supabase.local/rest/v1/**", async (route) => {
-    const path = new URL(route.request().url()).pathname.split("/rest/v1/")[1];
-    const body = path.startsWith("tracks")
-      ? [
-          { id: "flutter", is_active: true, track_locales: [{ name: "Flutter" }] },
-          { id: "backend", is_active: true, track_locales: [{ name: "Backend" }] },
-        ]
-      : path.startsWith("account_track_preferences")
-        ? preferences.map(({ trackId, isDefault }) => ({ track_id: trackId, is_default: isDefault, tracks: { id: trackId, is_active: true, track_locales: [{ name: trackId === "flutter" ? "Flutter" : "Backend" }] } }))
-        : [];
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
   });
 }
 
 test("anonymous Track catalogue can be served by the Node migration route", async ({ page }) => {
-  test.skip(process.env.NEXT_PUBLIC_NODE_API_ENABLED !== "true", "run with npm run test:e2e:node");
   let nodeRequests = 0;
   await page.route("http://127.0.0.1:3001/v1/tracks?locale=en", async (route) => {
     nodeRequests += 1;

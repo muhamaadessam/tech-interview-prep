@@ -5,7 +5,7 @@ export type TrackPreferenceState = { tracks: TrackOption[]; preferences: TrackPr
 export type TrackStore = {
   listTracks: (locale: string) => Promise<TrackOption[]>;
   getPreferences: (userId: string, locale: string) => Promise<TrackPreferenceState>;
-  savePreferences: (userId: string, trackIds: string[], defaultTrackId: string, accessToken?: string) => Promise<void>;
+  savePreferences: (userId: string, trackIds: string[], defaultTrackId: string) => Promise<void>;
 };
 
 export class TrackStoreError extends Error {
@@ -58,9 +58,8 @@ export function createSupabaseTrackStore(options: { url: string; serviceRoleKey:
         unavailableTracks: preferences.flatMap((row) => { const track = related(row.tracks); const name = names(track?.track_locales); return track?.is_active === false && typeof track.id === "string" && name ? [{ id: track.id, name }] : []; }),
       };
     },
-    async savePreferences(_userId, trackIds, defaultTrackId, accessToken) {
-      if (!accessToken) throw new TrackStoreError("track_preferences_token_required", 401);
-      const response = await fetchUpstream(fetchImpl, `${base}/rest/v1/rpc/set_track_preferences`, { method: "POST", headers: { apikey: options.serviceRoleKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ p_track_ids: [...new Set(trackIds)], p_default_track_id: defaultTrackId }) });
+    async savePreferences(userId, trackIds, defaultTrackId) {
+      const response = await fetchUpstream(fetchImpl, `${base}/rest/v1/rpc/set_track_preferences_for_account`, { method: "POST", headers: { apikey: options.serviceRoleKey, Authorization: `Bearer ${options.serviceRoleKey}`, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ p_account_id: userId, p_track_ids: [...new Set(trackIds)], p_default_track_id: defaultTrackId }) });
       if (!response.ok) {
         const body = await response.json().catch(() => ({})) as { code?: unknown; message?: unknown };
         const message = typeof body.message === "string" ? body.message : "";

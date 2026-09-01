@@ -13,11 +13,7 @@ export type ModerationSubmission = {
   created_at: string;
 };
 
-function supabaseConfig(): { url: string; key: string } | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  return url && key ? { url, key } : null;
-}
+import { nodeRequest } from "../backend/api.ts";
 
 export class ModerationError extends Error {
   readonly code: string;
@@ -34,18 +30,10 @@ export async function moderationRequest<T>({
   body: Record<string, unknown>;
   fetchImpl?: typeof fetch;
 }): Promise<T> {
-  const config = supabaseConfig();
-  if (!config) throw new ModerationError("moderation_unavailable", 503);
   const token = await getToken();
   if (!token) throw new ModerationError("unauthenticated", 401);
-  const result = await fetchImpl(`${config.url}/functions/v1/moderator-actions`, {
-    method: "POST",
-    headers: { apikey: config.key, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const response = await result.json().catch(() => ({})) as Record<string, unknown>;
-  if (!result.ok) throw new ModerationError(typeof response.error === "string" ? response.error : "moderation_unavailable", result.status);
-  return response as T;
+  try { return await nodeRequest<T>({ path: "/moderation/actions", token, fetchImpl, init: { method: "POST", body: JSON.stringify(body) } }); }
+  catch (error) { throw new ModerationError((error as { code?: string }).code ?? "moderation_unavailable", (error as { status?: number }).status ?? 503); }
 }
 
 export async function hasModeratorAccess({
@@ -57,13 +45,9 @@ export async function hasModeratorAccess({
   getToken: () => Promise<string | null>;
   fetchImpl?: typeof fetch;
 }): Promise<boolean> {
-  const config = supabaseConfig();
+  void userId;
   const token = await getToken();
-  if (!config || !token) return false;
-  const result = await fetchImpl(`${config.url}/rest/v1/account_roles?select=role,suspended&user_id=eq.${encodeURIComponent(userId)}&limit=1`, {
-    headers: { apikey: config.key, Authorization: `Bearer ${token}` },
-  });
-  if (!result.ok) return false;
-  const [account] = await result.json() as Array<{ role?: string; suspended?: boolean }>;
-  return account?.role === "moderator" && account.suspended !== true;
+  if (!token) return false;
+  try { return (await nodeRequest<{ allowed: boolean }>({ path: "/me/moderator-access", token, fetchImpl })).allowed === true; }
+  catch { return false; }
 }

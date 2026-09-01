@@ -21,9 +21,8 @@ export default defineConfig({
     url: "http://localhost:3000",
     env: {
       ...process.env,
-      NEXT_PUBLIC_SUPABASE_URL: "https://mock.supabase.local",
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "playwright-test",
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_playwright",
+      NEXT_PUBLIC_API_URL: "http://127.0.0.1:3001",
       PLAYWRIGHT_MOCK_AUTH: "true",
     },
     reuseExistingServer: false,

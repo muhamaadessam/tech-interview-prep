@@ -1,25 +1,21 @@
 # Supabase setup
 
-This project remains a static Next.js export on Cloudflare Pages. Supabase supplies
-the database, Row Level Security, and Edge Functions; Clerk owns authentication.
-The browser only receives the public Supabase URL and two publishable keys.
+This project uses a static Next.js frontend, a Node backend on Vercel, Clerk
+authentication, and Supabase PostgreSQL. The browser talks only to Node. Supabase
+URLs and credentials are backend-only.
 
 ## Provisioning checklist
 
-1. Production project: `aptxrianhyxvdjnuyruo` (`eu-central-1`). Its URL and
-   publishable key are stored as GitHub Actions variables named
-   `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`; Clerk's
-   key is stored as `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`. Do not commit values or
-   expose a service-role key.
+1. Production project: `aptxrianhyxvdjnuyruo` (`eu-central-1`). Store
+   `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` only in the Vercel backend.
+   GitHub Pages receives only `NEXT_PUBLIC_API_URL` and Clerk's publishable key.
    The Cloudflare Pages deployment currently uses Clerk Development until a
    custom domain is available and verified in Clerk Production.
 2. Configure Google and email/password providers in Clerk. Allow these exact
    origins: `http://localhost:3000` and
    `https://tech-interview-prep-1ux.pages.dev`.
-3. Configure Clerk's native Supabase integration before enabling RLS policies that
-   depend on the signed-in Clerk user.
-   The Clerk session token must include `role: authenticated`; the repository uses
-   the `supabase` JWT template when available for browser RLS requests.
+3. Configure the backend Clerk JWKS URL and issuer. Node verifies the ordinary
+   Clerk session token and passes the trusted Account ID to server-only database RPCs.
 4. Store these Edge Function secrets: `CLERK_SECRET_KEY`,
    `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY`,
    `GITHUB_REPOSITORY_OWNER`, and `GITHUB_REPOSITORY_NAME`. The GitHub App only
@@ -31,9 +27,8 @@ The browser only receives the public Supabase URL and two publishable keys.
 
 ## Local configuration
 
-Copy `.env.example` to `.env.local` and fill in the Clerk and Supabase public
-values. The static catalogue must continue to work when these values are empty so local
-content development does not depend on production credentials.
+Copy `.env.example` to `.env.local`. The frontend needs the Clerk publishable key
+and Node URL; only the backend receives Supabase credentials.
 
 ## Catalogue migration and seed
 
@@ -51,10 +46,9 @@ slug, imports both `ar` and `en` locale rows, and publishes revision 1. Content
 changes after the initial import must create a new revision instead of mutating a
 published revision.
 
-The browser sync path requests the current Clerk session token through the native
-Supabase Third-Party Auth integration and uses only the public Supabase URL and
-publishable key. Keep moderator roles server-controlled through `account_roles` or
-Clerk metadata; never grant browser clients write access to that table.
+The browser sends the ordinary Clerk token to Node. Node owns authorization and
+uses server credentials for database operations. Never expose Supabase credentials
+or restore direct browser database access.
 
 To apply the local project configuration, link once and push the migrations:
 
@@ -108,6 +102,6 @@ Submission and its `needs-review` Issue untouched.
 - A Google account and a confirmed email/password account can sign in and sign
   out through Clerk from localhost and Cloudflare Pages.
 - An unconfirmed account cannot submit a question.
-- Browser bundles contain no service-role key, GitHub token, or private key.
+- Browser bundles contain no Supabase URL/key, service-role key, GitHub token, or private key.
 - A failed Edge Function call does not lose the stored Submission and can be
   retried idempotently.

@@ -2,14 +2,15 @@ import { expect, test, type Page } from "@playwright/test";
 
 async function authenticate(page: Page, role: "learner" | "moderator") {
   await page.addInitScript(() => localStorage.setItem("playwright-authenticated", "true"));
-  await page.route("https://mock.supabase.local/rest/v1/**", async (route) => {
-    const path = new URL(route.request().url()).pathname.split("/rest/v1/")[1];
-    const body = path.startsWith("tracks")
-      ? [{ id: "flutter", is_active: true, track_locales: [{ name: "Flutter" }] }]
-      : path.startsWith("account_track_preferences")
-        ? [{ track_id: "flutter", is_default: true, tracks: { id: "flutter", is_active: true, track_locales: [{ name: "Flutter" }] } }]
-        : path.startsWith("account_roles") ? [{ role, suspended: false }] : [];
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+  await page.route("http://127.0.0.1:3001/v1/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/v1/me/moderator-access" && role !== "moderator") return route.fulfill({ status: 403, contentType: "application/json", body: JSON.stringify({ error: "moderator_required" }) });
+    const body = path === "/v1/me/moderator-access" ? { allowed: true }
+      : path === "/v1/me/track-preferences" ? { tracks: [{ id: "flutter", slug: "flutter", name: "Flutter" }], preferences: [{ trackId: "flutter", isDefault: true }], unavailableTracks: [] }
+      : path === "/v1/me/learner-state" ? { progress: [], favorites: [] }
+      : path === "/v1/tracks" ? { tracks: [{ id: "flutter", slug: "flutter", name: "Flutter" }] }
+      : {};
+    await route.fulfill({ status: route.request().method() === "PUT" ? 204 : 200, contentType: "application/json", body: route.request().method() === "PUT" ? "" : JSON.stringify(body) });
   });
 }
 

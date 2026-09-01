@@ -60,11 +60,11 @@ test("Fastify, Clerk, Account policy, and Supabase adapter integrate through one
   const jwks = await jwksServer(() => [key.jwk]);
   let role = { role: "moderator", suspended: false };
   const roleStore = createSupabaseAccountRoleStore({ url: "https://db.example", serviceRoleKey: "service-secret", fetchImpl: async () => new Response(JSON.stringify([role]), { status: 200 }) });
-  let saved: { userId: string; token?: string } | undefined;
+  let saved: { userId: string } | undefined;
   const app = await buildServer({ allowedOrigins: [], auth: createClerkAuth({ jwksUrl: jwks.url, issuer }), policy: createAccountPolicy(roleStore), tracks: {
     listTracks: async () => [{ id: "flutter", slug: "flutter", name: "Flutter" }],
     getPreferences: async () => ({ tracks: [{ id: "flutter", slug: "flutter", name: "Flutter" }], preferences: [{ trackId: "flutter", isDefault: true }], unavailableTracks: [] }),
-    savePreferences: async (userId, _trackIds, _defaultTrackId, token) => { saved = { userId, token }; },
+    savePreferences: async (userId: string) => { saved = { userId }; },
   } });
   app.get("/v1/moderator", { preHandler: [app.authenticate, app.requireModerator] }, async () => ({ ok: true }));
   app.get("/v1/contribute", { preHandler: [app.authenticate, app.requireConfirmedEmail] }, async () => ({ ok: true }));

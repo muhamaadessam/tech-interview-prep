@@ -1,10 +1,6 @@
-export function nodeApiEnabled(): boolean {
-  return process.env.NEXT_PUBLIC_NODE_API_ENABLED === "true" && Boolean(process.env.NEXT_PUBLIC_API_URL);
-}
-
 export function nodeApiUrl(): string | null {
   const value = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
-  return nodeApiEnabled() && value ? value : null;
+  return value || null;
 }
 
 export async function nodeRequest<T>({ path, token, fetchImpl = fetch, init }: { path: string; token?: string; fetchImpl?: typeof fetch; init?: RequestInit }): Promise<T> {

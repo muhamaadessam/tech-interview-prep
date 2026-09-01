@@ -7,6 +7,8 @@ import { createSupabaseTrackStore, TrackStoreError, type TrackStore } from "./tr
 import { createSupabaseCatalogueStore, CatalogueError, type CatalogueStore } from "./catalogue.ts";
 import { createSupabaseLearnerStateStore, LearnerStateError, type LearnerState } from "./learner-state.ts";
 import { createSupabaseSubmissionStore, SubmissionRouteError, type SubmissionRouteStore } from "./submissions.ts";
+import { CommunityStoreError, createSupabaseCommunityStore, type CommunityStore } from "./community.ts";
+import { createSupabaseOperations, OperationError, type Operations } from "./operations.ts";
 import { createRateLimiter } from "./rate-limit.ts";
 
 type LogSink = { info?: (line: string) => void; error?: (line: string) => void };
@@ -19,8 +21,15 @@ export type ServerOptions = {
   policy?: ReturnType<typeof createAccountPolicy>;
   tracks?: TrackStore;
   catalogue?: CatalogueStore;
-  learnerState?: { read: (userId: string) => Promise<LearnerState>; write: (userId: string, state: LearnerState) => Promise<void>; adjustAsked: (questionId: string, delta: -1 | 1, accessToken?: string) => Promise<{ personalCount: number | null; interviewFrequency: number }> };
+  learnerState?: {
+    read: (userId: string) => Promise<LearnerState>;
+    write: (userId: string, state: LearnerState) => Promise<void>;
+    readAsked: (questionIds: string[], userId?: string) => Promise<Record<string, { personalCount: number | null; interviewFrequency: number }>>;
+    adjustAsked: (questionId: string, delta: -1 | 1, userId: string) => Promise<{ personalCount: number | null; interviewFrequency: number }>;
+  };
   submission?: SubmissionRouteStore;
+  community?: CommunityStore;
+  operations?: Operations;
 };
 
 export function accountPolicyEnabled(value = process.env.ACCOUNT_POLICY_ENABLED): boolean {
@@ -35,7 +44,13 @@ function requestId(value: unknown): string {
   return typeof value === "string" && /^[a-zA-Z0-9._:-]{1,120}$/.test(value) ? value : crypto.randomUUID();
 }
 
-export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue, learnerState, submission }: ServerOptions): Promise<FastifyInstance> {
+function questionIds(value: unknown): string[] | null {
+  if (typeof value !== "string") return null;
+  const ids = [...new Set(value.split(",").map((id) => id.trim()).filter(Boolean))];
+  return ids.length > 0 && ids.length <= 200 && ids.every((id) => /^[a-zA-Z0-9._:-]{1,120}$/.test(id)) ? ids : null;
+}
+
+export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue, learnerState, submission, community, operations }: ServerOptions): Promise<FastifyInstance> {
   const origins = new Set(allowedOrigins.filter(Boolean));
   const limiter = createRateLimiter({ limit: 300, windowMs: 60_000, maxKeys: 10_000 });
   const trustProxy = process.env.TRUST_PROXY_HOPS === "1";
@@ -106,7 +121,7 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     if (!tracks) return reply.code(503).send({ error: "tracks_not_configured" });
     const body = request.body as { trackIds?: unknown; defaultTrackId?: unknown };
     if (!Array.isArray(body?.trackIds) || !body.trackIds.every((id) => typeof id === "string") || typeof body.defaultTrackId !== "string") return reply.code(400).send({ error: "invalid_track_preferences" });
-    await tracks.savePreferences(request.account!.sub, body.trackIds, body.defaultTrackId, request.account!.token);
+    await tracks.savePreferences(request.account!.sub, body.trackIds, body.defaultTrackId);
     return reply.code(204).send();
   });
   app.get("/v1/questions/:slug", async (request, reply) => {
@@ -115,6 +130,50 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     const locale = (request.query as { locale?: unknown }).locale;
     if (typeof slug !== "string" || !slug || (locale !== "ar" && locale !== "en")) return reply.code(400).send({ error: "invalid_question_request" });
     return catalogue.getQuestion(slug, locale);
+  });
+  app.get("/v1/community/questions", async (request, reply) => {
+    if (!community) return reply.code(503).send({ error: "community_not_configured" });
+    const { trackId, locale } = request.query as { trackId?: unknown; locale?: unknown };
+    if (typeof trackId !== "string" || !trackId || (locale !== "ar" && locale !== "en")) return reply.code(400).send({ error: "invalid_community_request" });
+    return { questions: await community.listQuestions(trackId, locale) };
+  });
+  app.get("/v1/me/community-likes", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request, reply) => {
+    if (!community) return reply.code(503).send({ error: "community_not_configured" });
+    const ids = questionIds((request.query as { questionIds?: unknown }).questionIds);
+    if (!ids) return reply.code(400).send({ error: "invalid_question_ids" });
+    return { questionIds: await community.likedQuestionIds(ids, request.account!.sub) };
+  });
+  app.post("/v1/questions/:questionId/like", { preHandler: [app.authenticate, app.requireAuthenticated, app.requireConfirmedEmail] }, async (request, reply) => {
+    if (!community) return reply.code(503).send({ error: "community_not_configured" });
+    const questionId = (request.params as { questionId?: unknown }).questionId;
+    const liked = (request.body as { liked?: unknown })?.liked;
+    if (typeof questionId !== "string" || !questionId || typeof liked !== "boolean") return reply.code(400).send({ error: "invalid_like_request" });
+    return community.setLike(questionId, liked, request.account!.sub);
+  });
+  app.get("/v1/me/moderator-access", { preHandler: [app.authenticate, app.requireModerator] }, async () => ({ allowed: true }));
+  app.post("/v1/moderation/actions", { preHandler: [app.authenticate, app.requireModerator] }, async (request, reply) => {
+    if (!operations) return reply.code(503).send({ error: "moderation_not_configured" });
+    const body = request.body;
+    if (!body || typeof body !== "object" || Array.isArray(body) || typeof (body as { action?: unknown }).action !== "string") return reply.code(400).send({ error: "invalid_moderation_request" });
+    return operations.moderate(body as Record<string, unknown>, request.account!.token!);
+  });
+  app.post("/v1/advisories", { preHandler: [app.authenticate, app.requireModerator] }, async (request, reply) => {
+    if (!operations) return reply.code(503).send({ error: "advisory_not_configured" });
+    const submissionId = (request.body as { submissionId?: unknown })?.submissionId;
+    if (typeof submissionId !== "string" || !submissionId || submissionId.length > 120) return reply.code(400).send({ error: "invalid_advisory_request" });
+    return operations.advise(submissionId, request.account!.token!);
+  });
+  app.get("/v1/asked-markers", async (request, reply) => {
+    if (!learnerState) return reply.code(503).send({ error: "learner_state_not_configured" });
+    const ids = questionIds((request.query as { questionIds?: unknown }).questionIds);
+    if (!ids) return reply.code(400).send({ error: "invalid_question_ids" });
+    return learnerState.readAsked(ids);
+  });
+  app.get("/v1/me/asked-markers", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request, reply) => {
+    if (!learnerState) return reply.code(503).send({ error: "learner_state_not_configured" });
+    const ids = questionIds((request.query as { questionIds?: unknown }).questionIds);
+    if (!ids) return reply.code(400).send({ error: "invalid_question_ids" });
+    return learnerState.readAsked(ids, request.account!.sub);
   });
   app.get("/v1/me/learner-state", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request, reply) => {
     if (!learnerState) return reply.code(503).send({ error: "learner_state_not_configured" });
@@ -139,7 +198,7 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     const questionId = (request.params as { questionId?: unknown }).questionId;
     const delta = (request.body as { delta?: unknown })?.delta;
     if (typeof questionId !== "string" || !questionId || (delta !== -1 && delta !== 1)) return reply.code(400).send({ error: "invalid_asked_marker" });
-    return learnerState.adjustAsked(questionId, delta, request.account!.token);
+    return learnerState.adjustAsked(questionId, delta, request.account!.sub);
   });
   app.post("/v1/submissions", { preHandler: [app.authenticate, app.requireAuthenticated, app.requireConfirmedEmail] }, async (request, reply) => {
     if (!submission) return reply.code(503).send({ error: "submission_not_configured" });
@@ -171,6 +230,14 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
       reply.code(error.status).send({ error: error.code });
       return;
     }
+    if (error instanceof CommunityStoreError) {
+      reply.code(error.status).send({ error: error.code });
+      return;
+    }
+    if (error instanceof OperationError) {
+      reply.code(error.status).send({ error: error.code });
+      return;
+    }
     const statusCode = typeof error === "object" && error !== null && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 500;
     logger.error?.(JSON.stringify({ error: "request_failed", statusCode }));
     reply.code(statusCode >= 400 ? statusCode : 500).send({ error: "internal_error" });
@@ -190,7 +257,9 @@ export async function createProductionServer() {
   const catalogue = supabaseUrl && serviceRoleKey ? createSupabaseCatalogueStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const learnerState = supabaseUrl && serviceRoleKey ? createSupabaseLearnerStateStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const submission = supabaseUrl && serviceRoleKey ? createSupabaseSubmissionStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
-  return buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue, learnerState, submission });
+  const community = supabaseUrl && serviceRoleKey ? createSupabaseCommunityStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
+  const operations = supabaseUrl && serviceRoleKey ? createSupabaseOperations({ url: supabaseUrl, serviceRoleKey }) : undefined;
+  return buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue, learnerState, submission, community, operations });
 }
 
 async function main() {

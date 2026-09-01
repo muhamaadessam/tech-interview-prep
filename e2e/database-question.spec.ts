@@ -3,30 +3,26 @@ import { test, expect, type Page } from "@playwright/test";
 const question = {
   id: "community-001",
   slug: "dynamic-question",
-  track_id: "flutter",
+  trackId: "flutter",
+  topicIds: ["dart"],
+  topicNames: ["Dart"],
   difficulty: "Mid",
-  published_revision_id: "revision-001",
+  lastReviewedAt: "2026-08-30",
+  translations: {
+    ar: { question: "ما هو السؤال الديناميكي؟", shortAnswer: "إجابة عربية قصيرة.", explanation: "شرح عربي كامل.", commonMistakes: [], followUpQuestions: [], sources: [{ title: "Flutter docs", url: "https://docs.flutter.dev" }] },
+    en: { question: "What is a dynamic question?", shortAnswer: "A short English answer.", explanation: "A complete English explanation.", commonMistakes: [], followUpQuestions: [], sources: [{ title: "Flutter docs", url: "https://docs.flutter.dev" }] },
+  },
 };
 
 async function mockQuestionApi(page: Page, options: { failFirst?: boolean } = {}) {
   let failing = Boolean(options.failFirst);
-  await page.route("https://mock.supabase.local/rest/v1/**", async (route) => {
+  await page.route("http://127.0.0.1:3001/v1/questions/**", async (route) => {
     if (failing) {
       await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "temporary" }) });
       return;
     }
-    const url = new URL(route.request().url());
-    const path = url.pathname.split("/rest/v1/")[1];
-    const body = path.startsWith("interview_questions") && url.searchParams.get("slug")?.includes("missing") ? []
-      : path.startsWith("interview_questions") ? [question]
-      : path.startsWith("question_revisions") ? [{ id: "revision-001", question_id: "community-001", reviewed_at: "2026-08-30" }]
-      : path.startsWith("question_revision_locales") ? [
-        { locale: "ar", question: "ما هو السؤال الديناميكي؟", short_answer: "إجابة عربية قصيرة.", explanation: "شرح عربي كامل.", code_example: null, common_mistakes: [], follow_up_questions: [], sources: [{ title: "Flutter docs", url: "https://docs.flutter.dev" }] },
-        { locale: "en", question: "What is a dynamic question?", short_answer: "A short English answer.", explanation: "A complete English explanation.", code_example: null, common_mistakes: [], follow_up_questions: [], sources: [{ title: "Flutter docs", url: "https://docs.flutter.dev" }] },
-      ]
-      : path.startsWith("question_topics") ? [{ topic_id: "dart" }]
-      : [{ topic_id: "dart", name: "Dart" }];
-    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+    const missing = new URL(route.request().url()).pathname.endsWith("/missing");
+    await route.fulfill({ status: missing ? 404 : 200, contentType: "application/json", body: JSON.stringify(missing ? { error: "question_not_found" } : question) });
   });
   return () => { failing = false; };
 }

@@ -15,9 +15,8 @@ test("sortByInterviewFrequency keeps stable order for equal counts", () => {
 
 test("asked marker writes use the Node route when enabled", async () => {
   process.env.NEXT_PUBLIC_API_URL = "https://api.example";
-  process.env.NEXT_PUBLIC_NODE_API_ENABLED = "true";
   try {
     const result = await adjustAskedMarker({ questionId: "q1", delta: 1, getToken: async () => "token", fetchImpl: async (input, init) => { assert.equal(String(input), "https://api.example/v1/questions/q1/asked-marker"); assert.equal(init?.method, "POST"); return Response.json({ personalCount: 1, interviewFrequency: 2 }); } });
     assert.deepEqual(result, { personalCount: 1, interviewFrequency: 2 });
-  } finally { delete process.env.NEXT_PUBLIC_API_URL; delete process.env.NEXT_PUBLIC_NODE_API_ENABLED; }
+  } finally { delete process.env.NEXT_PUBLIC_API_URL; }
 });

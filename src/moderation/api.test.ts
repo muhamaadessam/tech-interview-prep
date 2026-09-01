@@ -3,8 +3,7 @@ import test from "node:test";
 
 import { hasModeratorAccess, ModerationError, moderationRequest } from "./api.ts";
 
-process.env.NEXT_PUBLIC_SUPABASE_URL = "https://supabase.example";
-process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "publishable";
+process.env.NEXT_PUBLIC_API_URL = "https://api.example";
 
 test("moderationRequest sends the Clerk token and returns the response", async () => {
   let request: Request | undefined;
@@ -17,6 +16,7 @@ test("moderationRequest sends the Clerk token and returns the response", async (
     },
   });
   assert.deepEqual(result, { ok: true });
+  assert.equal(request?.url, "https://api.example/v1/moderation/actions");
   assert.equal(request?.headers.get("Authorization"), "Bearer clerk-token");
   assert.deepEqual(await request?.json(), { action: "list_submissions", status: "pending" });
 });
@@ -28,9 +28,8 @@ test("moderationRequest reports function errors", async () => {
   );
 });
 
-test("navigation access fails closed for ordinary and suspended Accounts", async () => {
-  const check = (body: unknown) => hasModeratorAccess({ userId: "account-1", getToken: async () => "token", fetchImpl: async () => new Response(JSON.stringify(body), { status: 200 }) });
-  assert.equal(await check([{ role: "moderator", suspended: false }]), true);
-  assert.equal(await check([{ role: "learner", suspended: false }]), false);
-  assert.equal(await check([{ role: "moderator", suspended: true }]), false);
+test("navigation access is decided by the Node policy endpoint", async () => {
+  const check = (body: unknown, status = 200) => hasModeratorAccess({ userId: "browser-id-is-ignored", getToken: async () => "token", fetchImpl: async (input) => { assert.equal(String(input), "https://api.example/v1/me/moderator-access"); return new Response(JSON.stringify(body), { status }); } });
+  assert.equal(await check({ allowed: true }), true);
+  assert.equal(await check({ error: "moderator_required" }, 403), false);
 });

@@ -10,7 +10,6 @@ import { localeFromPathname, localizedHref, messages, type Locale } from "../i18
 import { resolveActiveTrack, withQueryContext } from "../tracks/active-track";
 import { loadPublicTracks, loadTrackPreferences, type TrackPreferenceState } from "../tracks/preferences";
 import { LoadingPlaceholder } from "./loading-placeholder";
-import { nodeApiEnabled } from "../backend/api";
 
 type Phase = "loading" | "ready" | "error";
 type ActiveTrackValue = {
@@ -72,7 +71,7 @@ function ActiveTrackProvider({ children, authenticated, loading = false, userId,
   }, [authenticated, getToken, loading, locale, reload, userId]);
 
   useEffect(() => {
-    if (loading || authenticated || !nodeApiEnabled()) return;
+    if (loading || authenticated) return;
     let current = true;
     loadPublicTracks({ locale }).then((options) => {
       if (!current) return;

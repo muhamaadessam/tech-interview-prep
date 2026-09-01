@@ -49,9 +49,8 @@ with a large SQL view until measurements show those reads are the bottleneck.
 
 ## Rollback
 
-Disable the relevant `NEXT_PUBLIC_NODE_API_ENABLED` operation flag and rebuild
-the static frontend. Indexes are additive; leaving them in place is safe during
-rollback and avoids a destructive migration under traffic.
+Redeploy the previous known-good frontend and backend artifacts together.
+Indexes are additive; leaving them in place is safe during rollback.
 
 ## First staging deployment
 

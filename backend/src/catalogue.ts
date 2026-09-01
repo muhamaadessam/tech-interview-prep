@@ -1,4 +1,5 @@
-import { createDatabaseQuestionReader, DatabaseQuestionNotFound, type DatabaseQuestion } from "../../src/questions/database.ts";
+import type { DatabaseQuestion } from "../../src/questions/database.ts";
+import { createQuestionReader, QuestionNotFound } from "./question-reader.ts";
 import { fetchUpstream } from "./upstream.ts";
 
 export class CatalogueError extends Error {
@@ -10,12 +11,12 @@ export class CatalogueError extends Error {
 export type CatalogueStore = { getQuestion: (slug: string, locale: "ar" | "en") => Promise<DatabaseQuestion> };
 
 export function createSupabaseCatalogueStore({ url, serviceRoleKey, fetchImpl = fetch }: { url: string; serviceRoleKey: string; fetchImpl?: typeof fetch }): CatalogueStore {
-  const read = createDatabaseQuestionReader({ url, key: serviceRoleKey, fetchImpl: (input, init) => fetchUpstream(fetchImpl, input, init) });
+  const read = createQuestionReader({ url, key: serviceRoleKey, fetchImpl: (input, init) => fetchUpstream(fetchImpl, input, init) });
   return {
     async getQuestion(slug, locale) {
       try { return await read(slug, locale); }
       catch (error) {
-        if (error instanceof DatabaseQuestionNotFound) throw new CatalogueError("question_not_found", 404);
+        if (error instanceof QuestionNotFound) throw new CatalogueError("question_not_found", 404);
         throw new CatalogueError("catalogue_unavailable", 503);
       }
     },
