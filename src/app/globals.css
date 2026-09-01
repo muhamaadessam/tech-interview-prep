@@ -56,6 +56,9 @@ body {
   line-height: 1.75;
 }
 
+.site-frame { min-height: 100dvh; display: flex; flex-direction: column; }
+.site-frame > main { flex: 1 0 auto; width: 100%; }
+
 a { color: inherit; }
 
 .shell {
@@ -216,6 +219,15 @@ h3 { line-height: 1.45; }
 .page-header { padding-block: 64px 28px; }
 .page-header h1 { margin-block: 10px 14px; font-size: clamp(2rem, 5vw, 3.5rem); }
 .page-header p { max-width: 720px; color: var(--muted); }
+
+.legal-page { max-width: 980px; }
+.legal-updated { margin-block-start: 18px; font-size: .88rem; }
+.legal-content { display: grid; gap: 0; border-block: 1px solid var(--border); }
+.legal-section { padding-block: 24px; }
+.legal-section + .legal-section { border-top: 1px solid var(--border); }
+.legal-section h2 { margin: 0 0 8px; font-size: 1.08rem; }
+.legal-section p { max-width: 780px; margin: 0; color: var(--muted); }
+.legal-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; padding-block: 28px 8px; }
 
 .library-filters, .session-filters { display: grid; grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(130px, 1fr)) auto; gap: 12px; align-items: end; margin-block-end: 24px; }
 .library-filters label, .session-filters label { display: grid; gap: 6px; color: var(--muted); font-weight: 800; font-size: .9rem; }
@@ -419,7 +431,18 @@ h3 { line-height: 1.45; }
 
 :where(a, button, input, select):focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
 
-.footer { display: flex; justify-content: space-between; gap: 24px; padding-block: 28px; border-top: 1px solid var(--border); color: var(--muted); font-size: .9rem; }
+.site-footer { border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-soft) 38%, var(--background)); }
+.footer-inner { padding-block: 40px 20px; }
+.footer-grid { display: grid; grid-template-columns: minmax(220px, 1.2fr) minmax(0, 2fr); gap: 36px; }
+.footer-brand { display: grid; align-content: start; gap: 8px; }
+.footer-brand strong { color: var(--text); font-size: 1.08rem; }
+.footer-brand p { max-width: 32ch; margin: 0; color: var(--muted); font-size: .9rem; }
+.footer-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.footer-group { display: grid; align-content: start; justify-items: start; gap: 7px; }
+.footer-heading { margin: 0 0 4px; color: var(--text); font-size: .82rem; font-weight: 800; letter-spacing: .02em; }
+.footer-group a { width: fit-content; color: var(--muted); font-size: .9rem; text-decoration: none; }
+.footer-group a:hover, .footer-group a:focus-visible { color: var(--brand-strong); text-decoration: underline; text-underline-offset: 4px; }
+.footer-bottom { display: flex; justify-content: space-between; gap: 16px; margin-block-start: 32px; padding-block-start: 16px; border-top: 1px solid var(--border); color: var(--muted); font-size: .8rem; }
 
 @media (max-width: 900px) {
   .nav { min-height: 64px; gap: 12px; }
@@ -450,7 +473,10 @@ h3 { line-height: 1.45; }
   .moderator-toolbar { align-items: stretch; flex-direction: column; }
   .submission-grid > label, .submission-topics { grid-column: auto !important; }
   .library-toolbar { align-items: flex-start; flex-direction: column; }
-  .section-header, .footer, .reset-panel { align-items: flex-start; flex-direction: column; }
+  .section-header, .reset-panel { align-items: flex-start; flex-direction: column; }
+  .footer-grid { grid-template-columns: 1fr; gap: 26px; }
+  .footer-links { gap: 18px; }
+  .footer-bottom { align-items: flex-start; flex-direction: column; }
   .progress-summary { align-items: flex-start; flex-direction: column; }
   .active-track-selector { align-items: stretch; flex-direction: column; }
   .active-track-selector label { align-items: stretch; flex-direction: column; }
@@ -459,6 +485,11 @@ h3 { line-height: 1.45; }
   .track-preferences-card { max-height: calc(100dvh - 24px); padding: 20px; }
   .loading-skeleton-builder, .loading-skeleton-form, .loading-skeleton-grid { grid-template-columns: 1fr; }
   .loading-skeleton-form span:nth-child(3), .loading-skeleton-form span:nth-child(4), .loading-skeleton-form span:nth-child(5) { grid-column: auto; }
+}
+
+@media (max-width: 480px) {
+  .footer-links { grid-template-columns: 1fr 1fr; }
+  .footer-group:last-child { grid-column: 1 / -1; }
 }
 
 @media (prefers-reduced-motion: no-preference) {

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 
 import { localeDirection, localeFromPathname, localizedHref, messages, type Locale } from "../i18n";
+import { repositoryUrl } from "./site-config";
 import { ThemeToggle } from "./theme-toggle";
 import { BrandLogo } from "./logo";
 import { ClerkControls } from "./clerk-controls";
@@ -66,8 +67,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
   return (
     <>
       <a className="skip-link" href="#main-content">{copy.skip}</a>
-      <header className="site-header">
-        <nav className="shell nav" aria-label={locale === "ar" ? "التنقل الرئيسي" : "Main navigation"}>
+      <div className="site-frame">
+        <header className="site-header">
+          <nav className="shell nav" aria-label={locale === "ar" ? "التنقل الرئيسي" : "Main navigation"}>
           <Link className="brand" href={href("/")} prefetch={false} aria-label={`${copy.brandName} — ${copy.home}`}>
             <BrandLogo />
             <span dir={locale === "ar" ? "rtl" : "ltr"}>{copy.brandName}</span>
@@ -89,13 +91,44 @@ export function SiteShell({ children }: { children: ReactNode }) {
             <div className="mobile-navigation-links">{links}</div>
             <div className="mobile-navigation-actions"><ClerkControls locale={locale} myTracksHref={href("/my-tracks")} moderatorHref={href("/moderator")} /><Link className="locale-switcher icon-control" href={switchHref} prefetch={false} aria-label={copy.language} title={copy.language} onClick={() => menu.current?.close()}><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5h7M7.5 5v2.2a8.3 8.3 0 0 1-4.1 7.1M5 10.8c1.5 1.8 3.4 3.1 5.8 3.9M14 4l-4 10m2.2-4h7.3M16 13.5l3.5 6.5M12.7 16h6.6" /></svg><span className="sr-only">{copy.language}</span></Link><ThemeToggle locale={locale} /></div>
           </dialog>
-        </nav>
-      </header>
-      <main id="main-content">{children}</main>
-      <footer className="shell footer">
-        <span dir="ltr">Tech Interview Prep</span>
-        <span>{copy.footer}</span>
-      </footer>
+          </nav>
+        </header>
+        <main id="main-content">{children}</main>
+        <footer className="site-footer">
+          <div className="shell footer-inner">
+            <div className="footer-grid">
+              <div className="footer-brand">
+                <strong dir="ltr">Tech Interview Prep</strong>
+                <p>{copy.footer}</p>
+              </div>
+              <nav className="footer-links" aria-label={locale === "ar" ? "روابط الموقع" : "Site links"}>
+                <div className="footer-group">
+                  <p className="footer-heading">{copy.footerExplore}</p>
+                  <Link aria-label={locale === "ar" ? `استكشف ${copy.topics}` : `Browse ${copy.topics}`} href={href("/topics")} prefetch={false}>{copy.topics}</Link>
+                  <Link aria-label={locale === "ar" ? "تصفح الأسئلة" : "Browse questions"} href={href("/questions")} prefetch={false}>{copy.questions}</Link>
+                  <Link aria-label={locale === "ar" ? `تدرّب: ${copy.interview}` : `Practice: ${copy.interview}`} href={href("/interview")} prefetch={false}>{copy.interview}</Link>
+                </div>
+                <div className="footer-group">
+                  <p className="footer-heading">{copy.footerPractice}</p>
+                  <Link aria-label={locale === "ar" ? `راجع ${copy.progress}` : `Review ${copy.progress}`} href={href("/progress")} prefetch={false}>{copy.progress}</Link>
+                  <Link aria-label={locale === "ar" ? "فتح المسارات المحفوظة" : "Open saved routes"} href={href("/my-tracks")} prefetch={false}>{copy.myTracks}</Link>
+                  <Link aria-label={locale === "ar" ? `ساهم: ${copy.submit}` : `Contribute: ${copy.submit}`} href={href("/submissions")} prefetch={false}>{copy.submit}</Link>
+                </div>
+                <div className="footer-group">
+                  <p className="footer-heading">{copy.footerPolicies}</p>
+                  <Link href={localizedHref(locale, "/privacy")} prefetch={false}>{copy.privacyPolicy}</Link>
+                  <Link href={localizedHref(locale, "/terms")} prefetch={false}>{copy.termsOfUse}</Link>
+                  <a href={repositoryUrl} target="_blank" rel="noreferrer">{copy.sourceCode}<span className="sr-only"> (GitHub)</span></a>
+                </div>
+              </nav>
+            </div>
+            <div className="footer-bottom">
+              <span>{copy.footerRights}</span>
+              <span>{copy.footerNote}</span>
+            </div>
+          </div>
+        </footer>
+      </div>
     </>
   );
 }
