@@ -23,6 +23,7 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   const [rows, setRows] = useState<ModerationSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [copiedPromptId, setCopiedPromptId] = useState("");
   const [importSubmissionId, setImportSubmissionId] = useState("");
   const [importDocument, setImportDocument] = useState("");
   const [importPreview, setImportPreview] = useState<unknown>(null);
@@ -114,6 +115,11 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
     } catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
   }
 
+  async function copyPrompt(id: string, prompt: string) {
+    try { await navigator.clipboard.writeText(prompt); setCopiedPromptId(id); }
+    catch { setError(locale === "ar" ? "تعذر نسخ الـPrompt." : "Could not copy the prompt."); }
+  }
+
   if (!isLoaded) return <LoadingPlaceholder variant="moderator" />;
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.moderatorSignIn}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
   if (moderatorAccess === null) return <LoadingPlaceholder variant="moderator" />;
@@ -127,6 +133,7 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
     {followUpMode ? loading ? <LoadingPlaceholder variant="moderator" /> : <FollowUpEditor locale={locale} sources={followUpSources} targets={followUpTargets} sourceId={followUpSourceId} onSourceChange={setFollowUpSourceId} onTargetsChange={(targetIds) => setFollowUpSources((current) => current.map((item) => item.id === followUpSourceId ? { ...item, target_ids: targetIds } : item))} onSave={() => void saveFollowUps()} saving={followUpSaving} /> : communityMode ? loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{communityRows.map((row) => <article className="card moderator-card" key={row.id}><div className="meta"><span className="chip">{row.visibility}</span><span className="chip">{row.track_id}</span>{row.promoted_at && <span className="chip">{copy.promoted}</span>}</div><h2>{row.slug}</h2><p>{row.community_contributor_username ? `@${row.community_contributor_username}` : copy.contributor}</p><p className="field-hint">{row.community_published_at ?? "—"}{row.promotion_like_count ? ` · ${row.promotion_like_count} ${copy.likes}` : ""}</p><label>{copy.moderatorReason}<textarea value={reason[row.id] ?? ""} onChange={(event) => setReason((current) => ({ ...current, [row.id]: event.target.value }))} maxLength={500} /></label><div className="actions">{row.community_unpublished_at ? <button className="button" type="button" onClick={() => void moderateCommunity(row.id, "republish_question")}>{locale === "ar" ? "إعادة النشر" : "Republish"}</button> : <button className="button danger" type="button" onClick={() => void moderateCommunity(row.id, "unpublish_question")}>{locale === "ar" ? "إخفاء" : "Unpublish"}</button>}</div></article>)}</div> : loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{rows.map((row) => <article className="card moderator-card" key={row.id}>
       <div className="meta"><span className="chip">{row.difficulty}</span><span className="chip">{statusLabel(row.status, locale)}</span></div>
       <h2>{row.payload.question ?? "—"}</h2><p>{row.payload.shortAnswer ?? ""}</p>
+      {row.prompt && <div className="moderator-prompt"><label>{locale === "ar" ? "Prompt مراجعة السؤال بالـAI" : "AI question review prompt"}<textarea readOnly value={row.prompt} rows={12} /></label><button className="button" type="button" onClick={() => void copyPrompt(row.id, row.prompt ?? "")}>{copiedPromptId === row.id ? (locale === "ar" ? "تم النسخ" : "Copied") : (locale === "ar" ? "نسخ الـPrompt" : "Copy prompt")}</button></div>}
       {row.review_notes && <p className="field-hint">{row.review_notes}</p>}
       <label>{copy.moderatorReason}<textarea value={reason[row.id] ?? ""} onChange={(event) => setReason((current) => ({ ...current, [row.id]: event.target.value }))} maxLength={500} /></label>
       {row.status === "approved" && <label>{locale === "ar" ? "معرّف السؤال المنشور" : "Published question ID"}<input value={questionIds[row.id] ?? ""} onChange={(event) => setQuestionIds((current) => ({ ...current, [row.id]: event.target.value }))} placeholder="question-id" /></label>}

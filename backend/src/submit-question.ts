@@ -1,5 +1,4 @@
 import { normalizeQuestion, validateSubmission, type ValidatedSubmission } from "../../src/submissions/validation.ts";
-import { buildSubmissionPrompt } from "../../src/submissions/validation.ts";
 import { fetchUpstream } from "./upstream.ts";
 
 const cors = {
@@ -98,7 +97,7 @@ export async function handleSubmit(request: Request, fetchImpl: FetchLike = fetc
     const existing = await (await db(`/rest/v1/submissions?select=id,status,last_error,revision_number,duplicate_advisory&submitted_by=eq.${encodeURIComponent(userId)}&idempotency_key=eq.${encodeURIComponent(draft.idempotencyKey)}&limit=1`, key)).json() as SubmissionRow[];
     const previous = existing[0];
     if (previous && previous.status !== "failed") {
-      return response({ submissionId: previous.id, status: previous.status, prompt: buildSubmissionPrompt(draft), duplicateAdvisory: previous.duplicate_advisory });
+      return response({ submissionId: previous.id, status: previous.status, duplicateAdvisory: previous.duplicate_advisory });
     }
     const preferences = await (await db(`/rest/v1/account_track_preferences?select=track_id,tracks!inner(is_active)&user_id=eq.${encodeURIComponent(userId)}&track_id=eq.${encodeURIComponent(draft.trackId)}&tracks.is_active=eq.true&limit=1`, key)).json() as Array<{ track_id: string }>;
     if (preferences.length !== 1) return response({ error: "track_preference_required" }, 403);
@@ -144,7 +143,7 @@ export async function handleSubmit(request: Request, fetchImpl: FetchLike = fetc
       await db(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "pending", last_error: null }) });
     }
 
-    return response({ submissionId, status: "pending", prompt: buildSubmissionPrompt(draft), duplicateAdvisory: Boolean(duplicateOf) });
+    return response({ submissionId, status: "pending", duplicateAdvisory: Boolean(duplicateOf) });
   } catch (error) {
     console.error(error);
     return response({ error: "submission_unavailable" }, 503);
