@@ -1,4 +1,5 @@
 import type { FastifyRequest } from "fastify";
+import { fetchUpstream } from "./upstream.ts";
 
 export type AccountRole = { role?: string; suspended?: boolean };
 
@@ -59,7 +60,7 @@ export function createSupabaseAccountRoleStore(options: { url: string; serviceRo
   return {
     async getRole(userId) {
       const query = `${options.url.replace(/\/$/, "")}/rest/v1/account_roles?select=role,suspended&user_id=eq.${encodeURIComponent(userId)}&limit=1`;
-      const response = await fetchImpl(query, { headers: { apikey: options.serviceRoleKey, Authorization: `Bearer ${options.serviceRoleKey}`, Accept: "application/json" } });
+      const response = await fetchUpstream(fetchImpl, query, { headers: { apikey: options.serviceRoleKey, Authorization: `Bearer ${options.serviceRoleKey}`, Accept: "application/json" } });
       if (!response.ok) throw new Error("account_role_lookup_failed");
       const rows = await response.json() as AccountRole[];
       return rows[0] ?? null;

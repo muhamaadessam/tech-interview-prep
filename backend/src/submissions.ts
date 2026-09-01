@@ -1,4 +1,5 @@
 import { validateSubmission, type SubmissionDraft } from "../../src/submissions/validation.ts";
+import { fetchUpstream } from "./upstream.ts";
 
 export class SubmissionRouteError extends Error {
   readonly code: string;
@@ -14,7 +15,7 @@ export function createSupabaseSubmissionStore({ url, serviceRoleKey, fetchImpl =
     async submit(draft, accessToken) {
       if (!accessToken) throw new SubmissionRouteError("unauthenticated", 401);
       try { validateSubmission(draft); } catch (error) { throw new SubmissionRouteError(error instanceof Error ? error.message : "payload_invalid", 400); }
-      const response = await fetchImpl(`${base}/functions/v1/submit-question`, { method: "POST", headers: { apikey: serviceRoleKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify(draft) });
+      const response = await fetchUpstream(fetchImpl, `${base}/functions/v1/submit-question`, { method: "POST", headers: { apikey: serviceRoleKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify(draft) });
       const body = await response.json().catch(() => ({}));
       if (!response.ok) throw new SubmissionRouteError(typeof body?.error === "string" ? body.error : "submission_unavailable", response.status >= 500 ? response.status : response.status);
       return body;

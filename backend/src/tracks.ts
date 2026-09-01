@@ -31,7 +31,7 @@ export function createSupabaseTrackStore(options: { url: string; serviceRoleKey:
   const fetchImpl = options.fetchImpl ?? fetch;
   const base = options.url.replace(/\/$/, "");
   const request = async (path: string, init?: RequestInit) => {
-    const response = await fetchImpl(`${base}/rest/v1/${path}`, {
+    const response = await fetchUpstream(fetchImpl, `${base}/rest/v1/${path}`, {
       ...init,
       headers: { apikey: options.serviceRoleKey, Authorization: `Bearer ${options.serviceRoleKey}`, Accept: "application/json", ...init?.headers },
     });
@@ -60,7 +60,7 @@ export function createSupabaseTrackStore(options: { url: string; serviceRoleKey:
     },
     async savePreferences(_userId, trackIds, defaultTrackId, accessToken) {
       if (!accessToken) throw new TrackStoreError("track_preferences_token_required", 401);
-      const response = await fetchImpl(`${base}/rest/v1/rpc/set_track_preferences`, { method: "POST", headers: { apikey: options.serviceRoleKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ p_track_ids: [...new Set(trackIds)], p_default_track_id: defaultTrackId }) });
+      const response = await fetchUpstream(fetchImpl, `${base}/rest/v1/rpc/set_track_preferences`, { method: "POST", headers: { apikey: options.serviceRoleKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ p_track_ids: [...new Set(trackIds)], p_default_track_id: defaultTrackId }) });
       if (!response.ok) {
         const body = await response.json().catch(() => ({})) as { code?: unknown; message?: unknown };
         const message = typeof body.message === "string" ? body.message : "";
@@ -71,3 +71,4 @@ export function createSupabaseTrackStore(options: { url: string; serviceRoleKey:
     },
   };
 }
+import { fetchUpstream } from "./upstream.ts";

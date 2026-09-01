@@ -14,7 +14,7 @@ type Store = { read: (userId: string) => Promise<LearnerState>; write: (userId: 
 export function createSupabaseLearnerStateStore({ url, serviceRoleKey, fetchImpl = fetch }: { url: string; serviceRoleKey: string; fetchImpl?: FetchLike }): Store {
   const base = url.replace(/\/$/, "");
   const request = async (path: string, init?: RequestInit) => {
-    const response = await fetchImpl(`${base}/rest/v1/${path}`, { ...init, headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, Accept: "application/json", ...init?.headers } });
+    const response = await fetchUpstream(fetchImpl, `${base}/rest/v1/${path}`, { ...init, headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, Accept: "application/json", ...init?.headers } });
     if (!response.ok) throw new LearnerStateError("learner_state_unavailable", response.status >= 500 ? response.status : 503);
     return response;
   };
@@ -34,7 +34,7 @@ export function createSupabaseLearnerStateStore({ url, serviceRoleKey, fetchImpl
     },
     async adjustAsked(questionId, delta, accessToken) {
       if (!accessToken) throw new LearnerStateError("unauthenticated", 401);
-      const response = await fetchImpl(`${base}/rest/v1/rpc/adjust_asked_marker`, { method: "POST", headers: { apikey: serviceRoleKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ p_question_id: questionId, p_delta: delta }) });
+      const response = await fetchUpstream(fetchImpl, `${base}/rest/v1/rpc/adjust_asked_marker`, { method: "POST", headers: { apikey: serviceRoleKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify({ p_question_id: questionId, p_delta: delta }) });
       const body = await response.json().catch(() => ({})) as Record<string, unknown>;
       if (!response.ok) throw new LearnerStateError(typeof body.message === "string" ? body.message : "asked_marker_unavailable", response.status >= 500 ? response.status : 400);
       if (typeof body.personal_count !== "number" || typeof body.interview_frequency !== "number") throw new LearnerStateError("asked_marker_invalid_response", 502);
@@ -42,3 +42,4 @@ export function createSupabaseLearnerStateStore({ url, serviceRoleKey, fetchImpl
     },
   };
 }
+import { fetchUpstream } from "./upstream.ts";

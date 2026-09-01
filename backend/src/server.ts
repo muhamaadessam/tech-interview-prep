@@ -7,6 +7,7 @@ import { createSupabaseTrackStore, TrackStoreError, type TrackStore } from "./tr
 import { createSupabaseCatalogueStore, CatalogueError, type CatalogueStore } from "./catalogue.ts";
 import { createSupabaseLearnerStateStore, LearnerStateError, type LearnerState } from "./learner-state.ts";
 import { createSupabaseSubmissionStore, SubmissionRouteError, type SubmissionRouteStore } from "./submissions.ts";
+import { createRateLimiter } from "./rate-limit.ts";
 
 type LogSink = { info?: (line: string) => void; error?: (line: string) => void };
 
@@ -36,6 +37,7 @@ function requestId(value: unknown): string {
 
 export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue, learnerState, submission }: ServerOptions): Promise<FastifyInstance> {
   const origins = new Set(allowedOrigins.filter(Boolean));
+  const limiter = createRateLimiter({ limit: 300, windowMs: 60_000, maxKeys: 10_000 });
   const startedAt = new WeakMap<object, bigint>();
   const app = Fastify({ logger: false, bodyLimit: 256 * 1024, genReqId: (request) => requestId(request.headers["x-request-id"]) });
   app.decorateRequest("account", null);
@@ -50,6 +52,10 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     startedAt.set(request, process.hrtime.bigint());
     const id = request.id;
     reply.header("x-request-id", id);
+    if ((request.url.startsWith("/v1/questions") || request.url.startsWith("/v1/tracks") || request.url.startsWith("/v1/submissions")) && !limiter.allow(`${request.ip}:${request.url.split("?")[0]}`)) {
+      reply.code(429).send({ error: "rate_limit_exceeded" });
+      return;
+    }
     const origin = request.headers.origin;
     if (origin && !origins.has(origin)) {
       reply.code(403).send({ error: "cors_origin_denied" });
@@ -184,6 +190,9 @@ async function main() {
   const learnerState = supabaseUrl && serviceRoleKey ? createSupabaseLearnerStateStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const submission = supabaseUrl && serviceRoleKey ? createSupabaseSubmissionStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue, learnerState, submission });
+  const shutdown = async () => { try { await app.close(); } finally { process.exitCode = 0; } };
+  process.once("SIGTERM", shutdown);
+  process.once("SIGINT", shutdown);
   const port = Number(process.env.PORT ?? 3000);
   await app.listen({ host: "0.0.0.0", port: Number.isInteger(port) && port > 0 ? port : 3000 });
 }
