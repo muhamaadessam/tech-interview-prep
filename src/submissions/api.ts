@@ -1,4 +1,5 @@
 import type { SubmissionDraft } from "./validation";
+import { nodeApiUrl, nodeRequest } from "../backend/api.ts";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -13,8 +14,12 @@ export type SubmissionResult = {
 };
 
 export class SubmissionError extends Error {
-  constructor(public readonly code: string, public readonly status: number) {
+  readonly code: string;
+  readonly status: number;
+  constructor(code: string, status: number) {
     super(code);
+    this.code = code;
+    this.status = status;
   }
 }
 
@@ -27,9 +32,13 @@ export async function submitQuestion({
   getToken: () => Promise<string | null>;
   fetchImpl?: typeof fetch;
 }): Promise<SubmissionResult> {
-  if (!supabaseUrl || !supabaseKey) throw new SubmissionError("submission_unavailable", 503);
   const token = await getToken();
   if (!token) throw new SubmissionError("unauthenticated", 401);
+  if (nodeApiUrl()) {
+    try { return await nodeRequest<SubmissionResult>({ path: "/submissions", token, fetchImpl, init: { method: "POST", body: JSON.stringify(draft) } }); }
+    catch (error) { throw new SubmissionError((error as { code?: string }).code ?? "submission_unavailable", (error as { status?: number }).status ?? 503); }
+  }
+  if (!supabaseUrl || !supabaseKey) throw new SubmissionError("submission_unavailable", 503);
   const result = await fetchImpl(`${supabaseUrl}/functions/v1/submit-question`, {
     method: "POST",
     headers: { apikey: supabaseKey, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },

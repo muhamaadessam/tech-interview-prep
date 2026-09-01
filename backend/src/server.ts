@@ -6,6 +6,7 @@ import { createAccountPolicy, createSupabaseAccountRoleStore, PolicyError, type 
 import { createSupabaseTrackStore, TrackStoreError, type TrackStore } from "./tracks.ts";
 import { createSupabaseCatalogueStore, CatalogueError, type CatalogueStore } from "./catalogue.ts";
 import { createSupabaseLearnerStateStore, LearnerStateError, type LearnerState } from "./learner-state.ts";
+import { createSupabaseSubmissionStore, SubmissionRouteError, type SubmissionRouteStore } from "./submissions.ts";
 
 type LogSink = { info?: (line: string) => void; error?: (line: string) => void };
 
@@ -18,6 +19,7 @@ export type ServerOptions = {
   tracks?: TrackStore;
   catalogue?: CatalogueStore;
   learnerState?: { read: (userId: string) => Promise<LearnerState>; write: (userId: string, state: LearnerState) => Promise<void>; adjustAsked: (questionId: string, delta: -1 | 1, accessToken?: string) => Promise<{ personalCount: number | null; interviewFrequency: number }> };
+  submission?: SubmissionRouteStore;
 };
 
 export function accountPolicyEnabled(value = process.env.ACCOUNT_POLICY_ENABLED): boolean {
@@ -32,7 +34,7 @@ function requestId(value: unknown): string {
   return typeof value === "string" && /^[a-zA-Z0-9._:-]{1,120}$/.test(value) ? value : crypto.randomUUID();
 }
 
-export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue, learnerState }: ServerOptions): Promise<FastifyInstance> {
+export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue, learnerState, submission }: ServerOptions): Promise<FastifyInstance> {
   const origins = new Set(allowedOrigins.filter(Boolean));
   const startedAt = new WeakMap<object, bigint>();
   const app = Fastify({ logger: false, genReqId: (request) => requestId(request.headers["x-request-id"]) });
@@ -132,6 +134,10 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     if (typeof questionId !== "string" || !questionId || (delta !== -1 && delta !== 1)) return reply.code(400).send({ error: "invalid_asked_marker" });
     return learnerState.adjustAsked(questionId, delta, request.account!.token);
   });
+  app.post("/v1/submissions", { preHandler: [app.authenticate, app.requireAuthenticated, app.requireConfirmedEmail] }, async (request, reply) => {
+    if (!submission) return reply.code(503).send({ error: "submission_not_configured" });
+    return submission.submit(request.body as never, request.account!.token);
+  });
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof AuthError) {
@@ -154,6 +160,10 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
       reply.code(error.status).send({ error: error.code });
       return;
     }
+    if (error instanceof SubmissionRouteError) {
+      reply.code(error.status).send({ error: error.code });
+      return;
+    }
     const statusCode = typeof error === "object" && error !== null && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 500;
     logger.error?.(JSON.stringify({ error: "request_failed", statusCode }));
     reply.code(statusCode >= 400 ? statusCode : 500).send({ error: "internal_error" });
@@ -172,7 +182,8 @@ async function main() {
   const tracks = supabaseUrl && serviceRoleKey ? createSupabaseTrackStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const catalogue = supabaseUrl && serviceRoleKey ? createSupabaseCatalogueStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const learnerState = supabaseUrl && serviceRoleKey ? createSupabaseLearnerStateStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
-  const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue, learnerState });
+  const submission = supabaseUrl && serviceRoleKey ? createSupabaseSubmissionStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
+  const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue, learnerState, submission });
   const port = Number(process.env.PORT ?? 3000);
   await app.listen({ host: "0.0.0.0", port: Number.isInteger(port) && port > 0 ? port : 3000 });
 }
