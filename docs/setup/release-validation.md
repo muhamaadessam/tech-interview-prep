@@ -14,10 +14,10 @@ Before a production cutover, also verify in the deployed environment:
 
 - Clerk Production email/password and Google sign-in, redirect URLs, and allowed origins.
 - Node accepts a Clerk Production token and rejects invalid or expired tokens.
-- Submission, moderation, advisory, and `DELETE /v1/me/account` have their server-only secrets.
+- Submission, moderation, and `DELETE /v1/me/account` have their server-only secrets.
 - Both `/ar/` and `/en/` deep links, RTL/LTR, mobile layout, keyboard focus, and the missing-question route.
 - A learner can select multiple Track Preferences, switch the Active Track, and build a Full Interview across multiple Topics with an inclusive level; switching Tracks clears the previous Topic context.
 - A moderator can review oldest-first, request changes, and reject a submission; publication is only complete after a bilingual revision is inserted and selected as `published_revision_id`.
-- A moderator can trigger one server-side AI advisory per Submission Revision; the Issue remains `needs-review` and the advisory is clearly non-authoritative.
+- A moderator can preview and confirm a valid bilingual AI JSON document; it remains non-public until explicit publication.
 
 Keep screenshots, command output, migration status, and rollback notes with the release. Never commit `.env.local` or service-role credentials.

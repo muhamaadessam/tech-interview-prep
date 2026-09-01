@@ -1,61 +1,36 @@
-# Spec: Submission to Review side effects
+# Spec: Submission to Review
 
-## Problem
+The Node backend is the only application seam for Submissions and Review.
+After validation and persistence, `/v1/submissions` returns a bounded Prompt
+that a contributor can send to any external AI agent. A Moderator pastes the
+resulting bilingual JSON into `/v1/moderation/actions` for preview and explicit
+confirmation. Confirmation creates a new Submission Revision and puts the
+Submission into the existing Review queue; publication remains a separate
+explicit action.
 
-The current Node submission route combines validation, rate limits,
-idempotency, database writes, duplicate detection, and GitHub Issue creation.
-Moderator actions and AI advisory repeat GitHub concerns. Retries can therefore
-cross provider boundaries without one clear ownership model.
+PostgreSQL remains the Submission and Question Revision source of truth. Clerk
+identity and Moderator authorization remain server-owned. GitHub Issues,
+comments, closing, and GitHub credentials are not part of the product flow.
+Supabase remains storage accessed only by Node.
 
-## Goal
+## Safety
 
-Move the Submission-to-Review orchestration behind Node-owned policy and
-adapters, while keeping PostgreSQL as the Submission source of truth and the
-Review Issue as a conversation record rather than a publication authority.
-
-## Flow
-
-1. Verify the Clerk `sub`, active Account policy, email confirmation, consent,
-   Track, and Submission validation in Node.
-2. Persist the Submission and its first Question Revision transactionally with
-   an idempotency key; retries return the same result.
-3. Create or reconcile exactly one GitHub Review Issue through a server-only
-   GitHub adapter. Missing provider credentials leave a retryable state without
-   losing the Submission.
-4. A Moderator conducts Review and updates PostgreSQL explicitly. The Issue
-   never publishes an Interview Question by itself.
-
-## Invariants and safety
-
-- A Submission is not public until Review and explicit publication succeed.
-- PostgreSQL owns status, revisions, audit data, rate limits, and idempotency;
-  Node owns authorization and orchestration.
-- GitHub tokens, app keys, OpenAI keys, and full private Submission payloads are
-  never sent to the browser or logged.
-- Side effects have bounded retries, stable error codes, request IDs, and
-  observable latency/status outcomes.
-- Duplicate detection remains advisory unless the existing product policy says
-  otherwise; it cannot silently discard a valid Submission.
-
-## Rollout and rollback
-
-Migrate validation and persistence parity before GitHub creation. Rollback uses
-the previous known-good Node/frontend artifacts and must not require a schema
-change or dual writes.
+- Persist before returning the Prompt; retries remain idempotent.
+- Treat both Submission text and pasted JSON as untrusted input.
+- Exclude email, Clerk IDs, tokens, and private Account data from Prompts.
+- Enforce Track/Topic relationships, bilingual required fields, source URL
+  rules, and existing content limits at the Node boundary.
+- Preview is read-only; confirmation is authorized, audited, and repeat-safe.
+- Imported content is never public until explicit publication succeeds.
+- Legacy GitHub columns may remain for existing rows, but new product code does
+  not read or write them.
 
 ## Acceptance checks
 
-- Anonymous, unconfirmed, suspended, and unauthorized Accounts receive stable
-  refusals; confirmed contributors can submit within existing limits.
-- Repeating an idempotency key never creates duplicate Submission rows or Review
-  Issues.
-- Provider failure preserves the stored Submission and exposes a retryable
-  result.
-- Review decisions, publication, revision history, and audit rows retain parity.
-- GitHub adapter tests, integration tests, E2E smoke, secret scans, load/error
-  metrics, and route rollback checks pass before enabling the path.
-
-## Out of scope
-
-Replacing Clerk, changing RLS/schema invariants, moving the static catalogue,
-new AI model strategy, community Likes/promotion, or account deletion policy.
+- Confirmed contributors receive a Prompt after a successful Submission.
+- Duplicate idempotency keys do not create duplicate Submissions or revisions.
+- Valid bilingual JSON previews and confirms; malformed or unsafe JSON fails
+  with a stable error.
+- Changes requested, rejection, and publication work without GitHub secrets or
+  upstream GitHub calls.
+- Browser bundles contain no Supabase credentials or product GitHub secrets.

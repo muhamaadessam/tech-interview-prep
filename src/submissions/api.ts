@@ -3,9 +3,8 @@ import { nodeRequest } from "../backend/api.ts";
 
 export type SubmissionResult = {
   submissionId: string;
-  status: "pending" | "issue_created" | "failed";
-  githubIssueNumber?: number | null;
-  githubIssueUrl?: string | null;
+  status: "pending" | "approved" | "published" | "failed";
+  prompt?: string;
   duplicateAdvisory?: boolean;
   retryable?: boolean;
 };

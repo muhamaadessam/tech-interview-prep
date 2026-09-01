@@ -1,4 +1,3 @@
-import { handleAdvisory } from "./ai-advisory.ts";
 import { handleModerator } from "./moderator-actions.ts";
 
 export class OperationError extends Error {
@@ -9,14 +8,13 @@ export class OperationError extends Error {
 
 export type Operations = {
   moderate: (body: Record<string, unknown>, accessToken: string, userId?: string) => Promise<unknown>;
-  advise: (submissionId: string, accessToken: string, userId?: string) => Promise<unknown>;
 };
 
 export function createSupabaseOperations({ url, serviceRoleKey, fetchImpl = fetch }: { url: string; serviceRoleKey: string; fetchImpl?: typeof fetch }): Operations {
   const base = url.replace(/\/$/, "");
   const listSubmissions = async (body: Record<string, unknown>) => {
     const status = typeof body.status === "string" ? body.status : "pending";
-    const response = await fetchImpl(`${base}/rest/v1/submissions?select=id,status,track_id,topic_ids,difficulty,payload,review_notes,github_issue_number,github_issue_url,created_at&status=eq.${encodeURIComponent(status)}&order=created_at.asc&limit=50`, { headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` } });
+    const response = await fetchImpl(`${base}/rest/v1/submissions?select=id,status,track_id,topic_ids,difficulty,payload,review_notes,created_at&status=eq.${encodeURIComponent(status)}&order=created_at.asc&limit=50`, { headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` } });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) throw new OperationError("moderation_unavailable", response.status);
     return { submissions: payload };
@@ -29,6 +27,5 @@ export function createSupabaseOperations({ url, serviceRoleKey, fetchImpl = fetc
   };
   return {
     moderate: (body, _accessToken, userId) => userId ? body.action === "list_submissions" ? listSubmissions(body) : call(handleModerator, body, userId) : Promise.reject(new OperationError("unauthenticated", 401)),
-    advise: (submissionId, _accessToken, userId) => userId ? call(handleAdvisory, { submissionId, revisionNumber: 1 }, userId) : Promise.reject(new OperationError("unauthenticated", 401)),
   };
 }

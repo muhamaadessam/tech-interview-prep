@@ -24,6 +24,7 @@ function AuthenticatedSubmissionForm({ locale, topics }: { locale: Locale; topic
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({ question: "", shortAnswer: "", explanation: "", difficulty: "", sources: "", codeExample: "", commonMistakes: "", followUpQuestions: "", displayName: "", licenseConsent: false, idempotencyKey: "" });
   const verified = user?.primaryEmailAddress?.verification?.status === "verified";
 
@@ -93,10 +94,9 @@ function AuthenticatedSubmissionForm({ locale, topics }: { locale: Locale; topic
       </div>
       <label className="consent-checkbox"><input type="checkbox" checked={form.licenseConsent} onChange={(event) => update("licenseConsent", event.target.checked)} required />{copy.submitConsent}</label>
       {error && <p className="form-error" role="alert">{errorMessage(error, copy)}</p>}
-      {result?.status === "pending" && <p className="form-status" role="status">{result.submissionId ? copy.submitPending : copy.submitSubmitting}</p>}
-      {result?.status === "issue_created" && <p className="form-success" role="status">{copy.submitSuccess} {result.githubIssueUrl && <a href={result.githubIssueUrl} target="_blank" rel="noreferrer">{copy.submitSuccessIssue}</a>}{result.duplicateAdvisory ? ` — ${copy.submitDuplicate}` : ""}</p>}
+      {result?.status === "pending" && <div className="form-success" role="status"><p>{locale === "ar" ? "تم حفظ المساهمة. انسخ الـPrompt وأرسله لأي AI." : "Contribution saved. Copy the Prompt and send it to any AI."}</p>{result.prompt && <><label>{locale === "ar" ? "Prompt جاهز" : "Ready Prompt"}<textarea readOnly value={result.prompt} rows={12} /></label><button className="button" type="button" onClick={() => { void navigator.clipboard.writeText(result.prompt!).then(() => setCopied(true)); }}>{copied ? (locale === "ar" ? "تم النسخ" : "Copied") : (locale === "ar" ? "نسخ الـPrompt" : "Copy Prompt")}</button></>}</div>}
       {result?.status === "failed" && <p className="form-error" role="alert">{copy.submitFailed} <button className="text-button" type="submit">{copy.submitRetry}</button></p>}
-      <button className="button primary" type="submit" disabled={(result?.status === "pending" && !result.submissionId) || result?.status === "issue_created"}>{result?.status === "pending" && !result.submissionId ? copy.submitSubmitting : copy.submitButton}</button>
+      <button className="button primary" type="submit" disabled={(result?.status === "pending" && Boolean(result.prompt)) || result?.status === "approved"}>{result?.status === "pending" && !result.submissionId ? copy.submitSubmitting : copy.submitButton}</button>
     </form>
   );
 }

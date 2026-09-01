@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { normalizeQuestion, validateSubmission } from "./validation.ts";
+import { buildSubmissionPrompt, normalizeQuestion, validateImportedQuestion, validateSubmission } from "./validation.ts";
 
 const valid = {
   trackId: "flutter",
@@ -49,4 +49,16 @@ test("submission validation accepts optional enrichment but enforces its boundar
 
 test("duplicate advisory normalization is stable", () => {
   assert.equal(normalizeQuestion(" `Final`   vs   const? "), "final vs const?");
+});
+
+test("imported bilingual question accepts the catalogue contract and rejects unsafe values", () => {
+  const value = { trackId: "flutter", topicIds: ["dart"], difficulty: "Junior", translations: { ar: { question: "ما هو final؟", shortAnswer: "ثابت", explanation: "شرح", codeExample: null, commonMistakes: [], followUpQuestions: [], sources: ["https://dart.dev"] }, en: { question: "What is final?", shortAnswer: "A constant", explanation: "Explanation", codeExample: null, commonMistakes: [], followUpQuestions: [], sources: ["https://dart.dev"] } } };
+  assert.deepEqual(validateImportedQuestion(value), value);
+  assert.throws(() => validateImportedQuestion({ ...value, translations: { ...value.translations, en: { ...value.translations.en, question: "<script>" } } }), /import_en_question_invalid/);
+});
+
+test("submission prompt contains no private identity", () => {
+  const prompt = buildSubmissionPrompt(validateSubmission({ ...valid, topicIds: ["dart"], shortAnswer: "A", explanation: "B", difficulty: "Junior", sources: ["https://dart.dev"], displayName: "Mina" }));
+  assert.match(prompt, /Mina/);
+  assert.doesNotMatch(prompt, /email|clerk|token/i);
 });

@@ -1,5 +1,5 @@
 import { normalizeQuestion, validateSubmission, type ValidatedSubmission } from "../../src/submissions/validation.ts";
-import { buildReviewIssue } from "../../src/submissions/review-issue.ts";
+import { buildSubmissionPrompt } from "../../src/submissions/validation.ts";
 import { fetchUpstream } from "./upstream.ts";
 
 const cors = {
@@ -10,17 +10,13 @@ const cors = {
 };
 const maxDailySubmissions = 5;
 const cooldownMs = 60_000;
-const stalePendingMs = 120_000;
 
 type SubmissionRow = {
   id: string;
   status: string;
-  github_issue_number: number | null;
-  github_issue_url: string | null;
   last_error: string | null;
   revision_number: number;
   duplicate_advisory: boolean;
-  updated_at: string;
 };
 type FetchLike = typeof fetch;
 
@@ -83,74 +79,6 @@ async function isDuplicate(draft: ValidatedSubmission, key: string, fetchImpl: F
   return match?.id ?? null;
 }
 
-function base64Url(value: Uint8Array): string {
-  let binary = "";
-  for (const byte of value) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-}
-
-function pemBytes(pem: string): Uint8Array {
-  const body = pem.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g, "");
-  const binary = atob(body);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
-}
-
-async function githubAppJwt(): Promise<string> {
-  const appId = process.env.GITHUB_APP_ID;
-  const privateKey = process.env.GITHUB_APP_PRIVATE_KEY?.replaceAll("\\n", "\n");
-  if (!appId || !privateKey) throw new Error("github_configuration_error");
-  const header = base64Url(new TextEncoder().encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
-  const now = Math.floor(Date.now() / 1000);
-  const payload = base64Url(new TextEncoder().encode(JSON.stringify({ iat: now - 60, exp: now + 540, iss: appId })));
-  const key = await crypto.subtle.importKey("pkcs8", pemBytes(privateKey).buffer as ArrayBuffer, { hash: "SHA-256", name: "RSASSA-PKCS1-v1_5" }, false, ["sign"]);
-  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(`${header}.${payload}`));
-  return `${header}.${payload}.${base64Url(new Uint8Array(signature))}`;
-}
-
-async function githubInstallationToken(fetchImpl: FetchLike = fetch): Promise<string> {
-  const installationId = process.env.GITHUB_INSTALLATION_ID;
-  if (!installationId) throw new Error("github_configuration_error");
-  const appToken = await githubAppJwt();
-  const installation = await fetchUpstream(fetchImpl, `https://api.github.com/app/installations/${encodeURIComponent(installationId)}/access_tokens`, {
-    method: "POST",
-    headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${appToken}`, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "tech-interview-prep" },
-  });
-  if (!installation.ok) throw new Error("github_token_error");
-  const { token } = await installation.json() as { token?: string };
-  if (!token) throw new Error("github_token_error");
-  return token;
-}
-
-async function findGithubIssue(token: string, owner: string, repository: string, submissionId: string, fetchImpl: FetchLike = fetch): Promise<{ number: number; url: string } | null> {
-  const query = encodeURIComponent(`repo:${owner}/${repository} "submission-id: ${submissionId}"`);
-  const result = await fetchUpstream(fetchImpl, `https://api.github.com/search/issues?q=${query}&per_page=1`, {
-    headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "tech-interview-prep" },
-  });
-  if (!result.ok) throw new Error("github_search_error");
-  const data = await result.json() as { items?: Array<{ number?: number; html_url?: string }> };
-  const issue = data.items?.[0];
-  return issue?.number && issue.html_url ? { number: issue.number, url: issue.html_url } : null;
-}
-
-async function createGithubIssue(draft: ValidatedSubmission, submissionId: string, fetchImpl: FetchLike = fetch): Promise<{ number: number; url: string }> {
-  const owner = process.env.GITHUB_REPOSITORY_OWNER;
-  const repository = process.env.GITHUB_REPOSITORY_NAME;
-  if (!owner || !repository) throw new Error("github_configuration_error");
-  const token = await githubInstallationToken(fetchImpl);
-  const existing = await findGithubIssue(token, owner, repository, submissionId, fetchImpl);
-  if (existing) return existing;
-  const issueContent = buildReviewIssue({ draft, submissionId });
-  const issue = await fetchUpstream(fetchImpl, `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/issues`, {
-    method: "POST",
-    headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "Content-Type": "application/json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "tech-interview-prep" },
-    body: JSON.stringify(issueContent),
-  });
-  if (!issue.ok) throw new Error("github_issue_error");
-  const created = await issue.json() as { number?: number; html_url?: string };
-  if (!created.number || !created.html_url) throw new Error("github_issue_error");
-  return { number: created.number, url: created.html_url };
-}
-
 export async function handleSubmit(request: Request, fetchImpl: FetchLike = fetch): Promise<Response> {
   const userId = request.headers.get("x-account-id");
   if (!userId) return response({ error: "unauthenticated" }, 401);
@@ -167,12 +95,10 @@ export async function handleSubmit(request: Request, fetchImpl: FetchLike = fetc
     const { key } = dbConfig();
     const roles = await (await db(`/rest/v1/account_roles?select=suspended&user_id=eq.${encodeURIComponent(userId)}&limit=1`, key)).json() as Array<{ suspended?: boolean }>;
     if (roles[0]?.suspended) return response({ error: "submission_suspended" }, 403);
-    const existing = await (await db(`/rest/v1/submissions?select=id,status,github_issue_number,github_issue_url,last_error,revision_number,duplicate_advisory,updated_at&submitted_by=eq.${encodeURIComponent(userId)}&idempotency_key=eq.${encodeURIComponent(draft.idempotencyKey)}&limit=1`, key)).json() as SubmissionRow[];
+    const existing = await (await db(`/rest/v1/submissions?select=id,status,last_error,revision_number,duplicate_advisory&submitted_by=eq.${encodeURIComponent(userId)}&idempotency_key=eq.${encodeURIComponent(draft.idempotencyKey)}&limit=1`, key)).json() as SubmissionRow[];
     const previous = existing[0];
-    const pendingStatus = previous?.status === "pending" || previous?.status === "issue_creating";
-    const pendingIsFresh = pendingStatus && Date.now() - Date.parse(previous.updated_at) < stalePendingMs;
-    if (previous && ((previous.status !== "failed" && !pendingStatus) || pendingIsFresh)) {
-      return response({ submissionId: previous.id, status: previous.status === "issue_creating" ? "pending" : previous.status, githubIssueNumber: previous.github_issue_number, githubIssueUrl: previous.github_issue_url, duplicateAdvisory: previous.duplicate_advisory });
+    if (previous && previous.status !== "failed") {
+      return response({ submissionId: previous.id, status: previous.status, prompt: buildSubmissionPrompt(draft), duplicateAdvisory: previous.duplicate_advisory });
     }
     const preferences = await (await db(`/rest/v1/account_track_preferences?select=track_id,tracks!inner(is_active)&user_id=eq.${encodeURIComponent(userId)}&track_id=eq.${encodeURIComponent(draft.trackId)}&tracks.is_active=eq.true&limit=1`, key)).json() as Array<{ track_id: string }>;
     if (preferences.length !== 1) return response({ error: "track_preference_required" }, 403);
@@ -218,17 +144,7 @@ export async function handleSubmit(request: Request, fetchImpl: FetchLike = fetc
       await db(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "pending", last_error: null }) });
     }
 
-    const claimed = await (await db(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}&status=eq.pending`, key, { method: "PATCH", headers: { Prefer: "return=representation" }, body: JSON.stringify({ status: "issue_creating" }) })).json() as Array<{ id: string }>;
-    if (!claimed.length) return response({ submissionId, status: "pending", retryable: true });
-
-    try {
-      const issue = await createGithubIssue(draft, submissionId, fetchImpl);
-      await db(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "issue_created", github_issue_number: issue.number, github_issue_url: issue.url, last_error: null }) });
-      return response({ submissionId, status: "issue_created", githubIssueNumber: issue.number, githubIssueUrl: issue.url, duplicateAdvisory: Boolean(duplicateOf) });
-    } catch {
-      await db(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "failed", last_error: "github_integration_failed" }) });
-      return response({ submissionId, status: "failed", retryable: true, duplicateAdvisory: Boolean(duplicateOf) });
-    }
+    return response({ submissionId, status: "pending", prompt: buildSubmissionPrompt(draft), duplicateAdvisory: Boolean(duplicateOf) });
   } catch (error) {
     console.error(error);
     return response({ error: "submission_unavailable" }, 503);

@@ -1,3 +1,5 @@
+import { fetchUpstream } from "./upstream.ts";
+import { validateImportedQuestion, type ImportedQuestion } from "../../src/submissions/validation.ts";
 
 const cors = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -37,43 +39,6 @@ function text(value: unknown, max = 500): string | null {
   return typeof value === "string" && value.trim() ? value.trim().slice(0, max) : null;
 }
 
-function base64Url(value: Uint8Array): string {
-  let binary = "";
-  for (const byte of value) binary += String.fromCharCode(byte);
-  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-}
-
-function pemBytes(pem: string): Uint8Array {
-  const body = pem.replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g, "");
-  return Uint8Array.from(atob(body), (character) => character.charCodeAt(0));
-}
-
-async function githubToken(fetchImpl: FetchLike): Promise<string | null> {
-  const appId = process.env.GITHUB_APP_ID;
-  const installationId = process.env.GITHUB_INSTALLATION_ID;
-  const privateKey = process.env.GITHUB_APP_PRIVATE_KEY?.replaceAll("\\n", "\n");
-  if (!appId || !installationId || !privateKey) return null;
-  const header = base64Url(new TextEncoder().encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
-  const now = Math.floor(Date.now() / 1000);
-  const payload = base64Url(new TextEncoder().encode(JSON.stringify({ iat: now - 60, exp: now + 540, iss: appId })));
-  const key = await crypto.subtle.importKey("pkcs8", pemBytes(privateKey).buffer as ArrayBuffer, { hash: "SHA-256", name: "RSASSA-PKCS1-v1_5" }, false, ["sign"]);
-  const signature = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(`${header}.${payload}`));
-  const jwt = `${header}.${payload}.${base64Url(new Uint8Array(signature))}`;
-  const result = await fetchUpstream(fetchImpl, `https://api.github.com/app/installations/${encodeURIComponent(installationId)}/access_tokens`, { method: "POST", headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${jwt}`, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "tech-interview-prep" } });
-  if (!result.ok) return null;
-  return (await result.json() as { token?: string }).token ?? null;
-}
-
-async function closeGithubIssue(issueNumber: number | null, fetchImpl: FetchLike): Promise<boolean> {
-  if (!issueNumber) return true;
-  const owner = process.env.GITHUB_REPOSITORY_OWNER;
-  const repository = process.env.GITHUB_REPOSITORY_NAME;
-  const token = await githubToken(fetchImpl);
-  if (!owner || !repository || !token) return false;
-  const result = await fetchUpstream(fetchImpl, `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repository)}/issues/${issueNumber}`, { method: "PATCH", headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "Content-Type": "application/json", "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "tech-interview-prep" }, body: JSON.stringify({ state: "closed" }) });
-  return result.ok;
-}
-
 async function audit(key: string, actor: string, action: string, targetType: string, targetId: string | null, reason: string | null, metadata: Record<string, unknown>, fetchImpl: FetchLike): Promise<void> {
   await db("/rest/v1/moderation_audit_events", key, { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify([{ actor_user_id: await pseudonymousUserId(actor), action, target_type: targetType, target_id: targetId, reason, metadata }]) }, fetchImpl);
 }
@@ -86,10 +51,37 @@ export async function handleModerator(request: Request, fetchImpl: FetchLike = f
     const { key } = config();
     const roles = await (await query(`/rest/v1/account_roles?select=role,suspended&user_id=eq.${encodeURIComponent(actor)}&limit=1`, key)).json() as Array<{ role?: string; suspended?: boolean }>;
     if (roles[0]?.role !== "moderator" || roles[0]?.suspended) return response({ error: "moderator_required" }, 403);
-    const body = await request.json() as { action?: unknown; targetUserId?: unknown; submissionId?: unknown; questionId?: unknown; reason?: unknown; status?: unknown; targetQuestionIds?: unknown };
+    const body = await request.json() as { action?: unknown; targetUserId?: unknown; submissionId?: unknown; questionId?: unknown; reason?: unknown; status?: unknown; targetQuestionIds?: unknown; mode?: unknown; document?: unknown };
     const action = text(body.action, 60);
     const reason = text(body.reason);
     if (!action) return response({ error: "payload_invalid" }, 400);
+    if (action === "import_submission") {
+      const submissionId = text(body.submissionId, 80);
+      const mode = body.mode === "confirm" ? "confirm" : body.mode === "preview" ? "preview" : null;
+      if (!submissionId || !mode) return response({ error: "payload_invalid" }, 400);
+      let imported: ImportedQuestion;
+      try {
+        const raw = typeof body.document === "string" ? JSON.parse(body.document) : body.document;
+        imported = validateImportedQuestion(raw);
+      } catch (error) {
+        return response({ error: error instanceof Error ? error.message : "import_invalid" }, 400);
+      }
+      const submissions = await (await query(`/rest/v1/submissions?select=id,status,track_id,topic_ids,submitted_by,display_name,revision_number,payload&id=eq.${encodeURIComponent(submissionId)}&limit=1`, key)).json() as Array<{ id: string; status: string; track_id: string; topic_ids: string[]; submitted_by: string; display_name: string | null; revision_number?: number; payload?: unknown }>;
+      const submission = submissions[0];
+      if (!submission) return response({ error: "not_found" }, 404);
+      if (submission.track_id !== imported.trackId || JSON.stringify(submission.topic_ids) !== JSON.stringify(imported.topicIds)) return response({ error: "import_taxonomy_mismatch" }, 409);
+      if (mode === "preview") return response({ ok: true, mode, question: imported });
+      if (submission.status === "published") return response({ error: "submission_already_published" }, 409);
+      const payload = { ...imported, contributorDisplayName: submission.display_name ?? "Community contributor" };
+      if (submission.status === "in_review" && JSON.stringify(submission.payload) === JSON.stringify(payload)) return response({ ok: true, mode, submissionId, revisionNumber: submission.revision_number ?? 1, question: imported });
+      const latest = await (await query(`/rest/v1/submission_revisions?select=revision_number&submission_id=eq.${encodeURIComponent(submissionId)}&order=revision_number.desc&limit=1`, key)).json() as Array<{ revision_number?: number }>;
+      const revisionNumber = (latest[0]?.revision_number ?? 0) + 1;
+      const revision = await (await query("/rest/v1/submission_revisions", key, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify([{ submission_id: submissionId, revision_number: revisionNumber, submitted_by: submission.submitted_by, track_id: imported.trackId, topic_ids: imported.topicIds, difficulty: imported.difficulty, payload }]) })).json() as Array<{ id?: string }>;
+      if (!revision[0]?.id) return response({ error: "revision_create_failed" }, 503);
+      await query(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "in_review", track_id: imported.trackId, topic_ids: imported.topicIds, difficulty: imported.difficulty, payload, revision_number: revisionNumber, review_notes: null, last_error: null, reviewed_by: actor, reviewed_at: new Date().toISOString() }) });
+      await audit(key, actor, action, "submission", submissionId, null, { revision_number: revisionNumber }, fetchImpl);
+      return response({ ok: true, mode, submissionId, revisionNumber, question: imported });
+    }
     if (action === "list_follow_up_editor") {
       const questions = await (await query("/rest/v1/interview_questions?select=id,slug,track_id,published_revision_id&published_revision_id=not.is.null&order=track_id,slug&limit=1000", key)).json() as Array<{ id?: string; slug?: string; track_id?: string; published_revision_id?: string }>;
       const relations = await (await query("/rest/v1/question_follow_ups?select=source_revision_id,target_question_id,position&order=position.asc&limit=5000", key)).json() as Array<{ source_revision_id?: string; target_question_id?: string; position?: number }>;
@@ -124,10 +116,10 @@ export async function handleModerator(request: Request, fetchImpl: FetchLike = f
       return response({ ok: true, questionId, revisionId });
     }
     if (action === "list_submissions") {
-      const allowed = ["pending", "issue_created", "in_review", "changes_requested", "approved"];
+      const allowed = ["pending", "in_review", "changes_requested", "approved"];
       const status = text(body.status, 40) ?? "pending";
       if (!allowed.includes(status)) return response({ error: "payload_invalid" }, 400);
-      const rows = await (await query(`/rest/v1/submissions?select=id,status,track_id,topic_ids,difficulty,payload,review_notes,github_issue_number,github_issue_url,created_at&status=eq.${encodeURIComponent(status)}&order=created_at.asc&limit=50`, key)).json();
+      const rows = await (await query(`/rest/v1/submissions?select=id,status,track_id,topic_ids,difficulty,payload,review_notes,created_at&status=eq.${encodeURIComponent(status)}&order=created_at.asc&limit=50`, key)).json();
       return response({ submissions: rows });
     }
     if (action === "list_community_questions") {
@@ -145,7 +137,7 @@ export async function handleModerator(request: Request, fetchImpl: FetchLike = f
     if (action === "changes_requested" || action === "reject_submission") {
       const submissionId = text(body.submissionId, 80);
       if (!submissionId || !reason) return response({ error: "payload_invalid" }, 400);
-      const rows = await (await query(`/rest/v1/submissions?select=id,github_issue_number,status&id=eq.${encodeURIComponent(submissionId)}&limit=1`, key)).json() as Array<{ id: string; github_issue_number: number | null; status: string }>;
+      const rows = await (await query(`/rest/v1/submissions?select=id,status&id=eq.${encodeURIComponent(submissionId)}&limit=1`, key)).json() as Array<{ id: string; status: string }>;
       if (!rows[0]) return response({ error: "not_found" }, 404);
       if (rows[0].status === "published") return response({ error: "use_unpublish_action" }, 409);
       if (action === "changes_requested") {
@@ -153,17 +145,15 @@ export async function handleModerator(request: Request, fetchImpl: FetchLike = f
         await audit(key, actor, action, "submission", submissionId, reason, {}, fetchImpl);
         return response({ ok: true });
       }
-      const closed = await closeGithubIssue(rows[0].github_issue_number, fetchImpl);
-      if (!closed) return response({ error: "github_close_failed", retryable: true }, 503);
       await query(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "rejected", review_notes: reason, reviewed_by: actor, reviewed_at: new Date().toISOString(), closed_at: new Date().toISOString(), closed_by: actor }) });
-      await audit(key, actor, action, "submission", submissionId, reason, { github_closed: closed }, fetchImpl);
-      return response({ ok: true, githubClosed: closed });
+      await audit(key, actor, action, "submission", submissionId, reason, {}, fetchImpl);
+      return response({ ok: true });
     }
     if (action === "publish_submission") {
       const submissionId = text(body.submissionId, 80);
       const questionId = text(body.questionId, 120);
       if (!submissionId || !questionId) return response({ error: "payload_invalid" }, 400);
-      const submissions = await (await query(`/rest/v1/submissions?select=id,status,track_id,submitted_by,display_name,github_issue_number,published_question_id&id=eq.${encodeURIComponent(submissionId)}&limit=1`, key)).json() as Array<{ id: string; status: string; track_id: string; submitted_by: string; display_name: string | null; github_issue_number: number | null; published_question_id: string | null }>;
+      const submissions = await (await query(`/rest/v1/submissions?select=id,status,track_id,submitted_by,display_name,published_question_id&id=eq.${encodeURIComponent(submissionId)}&limit=1`, key)).json() as Array<{ id: string; status: string; track_id: string; submitted_by: string; display_name: string | null; published_question_id: string | null }>;
       const submission = submissions[0];
       if (!submission) return response({ error: "not_found" }, 404);
       if (submission.status === "published") {
@@ -177,11 +167,9 @@ export async function handleModerator(request: Request, fetchImpl: FetchLike = f
       if (question.track_id !== submission.track_id) return response({ error: "track_mismatch" }, 409);
       if (!question.published_revision_id) return response({ error: "question_revision_required" }, 409);
       if (question.source_submission_id && question.source_submission_id !== submissionId) return response({ error: "question_already_linked" }, 409);
-      const closed = await closeGithubIssue(submission.github_issue_number, fetchImpl);
-      if (!closed) return response({ error: "github_close_failed", retryable: true }, 503);
       await query(`/rest/v1/interview_questions?id=eq.${encodeURIComponent(questionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ visibility: "community", source_submission_id: submissionId, community_contributor_user_id: submission.submitted_by, community_contributor_username: submission.display_name || "Community contributor", community_published_at: new Date().toISOString() }) });
       await query(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "published", published_question_id: questionId, reviewed_by: actor, reviewed_at: new Date().toISOString(), last_error: null }) });
-      await audit(key, actor, action, "question", questionId, null, { submission_id: submissionId, github_closed: closed }, fetchImpl);
+      await audit(key, actor, action, "question", questionId, null, { submission_id: submissionId }, fetchImpl);
       return response({ ok: true, status: "published", questionId });
     }
     if (action === "unpublish_question") {
@@ -209,4 +197,3 @@ export async function handleModerator(request: Request, fetchImpl: FetchLike = f
     return response({ error: "moderation_unavailable" }, 503);
   }
 }
-import { fetchUpstream } from "./upstream.ts";

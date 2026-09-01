@@ -23,7 +23,7 @@ const content = {
         ],
         [
           "مقدمو الخدمات",
-          "تتم المصادقة عبر Clerk، ويعمل الـbackend على Vercel، وتستضيف الواجهة Cloudflare Pages. يتعامل الـbackend مع قاعدة البيانات نيابةً عن المتصفح؛ لا يتصل المتصفح بقاعدة البيانات مباشرة. قد تُرسل المساهمات إلى GitHub للمراجعة.",
+          "تتم المصادقة عبر Clerk، ويعمل الـbackend على Vercel، وتستضيف الواجهة Cloudflare Pages. يتعامل الـbackend مع قاعدة البيانات نيابةً عن المتصفح؛ لا يتصل المتصفح بقاعدة البيانات مباشرة. تُحفظ المساهمات للمراجعة داخل النظام.",
         ],
         [
           "المحتوى العام",
@@ -89,7 +89,7 @@ const content = {
         ],
         [
           "Service providers",
-          "Authentication is provided by Clerk, the Node backend runs on Vercel, and the frontend is hosted on Cloudflare Pages. The backend talks to the database on the browser’s behalf; the browser does not connect to the database directly. Submissions may be sent to GitHub for review.",
+          "Authentication is provided by Clerk, the Node backend runs on Vercel, and the frontend is hosted on Cloudflare Pages. The backend talks to the database on the browser’s behalf; the browser does not connect to the database directly. Submissions are retained for review inside the product.",
         ],
         [
           "Public contributions",

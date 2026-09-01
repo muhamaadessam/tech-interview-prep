@@ -16,12 +16,8 @@ URLs and credentials are backend-only.
    `https://tech-interview-prep-1ux.pages.dev`.
 3. Configure the backend Clerk JWKS URL and issuer. Node verifies the ordinary
    Clerk session token and passes the trusted Account ID to server-only database RPCs.
-4. Store these Node backend secrets: `CLERK_SECRET_KEY`,
-   `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_APP_PRIVATE_KEY`,
-   `GITHUB_REPOSITORY_OWNER`, and `GITHUB_REPOSITORY_NAME`. The GitHub App only
-   needs Issues: write for this repository. Set `OPENAI_API_KEY` only in the
-   backend when enabling moderator-triggered AI advisory review; never expose it
-   to the browser.
+4. Store `CLERK_SECRET_KEY` and the Supabase service-role credentials only in
+   the Node backend. No GitHub App or AI provider credentials are required.
 
 ## Local configuration
 
@@ -61,17 +57,14 @@ configuration. Supabase is storage only, accessed by the Node backend.
 
 The Node `/v1/submissions` route verifies the Clerk token and checks the confirmed email,
 enforces the five-per-day limit and cooldown, validates existing taxonomy, stores
-the Submission and its first revision, then creates a GitHub Issue with the fixed
-`community-submission` and `needs-review` labels. Missing GitHub/Clerk secrets
-leave retries in the `failed` state without exposing privileged values.
+the Submission and its first revision, then returns a bounded AI-ready Prompt.
 Submission revisions and rate-limit counters are service-role-only tables; the
 browser can read only its own Submission rows.
 
 The Node `/v1/moderation/actions` route is the only write path for suspensions,
-requesting changes, rejections, and unpublishing. It also serves the
+JSON preview/confirmation, requesting changes, rejections, and unpublishing. It also serves the
 oldest-first moderator queue used by `/ar/moderator` and `/en/moderator`. The
-route uses the Clerk Account policy and service-role key; GitHub App secrets
-are needed for closing review Issues after a rejection. Audit rows carry a
+route uses the Clerk Account policy and service-role key. Audit rows carry a
 12-month expiry and are never exposed to browser roles.
 
 `DELETE /v1/me/account` removes private Account data, anonymizes published
@@ -81,13 +74,6 @@ Publishing remains deliberately gated on a complete bilingual revision: a
 moderator must create Arabic and English `question_revision_locales` rows and
 select the immutable revision through `interview_questions.published_revision_id`.
 Do not bypass the catalogue constraints with direct client writes.
-
-The Node `/v1/advisories` route is a moderator-only, server-side OpenAI `gpt-5-mini`
-review. It reads one immutable Submission Revision, redacts obvious email/phone
-values, stores the bounded result, and adds at most one marked advisory comment
-to the existing GitHub Issue. It never changes moderation state, labels, Issue
-status, revisions, or publication. Provider failures are retryable and leave the
-Submission and its `needs-review` Issue untouched.
 
 ## Acceptance checks
 

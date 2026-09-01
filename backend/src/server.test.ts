@@ -98,11 +98,10 @@ test("Account deletion uses the authenticated Clerk subject even when active-acc
   await app.close();
 });
 
-test("Moderator HTTP interface owns access checks, actions, and advisory traffic", async () => {
+test("Moderator HTTP interface owns access checks and actions", async () => {
   const calls: unknown[] = [];
   const operations = {
     moderate: async (body: Record<string, unknown>, token: string) => { calls.push(["moderate", body, token]); return { submissions: [] }; },
-    advise: async (submissionId: string, token: string) => { calls.push(["advise", submissionId, token]); return { status: "completed", commentId: 42 }; },
   };
   const auth = { preHandler: async (request: Parameters<NonNullable<Parameters<typeof buildServer>[0]["auth"]>["preHandler"]>[0]) => { request.account = { sub: "moderator-1", claims: {}, token: "clerk-token" }; } };
   const policy = { requireAuthenticated: async () => undefined, requireModerator: async () => undefined, requireConfirmedEmail: async () => undefined, requireOwnership: async () => "moderator-1" };
@@ -110,8 +109,8 @@ test("Moderator HTTP interface owns access checks, actions, and advisory traffic
 
   assert.deepEqual((await app.inject({ method: "GET", url: "/v1/me/moderator-access" })).json(), { allowed: true });
   assert.deepEqual((await app.inject({ method: "POST", url: "/v1/moderation/actions", payload: { action: "list_submissions" } })).json(), { submissions: [] });
-  assert.deepEqual((await app.inject({ method: "POST", url: "/v1/advisories", payload: { submissionId: "submission-1" } })).json(), { status: "completed", commentId: 42 });
-  assert.deepEqual(calls, [["moderate", { action: "list_submissions" }, "clerk-token"], ["advise", "submission-1", "clerk-token"]]);
+  assert.equal((await app.inject({ method: "POST", url: "/v1/advisories", payload: { submissionId: "submission-1" } })).statusCode, 404);
+  assert.deepEqual(calls, [["moderate", { action: "list_submissions" }, "clerk-token"]]);
   await app.close();
 });
 

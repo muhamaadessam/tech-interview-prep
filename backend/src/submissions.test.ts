@@ -16,10 +16,13 @@ test("submission adapter validates input and keeps provider credentials server-s
     requests.push(request);
     return requests.length === 1
       ? Response.json([])
-      : Response.json([{ id: "s1", status: "issue_created", github_issue_number: null, github_issue_url: null, duplicate_advisory: false, updated_at: new Date().toISOString() }]);
+      : Response.json([{ id: "s1", status: "pending", duplicate_advisory: false }]);
   } });
   try {
-    assert.deepEqual(await store.submit(draft, "clerk-token", "account-1"), { submissionId: "s1", status: "issue_created", githubIssueNumber: null, githubIssueUrl: null, duplicateAdvisory: false });
+    const result = await store.submit(draft, "clerk-token", "account-1") as { submissionId: string; status: string; prompt: string };
+    assert.equal(result.submissionId, "s1");
+    assert.equal(result.status, "pending");
+    assert.match(result.prompt, /Return JSON only/);
     assert.equal(requests[0].url, "https://db.example/rest/v1/account_roles?select=suspended&user_id=eq.account-1&limit=1");
     assert.equal(requests[0].headers.get("Authorization"), "Bearer service-secret");
     assert.ok(requests.every((request) => !request.url.includes("/functions/v1/")));
