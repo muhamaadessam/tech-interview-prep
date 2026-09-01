@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 
 import { messages, type Locale } from "../i18n";
+import { nodeRequest } from "../backend/api.ts";
 
 type AuthMode = "signIn" | "signUp" | "verify";
 
@@ -115,22 +116,27 @@ export function AccountMenu({ locale, myTracksHref, moderatorHref, showModerator
   const [open, setOpen] = useState(false);
   const email = user?.primaryEmailAddress?.emailAddress ?? user?.username ?? "";
   const displayName = user?.fullName || user?.username || email || "User";
-  const username = user?.username ? `@${user.username}` : "";
   const initial = (displayName || "U").slice(0, 1).toUpperCase();
   const copy = messages[locale];
   return <div className="auth-account">
-    <button className="auth-profile-trigger" type="button" aria-label={`${copy.account}: ${displayName}`} aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen((value) => !value)}>
+    <button className="auth-profile-trigger" type="button" aria-label={`${copy.account}: ${displayName}`} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen(true)}>
       <span className="auth-avatar" aria-hidden="true">{user?.imageUrl ? <img src={user.imageUrl} alt="" referrerPolicy="no-referrer" /> : initial}</span>
     </button>
-    {open && <div className="auth-account-menu" role="menu">
-      <div className="auth-account-profile">
-        <strong>{displayName}</strong>
-        {username && <span dir="ltr">{username}</span>}
-        {email && <span dir="ltr">{email}</span>}
-      </div>
-      <Link href={myTracksHref} role="menuitem" onClick={() => setOpen(false)}>{copy.myTracks}</Link>
-      {showModerator && <Link href={moderatorHref} role="menuitem" onClick={() => setOpen(false)}>{copy.moderator}</Link>}
-      <button type="button" role="menuitem" onClick={() => void signOut()}>{locale === "ar" ? "تسجيل الخروج" : "Sign out"}</button>
-    </div>}
+    {open && <AccountDialog locale={locale} user={user} email={email} displayName={displayName} myTracksHref={myTracksHref} moderatorHref={moderatorHref} showModerator={showModerator} onClose={() => setOpen(false)} signOut={signOut} />}
   </div>;
+}
+
+function AccountDialog({ locale, user, email, displayName, myTracksHref, moderatorHref, showModerator, onClose, signOut }: { locale: Locale; user: ReturnType<typeof useUser>["user"]; email: string; displayName: string; myTracksHref: string; moderatorHref: string; showModerator: boolean; onClose: () => void; signOut: ReturnType<typeof useClerk>["signOut"] }) {
+  const [tab, setTab] = useState<"profile" | "security">("profile");
+  const [firstName, setFirstName] = useState(user?.firstName ?? "");
+  const [lastName, setLastName] = useState(user?.lastName ?? "");
+  const [handle, setHandle] = useState(user?.username ?? "");
+  const [status, setStatus] = useState("");
+  const [busy, setBusy] = useState(false);
+  const { getToken } = useAuth();
+  const ar = locale === "ar";
+  async function saveProfile(event: FormEvent<HTMLFormElement>) { event.preventDefault(); if (!user) return; setBusy(true); setStatus(""); try { await user.update({ firstName: firstName || undefined, lastName: lastName || undefined, username: handle || undefined }); setStatus(ar ? "تم حفظ بيانات الحساب." : "Account details saved."); } catch (error) { setStatus(errorMessage(error, ar ? "تعذر حفظ البيانات." : "Could not save account details.")); } finally { setBusy(false); } }
+  async function deleteAccount() { if (!window.confirm(ar ? "هل تريد حذف الحساب نهائيًا؟" : "Delete this account permanently?")) return; setBusy(true); setStatus(""); try { await nodeRequest({ path: "/me/account", token: (await getToken()) ?? undefined, init: { method: "DELETE" } }); await signOut(); } catch (error) { setStatus(errorMessage(error, ar ? "تعذر حذف الحساب." : "Could not delete the account.")); setBusy(false); } }
+  useEffect(() => { const close = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); }; document.addEventListener("keydown", close); return () => document.removeEventListener("keydown", close); }, [onClose]);
+  return <div className="account-overlay" role="dialog" aria-modal="true" aria-labelledby="account-dialog-title" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="account-dialog" onMouseDown={(event) => event.stopPropagation()}><header className="account-dialog-header"><div><span className="eyebrow">{messages[locale].brandName}</span><h2 id="account-dialog-title">{ar ? "إعدادات الحساب" : "Account settings"}</h2><p>{ar ? "بياناتك وإعدادات الأمان في مكان واحد." : "Your profile and security settings in one place."}</p></div><button className="auth-dialog-close" type="button" onClick={onClose} aria-label={messages[locale].close}>×</button></header><div className="account-dialog-body"><nav className="account-tabs" aria-label={ar ? "أقسام الحساب" : "Account sections"}><button className={tab === "profile" ? "active" : ""} type="button" onClick={() => setTab("profile")}>{ar ? "الملف الشخصي" : "Profile"}</button><button className={tab === "security" ? "active" : ""} type="button" onClick={() => setTab("security")}>{ar ? "الأمان" : "Security"}</button></nav>{tab === "profile" ? <form className="account-form" onSubmit={(event) => void saveProfile(event)}><div className="account-identity"><span className="auth-avatar account-avatar">{user?.imageUrl ? <img src={user.imageUrl} alt="" referrerPolicy="no-referrer" /> : displayName.slice(0, 1).toUpperCase()}</span><div><strong>{displayName}</strong><span dir="ltr">{email}</span></div></div><div className="account-fields"><label>{ar ? "الاسم الأول" : "First name"}<input value={firstName} onChange={(event) => setFirstName(event.target.value)} /></label><label>{ar ? "اسم العائلة" : "Last name"}<input value={lastName} onChange={(event) => setLastName(event.target.value)} /></label></div><label>{ar ? "اسم المستخدم" : "Username"}<input dir="ltr" value={handle} onChange={(event) => setHandle(event.target.value)} placeholder={ar ? "اختياري" : "Optional"} /></label>{status && <p className="account-status" role="status">{status}</p>}<div className="actions"><button className="button primary" type="submit" disabled={busy}>{ar ? "حفظ التغييرات" : "Save changes"}</button><Link className="button" href={myTracksHref} onClick={onClose}>{messages[locale].myTracks}</Link>{showModerator && <Link className="button" href={moderatorHref} onClick={onClose}>{messages[locale].moderator}</Link>}</div></form> : <div className="account-security"><div className="security-row"><span className="security-icon" aria-hidden="true">✓</span><div><strong>{ar ? "حسابك محمي بتسجيل الدخول" : "Your account is protected by sign-in"}</strong><p>{ar ? "إدارة الجلسة تتم بأمان عبر Clerk." : "Session management is secured through Clerk."}</p></div></div><div className="security-row"><span className="security-icon" aria-hidden="true">↗</span><div><strong>{ar ? "هل تريد الخروج؟" : "Need to sign out?"}</strong><p>{ar ? "سيتم تسجيل خروجك من هذا الجهاز." : "Sign out from this device."}</p><button className="button" type="button" onClick={() => void signOut()}>{ar ? "تسجيل الخروج" : "Sign out"}</button></div></div><div className="account-danger"><strong>{ar ? "منطقة خطرة" : "Danger zone"}</strong><p>{ar ? "حذف الحساب يمسح بياناتك نهائيًا ولا يمكن التراجع عنه." : "Deleting your account permanently removes your data."}</p><button className="button danger" type="button" onClick={() => void deleteAccount()} disabled={busy}>{ar ? "حذف الحساب" : "Delete account"}</button></div>{status && <p className="account-status" role="alert">{status}</p>}</div>}</div></section></div>;
 }
