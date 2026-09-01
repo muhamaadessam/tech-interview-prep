@@ -52,3 +52,19 @@ with a large SQL view until measurements show those reads are the bottleneck.
 Disable the relevant `NEXT_PUBLIC_NODE_API_ENABLED` operation flag and rebuild
 the static frontend. Indexes are additive; leaving them in place is safe during
 rollback and avoids a destructive migration under traffic.
+
+## First staging deployment
+
+The repository includes a Render blueprint at `/render.yaml`. Populate its
+secret values in the host dashboard (never in the blueprint), deploy the
+backend from the `backend/` root, then apply migrations from a controlled
+operator environment:
+
+```sh
+supabase db push
+npm run supabase:seed:check
+```
+
+Verify `GET /v1/ready` before routing frontend traffic. Start with one paid
+replica, capture the baseline, then increase replicas only when CPU, event-loop
+delay, or pool wait is the measured bottleneck.
