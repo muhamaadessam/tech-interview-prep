@@ -3,6 +3,9 @@
 ## What is optimized in code
 
 - Fastify limits request bodies to 256 KiB to bound per-connection memory.
+- Upstream calls abort after `UPSTREAM_TIMEOUT_MS` (5 seconds by default).
+- Set `TRUST_PROXY_HOPS=1` only when one trusted reverse proxy is in front of
+  Node; leave it at `0` when Node is directly exposed.
 - Public catalogue reads use the published/track indexes below; learner reads
   use account-scoped indexes. PostgreSQL remains the source of truth.
 - Node routes keep stable rollback flags. No in-process cache is treated as a

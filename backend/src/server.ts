@@ -38,8 +38,9 @@ function requestId(value: unknown): string {
 export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue, learnerState, submission }: ServerOptions): Promise<FastifyInstance> {
   const origins = new Set(allowedOrigins.filter(Boolean));
   const limiter = createRateLimiter({ limit: 300, windowMs: 60_000, maxKeys: 10_000 });
+  const trustProxy = process.env.TRUST_PROXY_HOPS === "1";
   const startedAt = new WeakMap<object, bigint>();
-  const app = Fastify({ logger: false, bodyLimit: 256 * 1024, genReqId: (request) => requestId(request.headers["x-request-id"]) });
+  const app = Fastify({ logger: false, bodyLimit: 256 * 1024, trustProxy, genReqId: (request) => requestId(request.headers["x-request-id"]) });
   app.decorateRequest("account", null);
   app.decorate("authenticate", auth?.preHandler ?? (async () => { throw new AuthError("auth_not_configured"); }));
   const unavailablePolicy = async () => { throw new PolicyError("policy_not_configured", 503); };
