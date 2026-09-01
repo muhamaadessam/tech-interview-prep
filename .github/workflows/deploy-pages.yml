@@ -28,7 +28,6 @@ jobs:
           cache: npm
       - uses: actions/configure-pages@v5
       - run: npm ci
-      - run: npm ci --prefix backend
       - run: npm test
       - run: npm run typecheck
       - run: npm run build

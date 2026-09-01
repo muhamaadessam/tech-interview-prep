@@ -85,6 +85,19 @@ test("Community Question HTTP interface owns catalogue and Like traffic", async 
   await app.close();
 });
 
+test("Account deletion uses the authenticated Clerk subject even when active-account policy denies access", async () => {
+  const deleted: string[] = [];
+  const auth = { preHandler: async (request: Parameters<NonNullable<Parameters<typeof buildServer>[0]["auth"]>["preHandler"]>[0]) => { request.account = { sub: "account-1", claims: {}, token: "token" }; } };
+  const policy = { requireAuthenticated: async () => { throw new PolicyError("account_suspended"); }, requireModerator: async () => undefined, requireConfirmedEmail: async () => undefined, requireOwnership: async () => "account-1" };
+  const app = await buildServer({ allowedOrigins: [], auth, policy, accountDeletion: { deleteAccount: async (userId) => { deleted.push(userId); } } });
+
+  const response = await app.inject({ method: "DELETE", url: "/v1/me/account" });
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.json(), { ok: true });
+  assert.deepEqual(deleted, ["account-1"]);
+  await app.close();
+});
+
 test("Moderator HTTP interface owns access checks, actions, and advisory traffic", async () => {
   const calls: unknown[] = [];
   const operations = {

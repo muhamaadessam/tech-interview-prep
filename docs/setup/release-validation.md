@@ -13,8 +13,8 @@ the production static build, and `git diff --check`. Any failure blocks deploy.
 Before a production cutover, also verify in the deployed environment:
 
 - Clerk Production email/password and Google sign-in, redirect URLs, and allowed origins.
-- Supabase Third-Party Auth accepts a Clerk Production token.
-- `moderator-actions`, `submit-question`, and `account-delete` have their server-only secrets.
+- Node accepts a Clerk Production token and rejects invalid or expired tokens.
+- Submission, moderation, advisory, and `DELETE /v1/me/account` have their server-only secrets.
 - Both `/ar/` and `/en/` deep links, RTL/LTR, mobile layout, keyboard focus, and the missing-question route.
 - A learner can select multiple Track Preferences, switch the Active Track, and build a Full Interview across multiple Topics with an inclusive level; switching Tracks clears the previous Topic context.
 - A moderator can review oldest-first, request changes, and reject a submission; publication is only complete after a bilingual revision is inserted and selected as `published_revision_id`.

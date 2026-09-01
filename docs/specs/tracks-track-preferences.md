@@ -3,8 +3,8 @@
 ## Problem
 
 Track and Track Preference reads are duplicated between the Active Track
-provider and the My Tracks flow. The browser still queries Supabase directly,
-which spreads Account policy and response shaping across clients.
+provider and the My Tracks flow. The browser must use Node for database-backed
+reads, keeping Account policy and response shaping in one place.
 
 ## Goal
 
@@ -39,9 +39,9 @@ PostgreSQL RPC.
 ## Rollout and rollback
 
 Migrate the two read callers first, compare responses, then migrate the save
-caller. Do not dual-write. Use `selectRoute(accountPolicyEnabled(),
-nodeHandler, legacyHandler)` for each migrated route. Disabling the flag returns
-the frontend to its existing Supabase/Edge implementation without a migration.
+caller. Do not dual-write. The Node route is the only application path; disabling
+the policy flag changes authorization only and does not restore direct database
+access.
 
 ## Acceptance checks
 

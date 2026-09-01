@@ -7,13 +7,15 @@ Tech Interview Prep is an open-source, Arabic-first study platform for software 
 ```text
 src/                 Next.js static frontend and domain modules
 backend/             Node/Fastify API deployed as a Vercel Function
-supabase/             Server-side migrations and functions only
+supabase/             Database migrations and seed data only
 e2e/                 Playwright browser journeys
 scripts/              Build, security, seed, and load-test utilities
 .github/              CI, deployment, ownership, and contribution policy
 ```
 
-The browser talks to the Node API under `/v1`. Supabase is an internal data provider behind that API; do not add direct Supabase calls to browser code.
+The browser talks to the Node API under `/v1`. Clerk session tokens are verified
+and authorized by Node. Supabase is an internal PostgreSQL provider behind that
+API; do not add direct Supabase calls to browser code.
 
 ## Local development
 

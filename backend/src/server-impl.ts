@@ -10,6 +10,7 @@ import { createSupabaseSubmissionStore, SubmissionRouteError, type SubmissionRou
 import { CommunityStoreError, createSupabaseCommunityStore, type CommunityStore } from "./community.ts";
 import { createSupabaseOperations, OperationError, type Operations } from "./operations.ts";
 import { createRateLimiter } from "./rate-limit.ts";
+import { AccountDeletionError, createAccountDeletionStore, type AccountDeletionStore } from "./account-deletion.ts";
 
 type LogSink = { info?: (line: string) => void; error?: (line: string) => void };
 
@@ -30,6 +31,7 @@ export type ServerOptions = {
   submission?: SubmissionRouteStore;
   community?: CommunityStore;
   operations?: Operations;
+  accountDeletion?: AccountDeletionStore;
 };
 
 export function accountPolicyEnabled(value = process.env.ACCOUNT_POLICY_ENABLED): boolean {
@@ -50,7 +52,7 @@ function questionIds(value: unknown): string[] | null {
   return ids.length > 0 && ids.length <= 200 && ids.every((id) => /^[a-zA-Z0-9._:-]{1,120}$/.test(id)) ? ids : null;
 }
 
-export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue, learnerState, submission, community, operations }: ServerOptions): Promise<FastifyInstance> {
+export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue, learnerState, submission, community, operations, accountDeletion }: ServerOptions): Promise<FastifyInstance> {
   const origins = new Set(allowedOrigins.filter(Boolean));
   const limiter = createRateLimiter({ limit: 300, windowMs: 60_000, maxKeys: 10_000 });
   const trustProxy = process.env.TRUST_PROXY_HOPS === "1";
@@ -163,13 +165,13 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     if (!operations) return reply.code(503).send({ error: "moderation_not_configured" });
     const body = request.body;
     if (!body || typeof body !== "object" || Array.isArray(body) || typeof (body as { action?: unknown }).action !== "string") return reply.code(400).send({ error: "invalid_moderation_request" });
-    return operations.moderate(body as Record<string, unknown>, request.account!.token!);
+    return operations.moderate(body as Record<string, unknown>, request.account!.token!, request.account!.sub);
   });
   app.post("/v1/advisories", { preHandler: [app.authenticate, app.requireModerator] }, async (request, reply) => {
     if (!operations) return reply.code(503).send({ error: "advisory_not_configured" });
     const submissionId = (request.body as { submissionId?: unknown })?.submissionId;
     if (typeof submissionId !== "string" || !submissionId || submissionId.length > 120) return reply.code(400).send({ error: "invalid_advisory_request" });
-    return operations.advise(submissionId, request.account!.token!);
+    return operations.advise(submissionId, request.account!.token!, request.account!.sub);
   });
   app.get("/v1/asked-markers", async (request, reply) => {
     if (!learnerState) return reply.code(503).send({ error: "learner_state_not_configured" });
@@ -210,7 +212,12 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
   });
   app.post("/v1/submissions", { preHandler: [app.authenticate, app.requireAuthenticated, app.requireConfirmedEmail] }, async (request, reply) => {
     if (!submission) return reply.code(503).send({ error: "submission_not_configured" });
-    return submission.submit(request.body as never, request.account!.token);
+    return submission.submit(request.body as never, request.account!.token, request.account!.sub);
+  });
+  app.delete("/v1/me/account", { preHandler: [app.authenticate] }, async (request, reply) => {
+    if (!accountDeletion) return reply.code(503).send({ error: "account_deletion_not_configured" });
+    await accountDeletion.deleteAccount(request.account!.sub);
+    return { ok: true };
   });
 
   app.setErrorHandler((error, _request, reply) => {
@@ -246,6 +253,10 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
       reply.code(error.status).send({ error: error.code });
       return;
     }
+    if (error instanceof AccountDeletionError) {
+      reply.code(error.status).send({ error: error.code });
+      return;
+    }
     const statusCode = typeof error === "object" && error !== null && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 500;
     logger.error?.(JSON.stringify({ error: "request_failed", statusCode }));
     reply.code(statusCode >= 400 ? statusCode : 500).send({ error: "internal_error" });
@@ -268,7 +279,8 @@ export async function createProductionServer() {
   const submission = supabaseUrl && serviceRoleKey ? createSupabaseSubmissionStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const community = supabaseUrl && serviceRoleKey ? createSupabaseCommunityStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const operations = supabaseUrl && serviceRoleKey ? createSupabaseOperations({ url: supabaseUrl, serviceRoleKey }) : undefined;
-  return buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue, learnerState, submission, community, operations });
+  const accountDeletion = supabaseUrl && serviceRoleKey && process.env.CLERK_SECRET_KEY ? createAccountDeletionStore({ url: supabaseUrl, serviceRoleKey, clerkSecretKey: process.env.CLERK_SECRET_KEY }) : undefined;
+  return buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue, learnerState, submission, community, operations, accountDeletion });
 }
 
 async function main() {
