@@ -31,6 +31,16 @@ test("public Track route delegates to the configured store", async () => {
   await app.close();
 });
 
+test("public question route delegates locale and slug to the catalogue", async () => {
+  let received = "";
+  const app = await buildServer({ allowedOrigins: [], catalogue: { getQuestion: async (slug, locale) => { received = `${slug}:${locale}`; return { id: "q1", slug, trackId: "flutter", topicIds: ["dart"], topicNames: ["Dart"], difficulty: "Junior", lastReviewedAt: "2026-08-30", translations: { ar: { question: "س", shortAnswer: "ج", explanation: "ش", commonMistakes: [], followUpQuestions: [], sources: [] }, en: { question: "q", shortAnswer: "a", explanation: "e", commonMistakes: [], followUpQuestions: [], sources: [] } } }; } } });
+  const response = await app.inject({ method: "GET", url: "/v1/questions/source?locale=en" });
+  assert.equal(response.statusCode, 200);
+  assert.equal(received, "source:en");
+  assert.equal((await app.inject({ method: "GET", url: "/v1/questions/source?locale=fr" })).statusCode, 400);
+  await app.close();
+});
+
 test("readiness is public and reports the configured process state", async () => {
   const app = await buildServer({ allowedOrigins: ["https://frontend.example"], ready: async () => true });
   const response = await app.inject({ method: "GET", url: "/ready" });

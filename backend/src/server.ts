@@ -4,6 +4,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import { AuthError, createClerkAuth, type ClerkAuth } from "./auth.ts";
 import { createAccountPolicy, createSupabaseAccountRoleStore, PolicyError, type AccountRoleStore } from "./account-policy.ts";
 import { createSupabaseTrackStore, TrackStoreError, type TrackStore } from "./tracks.ts";
+import { createSupabaseCatalogueStore, CatalogueError, type CatalogueStore } from "./catalogue.ts";
 
 type LogSink = { info?: (line: string) => void; error?: (line: string) => void };
 
@@ -14,6 +15,7 @@ export type ServerOptions = {
   auth?: ClerkAuth;
   policy?: ReturnType<typeof createAccountPolicy>;
   tracks?: TrackStore;
+  catalogue?: CatalogueStore;
 };
 
 export function accountPolicyEnabled(value = process.env.ACCOUNT_POLICY_ENABLED): boolean {
@@ -28,7 +30,7 @@ function requestId(value: unknown): string {
   return typeof value === "string" && /^[a-zA-Z0-9._:-]{1,120}$/.test(value) ? value : crypto.randomUUID();
 }
 
-export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks }: ServerOptions): Promise<FastifyInstance> {
+export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue }: ServerOptions): Promise<FastifyInstance> {
   const origins = new Set(allowedOrigins.filter(Boolean));
   const startedAt = new WeakMap<object, bigint>();
   const app = Fastify({ logger: false, genReqId: (request) => requestId(request.headers["x-request-id"]) });
@@ -96,6 +98,13 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     await tracks.savePreferences(request.account!.sub, body.trackIds, body.defaultTrackId, request.account!.token);
     return reply.code(204).send();
   });
+  app.get("/v1/questions/:slug", async (request, reply) => {
+    if (!catalogue) return reply.code(503).send({ error: "catalogue_not_configured" });
+    const { slug } = request.params as { slug?: unknown };
+    const locale = (request.query as { locale?: unknown }).locale;
+    if (typeof slug !== "string" || !slug || (locale !== "ar" && locale !== "en")) return reply.code(400).send({ error: "invalid_question_request" });
+    return catalogue.getQuestion(slug, locale);
+  });
 
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof AuthError) {
@@ -107,6 +116,10 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
       return;
     }
     if (error instanceof TrackStoreError) {
+      reply.code(error.status).send({ error: error.code });
+      return;
+    }
+    if (error instanceof CatalogueError) {
       reply.code(error.status).send({ error: error.code });
       return;
     }
@@ -126,7 +139,8 @@ async function main() {
   const roleStore: AccountRoleStore | undefined = supabaseUrl && serviceRoleKey ? createSupabaseAccountRoleStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const policy = accountPolicyEnabled() && roleStore ? createAccountPolicy(roleStore) : undefined;
   const tracks = supabaseUrl && serviceRoleKey ? createSupabaseTrackStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
-  const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks });
+  const catalogue = supabaseUrl && serviceRoleKey ? createSupabaseCatalogueStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
+  const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue });
   const port = Number(process.env.PORT ?? 3000);
   await app.listen({ host: "0.0.0.0", port: Number.isInteger(port) && port > 0 ? port : 3000 });
 }

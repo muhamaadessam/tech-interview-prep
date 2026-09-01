@@ -51,3 +51,11 @@ catalogue as the first path for public seeded questions.
 
 Track Preference migration, Question Progress/Favorites, Asked Markers, Likes,
 Submission Review, GitHub, AI advisory, and a wholesale static-catalogue move.
+
+## Measurement (2026-09-01)
+
+The existing reader and the Node adapter both issue eight REST reads for a
+question with one valid Follow-up target (question, revision, bilingual
+locales, follow-ups, target question, target locale labels, Topics, and Topic
+locale). The Node slice intentionally preserves this count; no latency or
+round-trip improvement is claimed until a deployed baseline is captured.
