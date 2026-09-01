@@ -6,7 +6,7 @@ import { exportJWK, SignJWT } from "jose";
 
 import { createClerkAuth } from "./auth.ts";
 import { createAccountPolicy, createSupabaseAccountRoleStore } from "./account-policy.ts";
-import { accountPolicyEnabled, buildServer, selectRoute } from "./server.ts";
+import { accountPolicyEnabled, buildServer, selectRoute } from "./server-impl.ts";
 
 const issuer = "https://clerk.example";
 

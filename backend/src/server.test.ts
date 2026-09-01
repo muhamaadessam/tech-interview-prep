@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildServer } from "./server.ts";
+import { buildServer } from "./server-impl.ts";
 
 test("health is public and returns process health", async () => {
   const app = await buildServer({ allowedOrigins: ["https://frontend.example"] });

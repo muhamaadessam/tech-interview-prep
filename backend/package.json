@@ -6,8 +6,9 @@
     "node": ">=22 <23"
   },
   "scripts": {
-    "dev": "node --experimental-strip-types --watch src/server.ts",
-    "start": "node --experimental-strip-types src/server.ts",
+    "build": "esbuild src/server-impl.ts --bundle --platform=node --format=esm --packages=external --outfile=server.bundle.js",
+    "dev": "node --experimental-strip-types --watch src/server-impl.ts",
+    "start": "node --experimental-strip-types src/server-impl.ts",
     "test": "node --experimental-strip-types --test src/server.test.ts src/auth.test.ts src/account-policy.test.ts src/tracks.test.ts src/catalogue.test.ts src/learner-state.test.ts src/submissions.test.ts"
   },
   "dependencies": {
@@ -15,6 +16,7 @@
     "jose": "^6.2.10"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0"
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.2"
   }
 }

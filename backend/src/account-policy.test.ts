@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createAccountPolicy, createSupabaseAccountRoleStore } from "./account-policy.ts";
-import { buildServer } from "./server.ts";
+import { buildServer } from "./server-impl.ts";
 
 const context = (sub: string, emailVerified = true) => ({ sub, claims: { sub, email_verified: emailVerified } });
 
