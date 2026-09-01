@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth, useUser } from "@clerk/react";
+import { useAuth } from "@clerk/react";
 import { useEffect, useState } from "react";
 
 import { formatNumber, messages, type Locale } from "../../i18n";
@@ -19,14 +19,12 @@ export function SubmissionForm({ locale, topics, clerkEnabled }: { locale: Local
 function AuthenticatedSubmissionForm({ locale, topics }: { locale: Locale; topics: TopicOption[] }) {
   const copy = messages[locale];
   const { isLoaded, isSignedIn, getToken } = useAuth();
-  const { user } = useUser();
   const { phase, activeTrack, selectableTracks, setActiveTrack } = useActiveTrack();
   const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [result, setResult] = useState<SubmissionResult | null>(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({ question: "", shortAnswer: "", explanation: "", difficulty: "", sources: "", codeExample: "", commonMistakes: "", followUpQuestions: "", displayName: "", licenseConsent: false, idempotencyKey: "" });
-  const verified = user?.primaryEmailAddress?.verification?.status === "verified";
 
   useEffect(() => setSelectedTopics([]), [activeTrack?.id]);
 
@@ -72,7 +70,6 @@ function AuthenticatedSubmissionForm({ locale, topics }: { locale: Locale; topic
 
   if (!isLoaded) return <LoadingPlaceholder variant="form" />;
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.submitSignInRequired}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
-  if (!verified) return <p className="empty-state">{copy.submitEmailRequired}</p>;
   if (phase !== "ready" || !activeTrack) return <ActiveTrackSelector locale={locale} />;
 
   const trackTopics = topics.filter((topic) => topic.trackId === activeTrack.id);
@@ -104,7 +101,6 @@ function AuthenticatedSubmissionForm({ locale, topics }: { locale: Locale; topic
 function errorMessage(code: string, copy: typeof messages.ar | typeof messages.en): string {
   if (code === "daily_limit_reached") return copy.submitRateLimit;
   if (code === "cooldown_active") return copy.submitCooldown;
-  if (code === "email_confirmation_required") return copy.submitEmailRequired;
   if (code === "submission_suspended") return copy.submitSuspended;
   if (code === "track_preference_required") return copy.submitTrackPreference;
   if (code === "topics_invalid" || code === "taxonomy_invalid" || code.endsWith("_invalid") || code === "license_consent_required") return copy.submitValidation;

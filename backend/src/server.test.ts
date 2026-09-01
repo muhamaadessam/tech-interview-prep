@@ -21,19 +21,6 @@ test("versioned health and readiness routes are available", async () => {
   await app.close();
 });
 
-test("email verification endpoint mirrors the backend access policy", async () => {
-  let emailVerified: boolean | undefined = false;
-  const auth = { preHandler: async (request: Parameters<NonNullable<Parameters<typeof buildServer>[0]["auth"]>["preHandler"]>[0]) => {
-    request.account = { sub: "account-1", claims: { email_verified: emailVerified }, token: "token" };
-  } };
-  const app = await buildServer({ allowedOrigins: [], auth });
-
-  assert.deepEqual((await app.inject({ method: "GET", url: "/v1/me/email-verification" })).json(), { verified: false });
-  emailVerified = true;
-  assert.deepEqual((await app.inject({ method: "GET", url: "/v1/me/email-verification" })).json(), { verified: true });
-  await app.close();
-});
-
 test("public Track route delegates to the configured store", async () => {
   let locale = "";
   const app = await buildServer({ allowedOrigins: [], tracks: { listTracks: async (value) => { locale = value; return [{ id: "flutter", slug: "flutter", name: "Flutter" }]; }, getPreferences: async () => ({ tracks: [], preferences: [], unavailableTracks: [] }), savePreferences: async () => undefined } });
@@ -64,7 +51,7 @@ test("Asked Marker HTTP interface keeps public frequency and Account state behin
     adjustAsked: async (questionId: string, delta: -1 | 1, userId: string) => { calls.push({ questionId, delta, userId }); return { personalCount: 3, interviewFrequency: 8 }; },
   };
   const auth = { preHandler: async (request: Parameters<NonNullable<Parameters<typeof buildServer>[0]["auth"]>["preHandler"]>[0]) => { request.account = { sub: "account-1", claims: {}, token: "token" }; } };
-  const policy = { requireAuthenticated: async () => undefined, requireModerator: async () => undefined, requireConfirmedEmail: async () => undefined, requireOwnership: async () => "account-1" };
+  const policy = { requireAuthenticated: async () => undefined, requireModerator: async () => undefined, requireOwnership: async () => "account-1" };
   const app = await buildServer({ allowedOrigins: [], auth, policy, learnerState });
 
   assert.deepEqual((await app.inject({ method: "GET", url: "/v1/asked-markers?questionIds=q1,q2,q1" })).json(), { q1: { personalCount: null, interviewFrequency: 7 }, q2: { personalCount: null, interviewFrequency: 7 } });
@@ -86,7 +73,7 @@ test("Community Question HTTP interface owns catalogue and Like traffic", async 
     setLike: async (questionId: string, liked: boolean, userId: string) => { calls.push(["set", questionId, liked, userId]); return { liked, likeCount: 5, promoted: false }; },
   };
   const auth = { preHandler: async (request: Parameters<NonNullable<Parameters<typeof buildServer>[0]["auth"]>["preHandler"]>[0]) => { request.account = { sub: "account-1", claims: { email_verified: true }, token: "token" }; } };
-  const policy = { requireAuthenticated: async () => undefined, requireModerator: async () => undefined, requireConfirmedEmail: async () => undefined, requireOwnership: async () => "account-1" };
+  const policy = { requireAuthenticated: async () => undefined, requireModerator: async () => undefined, requireOwnership: async () => "account-1" };
   const app = await buildServer({ allowedOrigins: [], auth, policy, community });
 
   const catalogue = await app.inject({ method: "GET", url: "/v1/community/questions?trackId=flutter&locale=en" });
@@ -101,7 +88,7 @@ test("Community Question HTTP interface owns catalogue and Like traffic", async 
 test("Account deletion uses the authenticated Clerk subject even when active-account policy denies access", async () => {
   const deleted: string[] = [];
   const auth = { preHandler: async (request: Parameters<NonNullable<Parameters<typeof buildServer>[0]["auth"]>["preHandler"]>[0]) => { request.account = { sub: "account-1", claims: {}, token: "token" }; } };
-  const policy = { requireAuthenticated: async () => { throw new PolicyError("account_suspended"); }, requireModerator: async () => undefined, requireConfirmedEmail: async () => undefined, requireOwnership: async () => "account-1" };
+  const policy = { requireAuthenticated: async () => { throw new PolicyError("account_suspended"); }, requireModerator: async () => undefined, requireOwnership: async () => "account-1" };
   const app = await buildServer({ allowedOrigins: [], auth, policy, accountDeletion: { deleteAccount: async (userId) => { deleted.push(userId); } } });
 
   const response = await app.inject({ method: "DELETE", url: "/v1/me/account" });
@@ -117,7 +104,7 @@ test("Moderator HTTP interface owns access checks and actions", async () => {
     moderate: async (body: Record<string, unknown>, token: string) => { calls.push(["moderate", body, token]); return { submissions: [] }; },
   };
   const auth = { preHandler: async (request: Parameters<NonNullable<Parameters<typeof buildServer>[0]["auth"]>["preHandler"]>[0]) => { request.account = { sub: "moderator-1", claims: {}, token: "clerk-token" }; } };
-  const policy = { requireAuthenticated: async () => undefined, requireModerator: async () => undefined, requireConfirmedEmail: async () => undefined, requireOwnership: async () => "moderator-1" };
+  const policy = { requireAuthenticated: async () => undefined, requireModerator: async () => undefined, requireOwnership: async () => "moderator-1" };
   const app = await buildServer({ allowedOrigins: [], auth, policy, operations });
 
   assert.deepEqual((await app.inject({ method: "GET", url: "/v1/me/moderator-access" })).json(), { allowed: true });
@@ -129,7 +116,7 @@ test("Moderator HTTP interface owns access checks and actions", async () => {
 
 test("moderator access reports a normal learner as denied without a failed request", async () => {
   const auth = { preHandler: async (request: Parameters<NonNullable<Parameters<typeof buildServer>[0]["auth"]>["preHandler"]>[0]) => { request.account = { sub: "learner-1", claims: {}, token: "token" }; } };
-  const policy = { requireAuthenticated: async () => undefined, requireModerator: async () => { throw new PolicyError("moderator_required"); }, requireConfirmedEmail: async () => undefined, requireOwnership: async () => "learner-1" };
+  const policy = { requireAuthenticated: async () => undefined, requireModerator: async () => { throw new PolicyError("moderator_required"); }, requireOwnership: async () => "learner-1" };
   const app = await buildServer({ allowedOrigins: [], auth, policy });
 
   const response = await app.inject({ method: "GET", url: "/v1/me/moderator-access" });

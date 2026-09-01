@@ -67,7 +67,7 @@ test("Fastify, Clerk, Account policy, and Supabase adapter integrate through one
     savePreferences: async (userId: string) => { saved = { userId }; },
   } });
   app.get("/v1/moderator", { preHandler: [app.authenticate, app.requireModerator] }, async () => ({ ok: true }));
-  app.get("/v1/contribute", { preHandler: [app.authenticate, app.requireConfirmedEmail] }, async () => ({ ok: true }));
+  app.get("/v1/contribute", { preHandler: [app.authenticate, app.requireAuthenticated] }, async () => ({ ok: true }));
   const bearer = async (claims?: Record<string, unknown>) => `Bearer ${await token(key.privateKey, "key-1", claims)}`;
 
   assert.equal((await app.inject({ method: "GET", url: "/v1/moderator" })).statusCode, 401);
@@ -78,7 +78,7 @@ test("Fastify, Clerk, Account policy, and Supabase adapter integrate through one
   role = { role: "moderator", suspended: true };
   assert.equal((await app.inject({ method: "GET", url: "/v1/moderator", headers: { authorization: await bearer() } })).statusCode, 403);
   role = { role: "learner", suspended: false };
-  assert.equal((await app.inject({ method: "GET", url: "/v1/contribute", headers: { authorization: await bearer({ email_verified: false }) } })).statusCode, 403);
+  assert.equal((await app.inject({ method: "GET", url: "/v1/contribute", headers: { authorization: await bearer({ email_verified: false }) } })).statusCode, 200);
   assert.equal(accountPolicyEnabled("false"), false);
   assert.equal(accountPolicyEnabled("true"), true);
   assert.equal(selectRoute(false, "node", "edge"), "edge");

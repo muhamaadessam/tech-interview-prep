@@ -63,7 +63,6 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
   const unavailablePolicy = async () => { throw new PolicyError("policy_not_configured", 503); };
   app.decorate("requireAuthenticated", policy?.requireAuthenticated ?? unavailablePolicy);
   app.decorate("requireModerator", policy?.requireModerator ?? unavailablePolicy);
-  app.decorate("requireConfirmedEmail", policy?.requireConfirmedEmail ?? unavailablePolicy);
   app.decorate("requireOwnership", policy?.requireOwnership ?? unavailablePolicy);
 
   app.addHook("onRequest", async (request, reply) => {
@@ -109,9 +108,6 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     if (!isReady) return reply.code(503).send({ status: "not_ready" });
     return { status: "ready" };
   });
-  app.get("/v1/me/email-verification", { preHandler: [app.authenticate] }, async (request) => ({
-    verified: request.account!.claims.email_verified === true || request.account!.claims.email_verified === "true",
-  }));
   app.get("/v1/tracks", async (request, reply) => {
     if (!tracks) return reply.code(503).send({ error: "tracks_not_configured" });
     const locale = typeof (request.query as { locale?: unknown }).locale === "string" ? (request.query as { locale: string }).locale : "en";
@@ -148,7 +144,7 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     if (!ids) return reply.code(400).send({ error: "invalid_question_ids" });
     return { questionIds: await community.likedQuestionIds(ids, request.account!.sub) };
   });
-  app.post("/v1/questions/:questionId/like", { preHandler: [app.authenticate, app.requireAuthenticated, app.requireConfirmedEmail] }, async (request, reply) => {
+  app.post("/v1/questions/:questionId/like", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request, reply) => {
     if (!community) return reply.code(503).send({ error: "community_not_configured" });
     const questionId = (request.params as { questionId?: unknown }).questionId;
     const liked = (request.body as { liked?: unknown })?.liked;
@@ -207,7 +203,7 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     if (typeof questionId !== "string" || !questionId || (delta !== -1 && delta !== 1)) return reply.code(400).send({ error: "invalid_asked_marker" });
     return learnerState.adjustAsked(questionId, delta, request.account!.sub);
   });
-  app.post("/v1/submissions", { preHandler: [app.authenticate, app.requireAuthenticated, app.requireConfirmedEmail] }, async (request, reply) => {
+  app.post("/v1/submissions", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request, reply) => {
     if (!submission) return reply.code(503).send({ error: "submission_not_configured" });
     return submission.submit(request.body as never, request.account!.token, request.account!.sub);
   });
@@ -294,7 +290,6 @@ declare module "fastify" {
     authenticate: ClerkAuth["preHandler"];
     requireAuthenticated: ReturnType<typeof createAccountPolicy>["requireAuthenticated"];
     requireModerator: ReturnType<typeof createAccountPolicy>["requireModerator"];
-    requireConfirmedEmail: ReturnType<typeof createAccountPolicy>["requireConfirmedEmail"];
     requireOwnership: ReturnType<typeof createAccountPolicy>["requireOwnership"];
   }
 }

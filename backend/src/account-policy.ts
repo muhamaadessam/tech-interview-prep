@@ -41,11 +41,6 @@ export function createAccountPolicy(store: AccountRoleStore, moderatorUserIds: s
       if (moderatorUserIds.includes(actor.sub) && role?.suspended !== true) return;
       if (role?.role !== "moderator" || role.suspended === true) throw new PolicyError("moderator_required");
     },
-    requireConfirmedEmail: async (request: FastifyRequest) => {
-      const actor = account(request);
-      if ((await store.getRole(actor.sub))?.suspended === true) throw new PolicyError("account_suspended");
-      if (actor.claims.email_verified !== true && actor.claims.email_verified !== "true") throw new PolicyError("email_confirmation_required");
-    },
     requireOwnership: async (request: FastifyRequest) => {
       const actor = account(request);
       if ((await store.getRole(actor.sub))?.suspended === true) throw new PolicyError("account_suspended");

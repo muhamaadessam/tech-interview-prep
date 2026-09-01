@@ -6,7 +6,7 @@ import { buildServer } from "./server-impl.ts";
 
 const context = (sub: string, emailVerified = true) => ({ sub, claims: { sub, email_verified: emailVerified } });
 
-test("policy guards enforce authentication, ownership, confirmation, role, and suspension", async () => {
+test("policy guards enforce authentication, ownership, role, and suspension", async () => {
   const policy = createAccountPolicy({ getRole: async (userId) => userId === "moderator" ? { role: "moderator", suspended: false } : userId === "suspended" || userId === "suspended-learner" ? { role: "learner", suspended: true } : { role: "learner", suspended: false } });
   const app = await buildServer({ allowedOrigins: [], policy });
   app.get("/auth", { preHandler: app.requireAuthenticated }, async () => ({ ok: true }));
@@ -15,8 +15,8 @@ test("policy guards enforce authentication, ownership, confirmation, role, and s
   app.get("/owner-query", { preHandler: [setAccount(context("user_123")), app.requireOwnership] }, async () => ({ ok: true }));
   app.get("/moderator", { preHandler: [setAccount(context("moderator")), app.requireModerator] }, async () => ({ ok: true }));
   app.get("/suspended-moderator", { preHandler: [setAccount(context("suspended")), app.requireModerator] }, async () => ({ ok: true }));
-  app.get("/suspended-learner", { preHandler: [setAccount(context("suspended-learner")), app.requireConfirmedEmail] }, async () => ({ ok: true }));
-  app.get("/contribute", { preHandler: [setAccount(context("user_123", false)), app.requireConfirmedEmail] }, async () => ({ ok: true }));
+  app.get("/suspended-learner", { preHandler: [setAccount(context("suspended-learner")), app.requireAuthenticated] }, async () => ({ ok: true }));
+  app.get("/contribute", { preHandler: [setAccount(context("user_123", false)), app.requireAuthenticated] }, async () => ({ ok: true }));
 
   assert.equal((await app.inject({ method: "GET", url: "/auth" })).statusCode, 401);
   assert.equal((await app.inject({ method: "GET", url: "/owner/user_123" })).statusCode, 200);
@@ -25,7 +25,7 @@ test("policy guards enforce authentication, ownership, confirmation, role, and s
   assert.equal((await app.inject({ method: "GET", url: "/moderator" })).statusCode, 200);
   assert.deepEqual((await app.inject({ method: "GET", url: "/suspended-moderator" })).json(), { error: "moderator_required" });
   assert.deepEqual((await app.inject({ method: "GET", url: "/suspended-learner" })).json(), { error: "account_suspended" });
-  assert.deepEqual((await app.inject({ method: "GET", url: "/contribute" })).json(), { error: "email_confirmation_required" });
+  assert.equal((await app.inject({ method: "GET", url: "/contribute" })).statusCode, 200);
   await app.close();
 });
 
