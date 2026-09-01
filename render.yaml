@@ -15,9 +15,9 @@ services:
       - key: UPSTREAM_TIMEOUT_MS
         value: "5000"
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        value: https://tech-interview-prep-1ux.pages.dev
       - key: SUPABASE_URL
-        sync: false
+        value: https://aptxrianhyxvdjnuyruo.supabase.co
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: CLERK_JWKS_URL
