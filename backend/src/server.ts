@@ -37,7 +37,7 @@ function requestId(value: unknown): string {
 export async function buildServer({ allowedOrigins, ready = true, logger = console, auth, policy, tracks, catalogue, learnerState, submission }: ServerOptions): Promise<FastifyInstance> {
   const origins = new Set(allowedOrigins.filter(Boolean));
   const startedAt = new WeakMap<object, bigint>();
-  const app = Fastify({ logger: false, genReqId: (request) => requestId(request.headers["x-request-id"]) });
+  const app = Fastify({ logger: false, bodyLimit: 256 * 1024, genReqId: (request) => requestId(request.headers["x-request-id"]) });
   app.decorateRequest("account", null);
   app.decorate("authenticate", auth?.preHandler ?? (async () => { throw new AuthError("auth_not_configured"); }));
   const unavailablePolicy = async () => { throw new PolicyError("policy_not_configured", 503); };
