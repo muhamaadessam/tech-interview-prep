@@ -7,13 +7,15 @@ Tech Interview Prep is an open-source, Arabic-first study platform for software 
 ```text
 src/                 Next.js static frontend and domain modules
 backend/             Node/Fastify API deployed as a Vercel Function
-supabase/             Server-side migrations and functions only
+supabase/             Database migrations and seed data only
 e2e/                 Playwright browser journeys
 scripts/              Build, security, seed, and load-test utilities
-.github/              CI, deployment, ownership, and contribution policy
+.github/              CI, ownership, and contribution policy
 ```
 
-The browser talks to the Node API under `/v1`. Supabase is an internal data provider behind that API; do not add direct Supabase calls to browser code.
+The browser talks to the Node API under `/v1`. Clerk session tokens are verified
+and authorized by Node. Supabase is an internal PostgreSQL provider behind that
+API; do not add direct Supabase calls to browser code.
 
 ## Local development
 
@@ -45,7 +47,9 @@ Use `npm run load:test -- --url http://127.0.0.1:3000/ --users 10,25,50 --durati
 
 ## Deployment
 
-Pushing to `main` starts the configured Cloudflare Pages deployment for the frontend. The Node backend is deployed separately to Vercel. Production secrets and variables are managed in the hosting dashboards; GitHub Actions receives only the public build variables it needs.
+Pushing to `main` deploys the static frontend through Cloudflare Pages Git
+integration and the Node backend through Vercel Git integration. Supabase stores
+data only. Production secrets and variables live in the hosting dashboards.
 
 ## Contributing
 

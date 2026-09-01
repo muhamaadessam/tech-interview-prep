@@ -2,7 +2,7 @@
 
 ## Problem
 
-The current Submission Edge Function combines validation, rate limits,
+The current Node submission route combines validation, rate limits,
 idempotency, database writes, duplicate detection, and GitHub Issue creation.
 Moderator actions and AI advisory repeat GitHub concerns. Retries can therefore
 cross provider boundaries without one clear ownership model.
@@ -39,10 +39,9 @@ Review Issue as a conversation record rather than a publication authority.
 
 ## Rollout and rollback
 
-Migrate validation and persistence parity before GitHub creation. Use one route
-flag per migrated operation and keep `submit-question`, `moderator-actions`,
-and related Edge Functions deployed as rollback implementations. Rollback must
-not require a schema change or dual writes.
+Migrate validation and persistence parity before GitHub creation. Rollback uses
+the previous known-good Node/frontend artifacts and must not require a schema
+change or dual writes.
 
 ## Acceptance checks
 

@@ -15,5 +15,5 @@ Recommended order:
 4. [Submission to Review](./submission-review.md) — validation, idempotency,
    Review Issues, and GitHub side effects after read/write parity is proven.
 
-The existing Edge Functions remain rollback implementations until each slice
-passes its own parity, security, E2E, and cutover checks.
+The Node backend is the application path for these slices. Supabase remains the
+database provider and migration/seed source only.

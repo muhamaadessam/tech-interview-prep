@@ -1,4 +1,5 @@
-import { fetchUpstream } from "./upstream.ts";
+import { handleAdvisory } from "./ai-advisory.ts";
+import { handleModerator } from "./moderator-actions.ts";
 
 export class OperationError extends Error {
   readonly code: string;
@@ -7,8 +8,8 @@ export class OperationError extends Error {
 }
 
 export type Operations = {
-  moderate: (body: Record<string, unknown>, accessToken: string) => Promise<unknown>;
-  advise: (submissionId: string, accessToken: string) => Promise<unknown>;
+  moderate: (body: Record<string, unknown>, accessToken: string, userId?: string) => Promise<unknown>;
+  advise: (submissionId: string, accessToken: string, userId?: string) => Promise<unknown>;
 };
 
 export function createSupabaseOperations({ url, serviceRoleKey, fetchImpl = fetch }: { url: string; serviceRoleKey: string; fetchImpl?: typeof fetch }): Operations {
@@ -20,14 +21,14 @@ export function createSupabaseOperations({ url, serviceRoleKey, fetchImpl = fetc
     if (!response.ok) throw new OperationError("moderation_unavailable", response.status);
     return { submissions: payload };
   };
-  const call = async (name: string, body: Record<string, unknown>, accessToken: string) => {
-    const response = await fetchUpstream(fetchImpl, `${base}/functions/v1/${name}`, { method: "POST", headers: { apikey: serviceRoleKey, Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const call = async (handler: (request: Request, fetchImpl?: typeof fetch) => Promise<Response>, body: Record<string, unknown>, userId: string) => {
+    const response = await handler(new Request("http://node.internal", { method: "POST", headers: { "x-account-id": userId, "Content-Type": "application/json" }, body: JSON.stringify(body) }), fetchImpl);
     const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
-    if (!response.ok) throw new OperationError(typeof payload.error === "string" ? payload.error : `${name}_unavailable`, response.status);
+    if (!response.ok) throw new OperationError(typeof payload.error === "string" ? payload.error : "operation_unavailable", response.status);
     return payload;
   };
   return {
-    moderate: (body, accessToken) => body.action === "list_submissions" ? listSubmissions(body) : call("moderator-actions", body, accessToken),
-    advise: (submissionId, accessToken) => call("ai-advisory", { submissionId, revisionNumber: 1 }, accessToken),
+    moderate: (body, _accessToken, userId) => userId ? body.action === "list_submissions" ? listSubmissions(body) : call(handleModerator, body, userId) : Promise.reject(new OperationError("unauthenticated", 401)),
+    advise: (submissionId, _accessToken, userId) => userId ? call(handleAdvisory, { submissionId, revisionNumber: 1 }, userId) : Promise.reject(new OperationError("unauthenticated", 401)),
   };
 }

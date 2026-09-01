@@ -39,6 +39,6 @@ deployment artifact available until the new routes pass smoke checks.
 The local load smoke on 2026-09-01 passed at 1 and 2 concurrent users (0% errors;
 p95 389.7ms and 284.4ms respectively, under the 1000ms/1% default SLO). This is
 a development baseline, not a capacity claim; rerun the full `README.md` load
-profile against the deployed target before switching traffic. In the deployment
-account, `supabase functions list` is the rollback deployability smoke; the four
-existing Edge Functions must remain present before enabling the Node path.
+profile against the deployed target before switching traffic. The Node backend
+is the only application path; Supabase is a database provider and migration
+source only.
