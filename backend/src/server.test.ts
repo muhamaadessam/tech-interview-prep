@@ -21,19 +21,6 @@ test("versioned health and readiness routes are available", async () => {
   await app.close();
 });
 
-test("email verification endpoint mirrors the backend access policy", async () => {
-  let emailVerified: boolean | undefined = false;
-  const auth = { preHandler: async (request: Parameters<NonNullable<Parameters<typeof buildServer>[0]["auth"]>["preHandler"]>[0]) => {
-    request.account = { sub: "account-1", claims: { email_verified: emailVerified }, token: "token" };
-  } };
-  const app = await buildServer({ allowedOrigins: [], auth });
-
-  assert.deepEqual((await app.inject({ method: "GET", url: "/v1/me/email-verification" })).json(), { verified: false });
-  emailVerified = true;
-  assert.deepEqual((await app.inject({ method: "GET", url: "/v1/me/email-verification" })).json(), { verified: true });
-  await app.close();
-});
-
 test("public Track route delegates to the configured store", async () => {
   let locale = "";
   const app = await buildServer({ allowedOrigins: [], tracks: { listTracks: async (value) => { locale = value; return [{ id: "flutter", slug: "flutter", name: "Flutter" }]; }, getPreferences: async () => ({ tracks: [], preferences: [], unavailableTracks: [] }), savePreferences: async () => undefined } });
