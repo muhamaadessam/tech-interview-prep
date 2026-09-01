@@ -178,7 +178,7 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
   return app;
 }
 
-async function main() {
+export async function createProductionServer() {
   const jwksUrl = process.env.CLERK_JWKS_URL;
   const issuer = process.env.CLERK_JWT_ISSUER;
   const auth = jwksUrl && issuer ? createClerkAuth({ jwksUrl, issuer }) : undefined;
@@ -190,7 +190,11 @@ async function main() {
   const catalogue = supabaseUrl && serviceRoleKey ? createSupabaseCatalogueStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const learnerState = supabaseUrl && serviceRoleKey ? createSupabaseLearnerStateStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
   const submission = supabaseUrl && serviceRoleKey ? createSupabaseSubmissionStore({ url: supabaseUrl, serviceRoleKey }) : undefined;
-  const app = await buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue, learnerState, submission });
+  return buildServer({ allowedOrigins: (process.env.CORS_ALLOWED_ORIGINS ?? "").split(",").map((origin) => origin.trim()), ready: true, auth, policy, tracks, catalogue, learnerState, submission });
+}
+
+async function main() {
+  const app = await createProductionServer();
   const shutdown = async () => { try { await app.close(); } finally { process.exitCode = 0; } };
   process.once("SIGTERM", shutdown);
   process.once("SIGINT", shutdown);
