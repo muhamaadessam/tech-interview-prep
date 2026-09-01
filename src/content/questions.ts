@@ -65,6 +65,7 @@ export const topics: Topic[] = [
   { id: "state-management", slug: "state-management", trackId: "flutter", name: "State Management" },
   { id: "navigation", slug: "navigation", trackId: "flutter", name: "Navigation" },
   { id: "networking", slug: "networking", trackId: "flutter", name: "Networking" },
+  { id: "realtime", slug: "realtime", trackId: "flutter", name: "Realtime & WebSockets" },
   { id: "local-storage", slug: "local-storage", trackId: "flutter", name: "Local Storage" },
   { id: "platform-integration", slug: "platform-integration", trackId: "flutter", name: "Platform Integration" },
   { id: "architecture", slug: "architecture", trackId: "flutter", name: "Architecture" },
@@ -1401,6 +1402,30 @@ Navigator.of(context).pop();`,
     lastReviewedAt: "2026-08-30",
   },
   {
+    id: "realtime-001", slug: "websocket-vs-http-polling", trackId: "flutter", topicIds: ["realtime"], difficulty: "Junior",
+    question: "إمتى تختار WebSocket بدل HTTP polling في تطبيق Flutter؟", shortAnswer: "WebSocket مناسب لتحديثات ثنائية الاتجاه شبه الفورية، بينما polling أبسط للتحديثات النادرة.", explanation: "الاتصال الطويل يحتاج lifecycle وreconnect؛ لا تستخدمه إذا كان request عادي يحقق المطلوب.", commonMistakes: ["استخدام socket لكل تحديث."], followUpQuestions: ["ما تكلفة الاتصال الطويل؟"], sources: [{ title: "Dart API — WebSocket", url: "https://api.dart.dev/dart-io/WebSocket-class.html" }], lastReviewedAt: "2026-09-01",
+  },
+  {
+    id: "realtime-002", slug: "stream-connection-state", trackId: "flutter", topicIds: ["realtime"], difficulty: "Mid",
+    question: "إزاي تمثل حالات اتصال realtime داخل Flutter؟", shortAnswer: "استخدم حالات واضحة مثل connecting وconnected وdisconnected وerror بدل flags متفرقة.", explanation: "نموذج الحالة الموحد يجعل UI والاختبارات متسقين ويمنع عرض connected قبل اكتمال الاتصال.", commonMistakes: ["ترك state قديم بعد close."], followUpQuestions: ["كيف تختبر انتقالات الحالة؟"], sources: [{ title: "Flutter docs — WebSockets", url: "https://docs.flutter.dev/cookbook/networking/web-sockets" }], lastReviewedAt: "2026-09-01",
+  },
+  {
+    id: "realtime-003", slug: "reconnect-backoff-and-jitter", trackId: "flutter", topicIds: ["realtime"], difficulty: "Mid",
+    question: "كيف تصمم reconnect آمنًا للـWebSocket؟", shortAnswer: "استخدم exponential backoff مع حد أقصى وjitter وأوقف المحاولات عند dispose أو logout.", explanation: "backoff وjitter يمنعان storm عند انقطاع الخدمة، وفشل المصادقة يحتاج تدخلًا بدل retry بلا نهاية.", commonMistakes: ["retry فوري بلا حد."], followUpQuestions: ["متى تعيد authentication؟"], sources: [{ title: "Flutter docs — WebSockets", url: "https://docs.flutter.dev/cookbook/networking/web-sockets" }], lastReviewedAt: "2026-09-01",
+  },
+  {
+    id: "realtime-004", slug: "websocket-message-ordering", trackId: "flutter", topicIds: ["realtime"], difficulty: "Senior",
+    question: "كيف تتعامل مع ترتيب الرسائل وتكرارها بعد reconnect؟", shortAnswer: "استخدم message id أو sequence number وطبّق idempotency حسب contract واضح.", explanation: "إعادة الاتصال قد تفقد أو تكرر رسائل؛ transport وحده لا يضمن business ordering.", commonMistakes: ["تطبيق الرسالة مرتين."], followUpQuestions: ["كيف تنفذ replay من cursor؟"], sources: [{ title: "Dart API — WebSocket", url: "https://api.dart.dev/dart-io/WebSocket-class.html" }], lastReviewedAt: "2026-09-01",
+  },
+  {
+    id: "realtime-005", slug: "dispose-stream-subscriptions", trackId: "flutter", topicIds: ["realtime"], difficulty: "Junior",
+    question: "إزاي تمنع تسريب StreamSubscription في شاشة Flutter؟", shortAnswer: "احتفظ بالـsubscription وألغِه في dispose، ولا تشترك داخل build.", explanation: "listener المتروك قد يحدّث Widget منتهية ويحتفظ بمراجع تمنع جمع الذاكرة.", commonMistakes: ["نسيان cancel عند تبديل الحساب."], followUpQuestions: ["كيف تمنع duplicate subscriptions؟"], sources: [{ title: "Dart API — StreamSubscription", url: "https://api.dart.dev/dart-async/StreamSubscription-class.html" }], lastReviewedAt: "2026-09-01",
+  },
+  {
+    id: "realtime-006", slug: "realtime-auth-and-logout", trackId: "flutter", topicIds: ["realtime"], difficulty: "Senior",
+    question: "ما الذي يحدث لاتصال realtime عند انتهاء الجلسة أو logout؟", shortAnswer: "أوقف الإرسال وأغلق الاتصال وامسح listeners والبيانات الخاصة قبل السماح باتصال جديد.", explanation: "اربط lifecycle بالمصادقة حتى لا يتسرب حدث مستخدم سابق أو token منتهي.", commonMistakes: ["الإبقاء على socket بعد logout."], followUpQuestions: ["كيف تدور credentials بأمان؟"], sources: [{ title: "Flutter docs — WebSockets", url: "https://docs.flutter.dev/cookbook/networking/web-sockets" }], lastReviewedAt: "2026-09-01",
+  },
+  {
     id: "arch-002",
     slug: "presentation-domain-and-data-boundaries",
     trackId: "flutter",
@@ -1789,12 +1814,12 @@ export const questions: InterviewQuestion[] = baseQuestions.map((question) => ({
 export const topicTranslations: Record<Locale, Record<string, string>> = {
   ar: {
     dart: "Dart", oop: "OOP", solid: "SOLID", "flutter-fundamentals": "Flutter Fundamentals", widgets: "Widgets",
-    "state-management": "State Management", navigation: "Navigation", networking: "Networking", "local-storage": "Local Storage",
+    "state-management": "State Management", navigation: "Navigation", networking: "Networking", realtime: "Realtime & WebSockets", "local-storage": "Local Storage",
     "platform-integration": "Platform Integration", architecture: "Architecture", testing: "Testing", performance: "Performance", "async-isolates": "Async & Isolates",
   },
   en: {
     dart: "Dart", oop: "OOP", solid: "SOLID", "flutter-fundamentals": "Flutter Fundamentals", widgets: "Widgets",
-    "state-management": "State Management", navigation: "Navigation", networking: "Networking", "local-storage": "Local Storage",
+    "state-management": "State Management", navigation: "Navigation", networking: "Networking", realtime: "Realtime & WebSockets", "local-storage": "Local Storage",
     "platform-integration": "Platform Integration", architecture: "Architecture", testing: "Testing", performance: "Performance", "async-isolates": "Async & Isolates",
   },
 };
@@ -1837,6 +1862,7 @@ export const productionTopicCounts = {
   "state-management": 10,
   navigation: 5,
   networking: 7,
+  realtime: 6,
   "local-storage": 5,
   "platform-integration": 2,
   architecture: 8,
@@ -1879,7 +1905,7 @@ export function validateQuestions(interviewQuestions: InterviewQuestion[]): void
 export function validateProductionCatalogue(interviewQuestions: InterviewQuestion[] = questions): void {
   validateQuestions(interviewQuestions);
   validateBilingualCatalogue(interviewQuestions);
-  if (interviewQuestions.length !== 100) throw new Error(`Production catalogue must contain exactly 100 questions; found ${interviewQuestions.length}`);
+  if (interviewQuestions.length !== 106) throw new Error(`Production catalogue must contain exactly 106 questions; found ${interviewQuestions.length}`);
   for (const [topicId, expectedCount] of Object.entries(productionTopicCounts)) {
     const actualCount = interviewQuestions.filter((question) => question.topicIds.includes(topicId)).length;
     if (actualCount !== expectedCount) throw new Error(`Topic ${topicId} must contain exactly ${expectedCount} questions; found ${actualCount}`);

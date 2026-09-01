@@ -8,10 +8,10 @@ verified. It currently contains:
 | Entity | Count | Migration key |
 | --- | ---: | --- |
 | Track | 1 | `flutter` |
-| Topic | 14 | existing topic `id`/`slug` |
-| Interview Question | 100 | existing `id` and immutable `slug` |
-| Question/Topic links | 100 | `question.id + topic.id` |
-| Locale rows | 200 | 100 questions × `ar`/`en` |
+| Topic | 15 | existing topic `id`/`slug` |
+| Interview Question | 106 | existing `id` and immutable `slug` |
+| Question/Topic links | 106 | `question.id + topic.id` |
+| Locale rows | 212 | 106 questions × `ar`/`en` |
 | Difficulty levels | 3 | `Junior`, `Mid`, `Senior` |
 
 Difficulty distribution is 34 Junior, 45 Mid, and 21 Senior. Every published
@@ -55,7 +55,7 @@ never key progress by slug revision or translated text.
 
 - Seed is repeatable and idempotent; rerunning it does not duplicate Tracks,
   Topics, Questions, locale rows, revisions, or links.
-- The database contains 1 Track, 14 Topics, 100 Questions, 100 links, and 200
+- The database contains 1 Track, 15 Topics, 106 Questions, 106 links, and 212
   locale rows with the inventory above.
 - Every existing question id/slug resolves to the same question after the
   cutover, and every topic count matches `productionTopicCounts`.

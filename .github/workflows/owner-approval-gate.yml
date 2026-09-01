@@ -1,0 +1,22 @@
+name: Owner approval gate
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  approval:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require repository owner approval for contributors
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          if [ "$AUTHOR" = "muhamaadessam" ]; then exit 0; fi
+          approved=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews" --paginate --jq '[.[] | select(.user.login == "muhamaadessam" and .state == "APPROVED")] | length' | tail -n1)
+          test "$approved" -gt 0 || { echo "Waiting for muhamaadessam approval"; exit 1; }
