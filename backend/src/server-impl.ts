@@ -150,7 +150,15 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     if (typeof questionId !== "string" || !questionId || typeof liked !== "boolean") return reply.code(400).send({ error: "invalid_like_request" });
     return community.setLike(questionId, liked, request.account!.sub);
   });
-  app.get("/v1/me/moderator-access", { preHandler: [app.authenticate, app.requireModerator] }, async () => ({ allowed: true }));
+  app.get("/v1/me/moderator-access", { preHandler: [app.authenticate, app.requireAuthenticated] }, async (request) => {
+    try {
+      await app.requireModerator(request);
+      return { allowed: true };
+    } catch (error) {
+      if (error instanceof PolicyError && error.statusCode === 403) return { allowed: false };
+      throw error;
+    }
+  });
   app.post("/v1/moderation/actions", { preHandler: [app.authenticate, app.requireModerator] }, async (request, reply) => {
     if (!operations) return reply.code(503).send({ error: "moderation_not_configured" });
     const body = request.body;

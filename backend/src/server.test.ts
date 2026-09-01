@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { PolicyError } from "./account-policy.ts";
 import { buildServer } from "./server-impl.ts";
 
 test("health is public and returns process health", async () => {
@@ -98,6 +99,17 @@ test("Moderator HTTP interface owns access checks, actions, and advisory traffic
   assert.deepEqual((await app.inject({ method: "POST", url: "/v1/moderation/actions", payload: { action: "list_submissions" } })).json(), { submissions: [] });
   assert.deepEqual((await app.inject({ method: "POST", url: "/v1/advisories", payload: { submissionId: "submission-1" } })).json(), { status: "completed", commentId: 42 });
   assert.deepEqual(calls, [["moderate", { action: "list_submissions" }, "clerk-token"], ["advise", "submission-1", "clerk-token"]]);
+  await app.close();
+});
+
+test("moderator access reports a normal learner as denied without a failed request", async () => {
+  const auth = { preHandler: async (request: Parameters<NonNullable<Parameters<typeof buildServer>[0]["auth"]>["preHandler"]>[0]) => { request.account = { sub: "learner-1", claims: {}, token: "token" }; } };
+  const policy = { requireAuthenticated: async () => undefined, requireModerator: async () => { throw new PolicyError("moderator_required"); }, requireConfirmedEmail: async () => undefined, requireOwnership: async () => "learner-1" };
+  const app = await buildServer({ allowedOrigins: [], auth, policy });
+
+  const response = await app.inject({ method: "GET", url: "/v1/me/moderator-access" });
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(response.json(), { allowed: false });
   await app.close();
 });
 
