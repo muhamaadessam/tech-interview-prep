@@ -29,7 +29,7 @@ function requestAccountId(request: FastifyRequest): string | undefined {
   return undefined;
 }
 
-export function createAccountPolicy(store: AccountRoleStore) {
+export function createAccountPolicy(store: AccountRoleStore, moderatorUserIds: string[] = []) {
   return {
     requireAuthenticated: async (request: FastifyRequest) => {
       const actor = account(request);
@@ -38,6 +38,7 @@ export function createAccountPolicy(store: AccountRoleStore) {
     requireModerator: async (request: FastifyRequest) => {
       const actor = account(request);
       const role = await store.getRole(actor.sub);
+      if (moderatorUserIds.includes(actor.sub) && role?.suspended !== true) return;
       if (role?.role !== "moderator" || role.suspended === true) throw new PolicyError("moderator_required");
     },
     requireConfirmedEmail: async (request: FastifyRequest) => {
