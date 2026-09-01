@@ -50,9 +50,9 @@ test("every question has complete Arabic and English translations", () => {
   }
 });
 
-test("production validation enforces the 100-question topic distribution", () => {
+test("production validation enforces the 106-question topic distribution", () => {
   assert.doesNotThrow(() => validateProductionCatalogue());
-  assert.throws(() => validateProductionCatalogue(questions.slice(0, -1)), /exactly 100 questions/);
+  assert.throws(() => validateProductionCatalogue(questions.slice(0, -1)), /exactly 106 questions/);
   const wrongDistribution = questions.map((question, index) => index === 0 ? { ...question, topicIds: ["oop"] } : question);
   assert.throws(() => validateProductionCatalogue(wrongDistribution), /Topic dart must contain exactly 12/);
   assert.throws(() => validateProductionCatalogue(questions.map((question, index) => index === 0 ? { ...question, difficulty: "Expert" as never } : question)), /invalid difficulty/);
@@ -159,6 +159,10 @@ test("the Navigation and Networking topics contain their planned question sets",
       "cancelling-network-work-with-widget-lifecycle",
       "service-repository-network-boundaries",
       "websockets-and-stream-lifecycle",
+    ],
+    realtime: [
+      "websocket-vs-http-polling", "stream-connection-state", "reconnect-backoff-and-jitter",
+      "websocket-message-ordering", "dispose-stream-subscriptions", "realtime-auth-and-logout",
     ],
   } as const;
   for (const [topic, slugs] of Object.entries(expected)) {
