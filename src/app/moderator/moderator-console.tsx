@@ -4,7 +4,7 @@ import { useAuth } from "@clerk/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { messages, type Locale } from "../../i18n";
-import { ModerationError, moderationRequest, type ModerationStatus, type ModerationSubmission } from "../../moderation/api";
+import { hasModeratorAccess, ModerationError, moderationRequest, type ModerationStatus, type ModerationSubmission } from "../../moderation/api";
 import { AuthDialogTrigger } from "../auth-dialog";
 import { LoadingPlaceholder } from "../loading-placeholder";
 
@@ -19,6 +19,7 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   const copy = messages[locale];
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const [status, setStatus] = useState<ModerationStatus>("pending");
+  const [moderatorAccess, setModeratorAccess] = useState<boolean | null>(null);
   const [rows, setRows] = useState<ModerationSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -44,7 +45,13 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
     finally { setLoading(false); }
   }, [getToken, status]);
 
-  useEffect(() => { if (isSignedIn) void load(); }, [isSignedIn, load]);
+  useEffect(() => {
+    if (!isSignedIn) { setModeratorAccess(false); return; }
+    let active = true;
+    void hasModeratorAccess({ userId: "page-access-check", getToken }).then((allowed) => { if (active) setModeratorAccess(allowed); });
+    return () => { active = false; };
+  }, [getToken, isSignedIn]);
+  useEffect(() => { if (moderatorAccess === true) void load(); }, [load, moderatorAccess]);
 
   async function loadCommunity() {
     setCommunityMode(true); setFollowUpMode(false); setLoading(true); setError("");
@@ -109,6 +116,8 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
 
   if (!isLoaded) return <LoadingPlaceholder variant="moderator" />;
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.moderatorSignIn}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
+  if (moderatorAccess === null) return <LoadingPlaceholder variant="moderator" />;
+  if (!moderatorAccess) return <div className="empty-state"><h2>{locale === "ar" ? "لوحة المشرف غير متاحة" : "Moderator access required"}</h2><p>{locale === "ar" ? "هذا الحساب ليس لديه صلاحية مراجعة المساهمات." : "This account is not allowed to review contributions."}</p></div>;
 
   return <div className="moderator-console">
     <div className="moderator-toolbar"><label>{copy.moderatorStatus}<select value={status} onChange={(event) => { setCommunityMode(false); setFollowUpMode(false); setStatus(event.target.value as ModerationStatus); }}>{statuses.map((value) => <option key={value} value={value}>{statusLabel(value, locale)}</option>)}</select></label><button className="button" type="button" onClick={() => void (followUpMode ? loadFollowUps() : communityMode ? loadCommunity() : load())} disabled={loading}>{loading ? copy.moderatorLoading : copy.moderatorRefresh}</button><button className="button" type="button" onClick={() => void loadCommunity()} disabled={loading}>{locale === "ar" ? "أسئلة المجتمع" : "Community questions"}</button><button className="button" type="button" onClick={() => void loadFollowUps()} disabled={loading}>{locale === "ar" ? "أسئلة المتابعة" : "Follow-ups"}</button></div>
