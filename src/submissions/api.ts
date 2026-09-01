@@ -4,7 +4,6 @@ import { nodeRequest } from "../backend/api.ts";
 export type SubmissionResult = {
   submissionId: string;
   status: "pending" | "approved" | "published" | "failed";
-  prompt?: string;
   duplicateAdvisory?: boolean;
   retryable?: boolean;
 };

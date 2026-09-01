@@ -7,6 +7,7 @@ export type ModerationSubmission = {
   topic_ids: string[];
   difficulty: string;
   payload: { question?: string; shortAnswer?: string; explanation?: string; sources?: string[] };
+  prompt?: string;
   review_notes: string | null;
   created_at: string;
 };

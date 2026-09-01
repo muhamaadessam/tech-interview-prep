@@ -136,7 +136,9 @@ export function validateImportedQuestion(value: unknown): ImportedQuestion {
   return { trackId, topicIds, difficulty, translations: { ar: locale(locales.ar, "import_ar"), en: locale(locales.en, "import_en") } };
 }
 
-export function buildSubmissionPrompt(draft: ValidatedSubmission): string {
+export type SubmissionPromptData = Pick<ValidatedSubmission, "trackId" | "topicIds" | "difficulty" | "question" | "shortAnswer" | "explanation" | "codeExample" | "commonMistakes" | "followUpQuestions" | "sources" | "displayName">;
+
+export function buildSubmissionPrompt(draft: SubmissionPromptData): string {
   const data = {
     contributorDisplayName: draft.displayName ?? "Community contributor",
     trackId: draft.trackId,

@@ -342,6 +342,8 @@ h3 { line-height: 1.45; }
 .moderator-card { display: grid; gap: 12px; }
 .moderator-card h2, .moderator-card p { margin: 0; }
 .moderator-card textarea { min-height: 84px; resize: vertical; }
+.moderator-prompt { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: color-mix(in srgb, var(--surface) 75%, var(--brand)); }
+.moderator-prompt textarea { min-height: 220px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; direction: ltr; text-align: left; }
 .follow-up-editor fieldset { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 16px; margin: 0; padding: 14px; border: 1px solid var(--border); border-radius: 12px; }
 .follow-up-editor select { min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
 .submission-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
