@@ -13,7 +13,7 @@ Recommended order:
 3. [Learner state](./learner-state.md) — Question Progress, Favorites, and
    Asked Markers remain separate concepts and contracts.
 4. [Submission to Review](./submission-review.md) — validation, idempotency,
-   Review Issues, and GitHub side effects after read/write parity is proven.
+   Submission Review side effects after read/write parity is proven.
 
 The Node backend is the application path for these slices. Supabase remains the
 database provider and migration/seed source only.

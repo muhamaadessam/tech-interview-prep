@@ -1,4 +1,4 @@
-export type ModerationStatus = "pending" | "issue_created" | "in_review" | "changes_requested" | "approved" | "rejected" | "published" | "failed";
+export type ModerationStatus = "pending" | "in_review" | "changes_requested" | "approved" | "rejected" | "published" | "failed";
 
 export type ModerationSubmission = {
   id: string;
@@ -8,8 +8,6 @@ export type ModerationSubmission = {
   difficulty: string;
   payload: { question?: string; shortAnswer?: string; explanation?: string; sources?: string[] };
   review_notes: string | null;
-  github_issue_number: number | null;
-  github_issue_url: string | null;
   created_at: string;
 };
 

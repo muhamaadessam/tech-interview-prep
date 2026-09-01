@@ -4,12 +4,11 @@ import { useAuth } from "@clerk/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { messages, type Locale } from "../../i18n";
-import { AdvisoryError, runAdvisory } from "../../advisory/api";
 import { ModerationError, moderationRequest, type ModerationStatus, type ModerationSubmission } from "../../moderation/api";
 import { AuthDialogTrigger } from "../auth-dialog";
 import { LoadingPlaceholder } from "../loading-placeholder";
 
-const statuses: ModerationStatus[] = ["pending", "issue_created", "in_review", "changes_requested", "approved"];
+const statuses: ModerationStatus[] = ["pending", "in_review", "changes_requested", "approved"];
 
 export function ModeratorConsole({ locale, clerkEnabled }: { locale: Locale; clerkEnabled: boolean }) {
   if (!clerkEnabled) return <p className="empty-state">{locale === "ar" ? "لوحة المشرف تحتاج إعداد تسجيل الدخول." : "The moderator console needs authentication setup."}</p>;
@@ -23,8 +22,10 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
   const [rows, setRows] = useState<ModerationSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [importSubmissionId, setImportSubmissionId] = useState("");
+  const [importDocument, setImportDocument] = useState("");
+  const [importPreview, setImportPreview] = useState<unknown>(null);
   const [reason, setReason] = useState<Record<string, string>>({});
-  const [advisory, setAdvisory] = useState<Record<string, string>>({});
   const [questionIds, setQuestionIds] = useState<Record<string, string>>({});
   const [communityMode, setCommunityMode] = useState(false);
   const [followUpMode, setFollowUpMode] = useState(false);
@@ -88,11 +89,6 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
     catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
   }
 
-  async function reviewWithAi(submissionId: string) {
-    setAdvisory((current) => ({ ...current, [submissionId]: "running" }));
-    try { const result = await runAdvisory({ getToken, submissionId }); setAdvisory((current) => ({ ...current, [submissionId]: result.status })); }
-    catch (caught) { setAdvisory((current) => ({ ...current, [submissionId]: "failed" })); setError(caught instanceof AdvisoryError ? caught.code : "advisory_unavailable"); }
-  }
 
   async function publish(submissionId: string) {
     const questionId = questionIds[submissionId]?.trim();
@@ -102,27 +98,36 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
     catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
   }
 
+  async function importQuestion(mode: "preview" | "confirm") {
+    if (!importSubmissionId || !importDocument.trim()) return;
+    setError("");
+    try {
+      const result = await moderationRequest<{ question?: unknown }>({ getToken, body: { action: "import_submission", mode, submissionId: importSubmissionId, document: importDocument } });
+      if (mode === "preview") setImportPreview(result.question ?? null); else { setImportPreview(null); setImportDocument(""); await load(); }
+    } catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
+  }
+
   if (!isLoaded) return <LoadingPlaceholder variant="moderator" />;
   if (!isSignedIn) return <div className="empty-state"><h2>{copy.moderatorSignIn}</h2><AuthDialogTrigger locale={locale} className="button primary">{copy.signIn}</AuthDialogTrigger></div>;
 
   return <div className="moderator-console">
     <div className="moderator-toolbar"><label>{copy.moderatorStatus}<select value={status} onChange={(event) => { setCommunityMode(false); setFollowUpMode(false); setStatus(event.target.value as ModerationStatus); }}>{statuses.map((value) => <option key={value} value={value}>{statusLabel(value, locale)}</option>)}</select></label><button className="button" type="button" onClick={() => void (followUpMode ? loadFollowUps() : communityMode ? loadCommunity() : load())} disabled={loading}>{loading ? copy.moderatorLoading : copy.moderatorRefresh}</button><button className="button" type="button" onClick={() => void loadCommunity()} disabled={loading}>{locale === "ar" ? "أسئلة المجتمع" : "Community questions"}</button><button className="button" type="button" onClick={() => void loadFollowUps()} disabled={loading}>{locale === "ar" ? "أسئلة المتابعة" : "Follow-ups"}</button></div>
+    {!communityMode && !followUpMode && <section className="card moderator-card"><h2>{locale === "ar" ? "استيراد JSON من AI" : "Import AI JSON"}</h2><label>{locale === "ar" ? "معرّف المساهمة" : "Submission ID"}<input value={importSubmissionId} onChange={(event) => setImportSubmissionId(event.target.value)} /></label><label>{locale === "ar" ? "ملف JSON" : "JSON document"}<textarea value={importDocument} onChange={(event) => setImportDocument(event.target.value)} rows={8} /></label><div className="actions"><button className="button" type="button" onClick={() => void importQuestion("preview")}>{locale === "ar" ? "معاينة" : "Preview"}</button><button className="button primary" type="button" onClick={() => void importQuestion("confirm")} disabled={!importPreview}>{locale === "ar" ? "تأكيد وإضافة" : "Confirm and add"}</button></div>{importPreview !== null && <pre className="field-hint">{JSON.stringify(importPreview, null, 2) ?? ""}</pre>}</section>}
     {error && <p className="form-error" role="alert">{error}</p>}
     {!communityMode && !followUpMode && !loading && !rows.length && <p className="empty-state">{copy.moderatorEmpty}</p>}
     {followUpMode ? loading ? <LoadingPlaceholder variant="moderator" /> : <FollowUpEditor locale={locale} sources={followUpSources} targets={followUpTargets} sourceId={followUpSourceId} onSourceChange={setFollowUpSourceId} onTargetsChange={(targetIds) => setFollowUpSources((current) => current.map((item) => item.id === followUpSourceId ? { ...item, target_ids: targetIds } : item))} onSave={() => void saveFollowUps()} saving={followUpSaving} /> : communityMode ? loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{communityRows.map((row) => <article className="card moderator-card" key={row.id}><div className="meta"><span className="chip">{row.visibility}</span><span className="chip">{row.track_id}</span>{row.promoted_at && <span className="chip">{copy.promoted}</span>}</div><h2>{row.slug}</h2><p>{row.community_contributor_username ? `@${row.community_contributor_username}` : copy.contributor}</p><p className="field-hint">{row.community_published_at ?? "—"}{row.promotion_like_count ? ` · ${row.promotion_like_count} ${copy.likes}` : ""}</p><label>{copy.moderatorReason}<textarea value={reason[row.id] ?? ""} onChange={(event) => setReason((current) => ({ ...current, [row.id]: event.target.value }))} maxLength={500} /></label><div className="actions">{row.community_unpublished_at ? <button className="button" type="button" onClick={() => void moderateCommunity(row.id, "republish_question")}>{locale === "ar" ? "إعادة النشر" : "Republish"}</button> : <button className="button danger" type="button" onClick={() => void moderateCommunity(row.id, "unpublish_question")}>{locale === "ar" ? "إخفاء" : "Unpublish"}</button>}</div></article>)}</div> : loading ? <LoadingPlaceholder variant="moderator" /> : <div className="moderator-list">{rows.map((row) => <article className="card moderator-card" key={row.id}>
-      <div className="meta"><span className="chip">{row.difficulty}</span><span className="chip">{statusLabel(row.status, locale)}</span>{row.github_issue_url && <a className="text-link" href={row.github_issue_url} target="_blank" rel="noreferrer">GitHub #{row.github_issue_number}</a>}</div>
+      <div className="meta"><span className="chip">{row.difficulty}</span><span className="chip">{statusLabel(row.status, locale)}</span></div>
       <h2>{row.payload.question ?? "—"}</h2><p>{row.payload.shortAnswer ?? ""}</p>
       {row.review_notes && <p className="field-hint">{row.review_notes}</p>}
       <label>{copy.moderatorReason}<textarea value={reason[row.id] ?? ""} onChange={(event) => setReason((current) => ({ ...current, [row.id]: event.target.value }))} maxLength={500} /></label>
       {row.status === "approved" && <label>{locale === "ar" ? "معرّف السؤال المنشور" : "Published question ID"}<input value={questionIds[row.id] ?? ""} onChange={(event) => setQuestionIds((current) => ({ ...current, [row.id]: event.target.value }))} placeholder="question-id" /></label>}
-      <div className="actions"><button className="button" type="button" onClick={() => void act(row.id, "changes_requested")}>{copy.moderatorChanges}</button><button className="button danger" type="button" onClick={() => void act(row.id, "reject_submission")}>{copy.moderatorReject}</button>{row.status === "approved" && <button className="button primary" type="button" onClick={() => void publish(row.id)}>{locale === "ar" ? "نشر في المجتمع" : "Publish to community"}</button>}{row.github_issue_number && <button className="button" type="button" onClick={() => void reviewWithAi(row.id)} disabled={advisory[row.id] === "running"}>{advisory[row.id] === "running" ? (locale === "ar" ? "جاري المراجعة…" : "Reviewing…") : (locale === "ar" ? "مراجعة بالذكاء الاصطناعي" : "Run AI advisory review")}</button>}</div>
-      {advisory[row.id] === "completed" && <p className="form-status" role="status">{locale === "ar" ? "تمت إضافة المراجعة الاستشارية إلى Issue." : "Advisory review added to the Issue."}</p>}
+      <div className="actions"><button className="button" type="button" onClick={() => void act(row.id, "changes_requested")}>{copy.moderatorChanges}</button><button className="button danger" type="button" onClick={() => void act(row.id, "reject_submission")}>{copy.moderatorReject}</button>{row.status === "approved" && <button className="button primary" type="button" onClick={() => void publish(row.id)}>{locale === "ar" ? "نشر في المجتمع" : "Publish to community"}</button>}</div>
     </article>)}</div>}
   </div>;
 }
 
 function statusLabel(status: ModerationStatus, locale: Locale): string {
-  const labels = { ar: { pending: "قيد الانتظار", issue_created: "Issue منشأ", in_review: "قيد المراجعة", changes_requested: "مطلوب تعديل", approved: "مقبول", rejected: "مرفوض", published: "منشور", failed: "فشل" }, en: { pending: "Pending", issue_created: "Issue created", in_review: "In review", changes_requested: "Changes requested", approved: "Approved", rejected: "Rejected", published: "Published", failed: "Failed" } } as const;
+  const labels = { ar: { pending: "قيد الانتظار", in_review: "قيد المراجعة", changes_requested: "مطلوب تعديل", approved: "مقبول", rejected: "مرفوض", published: "منشور", failed: "فشل" }, en: { pending: "Pending", in_review: "In review", changes_requested: "Changes requested", approved: "Approved", rejected: "Rejected", published: "Published", failed: "Failed" } } as const;
   return labels[locale][status];
 }
 

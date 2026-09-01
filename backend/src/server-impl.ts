@@ -167,12 +167,6 @@ export async function buildServer({ allowedOrigins, ready = true, logger = conso
     if (!body || typeof body !== "object" || Array.isArray(body) || typeof (body as { action?: unknown }).action !== "string") return reply.code(400).send({ error: "invalid_moderation_request" });
     return operations.moderate(body as Record<string, unknown>, request.account!.token!, request.account!.sub);
   });
-  app.post("/v1/advisories", { preHandler: [app.authenticate, app.requireModerator] }, async (request, reply) => {
-    if (!operations) return reply.code(503).send({ error: "advisory_not_configured" });
-    const submissionId = (request.body as { submissionId?: unknown })?.submissionId;
-    if (typeof submissionId !== "string" || !submissionId || submissionId.length > 120) return reply.code(400).send({ error: "invalid_advisory_request" });
-    return operations.advise(submissionId, request.account!.token!, request.account!.sub);
-  });
   app.get("/v1/asked-markers", async (request, reply) => {
     if (!learnerState) return reply.code(503).send({ error: "learner_state_not_configured" });
     const ids = questionIds((request.query as { questionIds?: unknown }).questionIds);
