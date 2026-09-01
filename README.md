@@ -1,38 +1,58 @@
 # Tech Interview Prep
 
-منصة عربية مفتوحة المصدر للتجهيز لمقابلات البرمجة التقنية. يبدأ المشروع بمسار Flutter ومحتوى Dart أصلي مرتبط بالمراجع الرسمية.
+Tech Interview Prep is an open-source, Arabic-first study platform for software engineering interviews. It currently ships a Flutter track with Dart and Flutter questions backed by official references.
 
-## التشغيل محليًا
+## What is in the repository?
 
-يتطلب Node.js 22 أو أحدث.
+```text
+src/                 Next.js static frontend and domain modules
+backend/             Node/Fastify API deployed as a Vercel Function
+supabase/             Server-side migrations and functions only
+e2e/                 Playwright browser journeys
+scripts/              Build, security, seed, and load-test utilities
+.github/              CI, deployment, ownership, and contribution policy
+```
+
+The browser talks to the Node API under `/v1`. Supabase is an internal data provider behind that API; do not add direct Supabase calls to browser code.
+
+## Local development
+
+Requirements: Node.js 22 or newer.
 
 ```bash
 npm install
+npm ci --prefix backend
+cp .env.example .env.local
 npm run dev
 ```
 
-لتفعيل تسجيل الدخول، انسخ `.env.example` إلى `.env.local` وضع `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` من Clerk. النشر الحالي يتم على [Cloudflare Pages](https://tech-interview-prep-1ux.pages.dev/ar/)، ويستخدم مفتاح Clerk Development مؤقتًا لأن دومينًا مملوكًا غير متاح بعد؛ استبدله بمفتاح Production بعد توثيق دومينك في Clerk.
+The static site is available at `http://localhost:3000`. Set `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` in `.env.local` only when you need to exercise authentication. Server-only backend values belong in the backend/Vercel environment and must never be committed.
 
-الموقع static، لذلك Clerk يعمل من المتصفح فقط؛ حماية المسارات من الخادم تحتاج استضافة تدعم runtime مثل Vercel.
+## Verification
 
-التحقق قبل النشر:
+Run the same checks expected by CI before opening a pull request:
 
 ```bash
-npm test
+npm run backend:test
 npm run typecheck
+npm test
 npm run build
+npm run security:check
+npm run test:e2e
 ```
 
-اختبار ضغط تدريجي لرحلة التصفح العامة:
+Use `npm run load:test -- --url http://127.0.0.1:3000/ --users 10,25,50 --duration 10` for a small local load smoke. Capacity claims must be based on a deployed staging test, not a local run.
 
-```bash
-npm run load:test -- --url http://127.0.0.1:3000/ --users 10,25,50 --duration 10
-```
+## Deployment
 
-`--users` تمثل مستخدمين افتراضيين متزامنين، والنتيجة تعرض معدل الطلبات ونسبة الأخطاء وقياسات `p50` و`p95` و`p99`. استخدم بيئة اختبار منفصلة قبل توجيه ضغط مرتفع إلى خدمات Supabase أو مسارات الكتابة.
+Pushing to `main` starts the configured Cloudflare Pages deployment for the frontend. The Node backend is deployed separately to Vercel. Production secrets and variables are managed in the hosting dashboards; GitHub Actions receives only the public build variables it needs.
 
-## التراخيص
+## Contributing
 
-- الكود المصدري مرخص وفق [MIT](LICENSE).
-- المحتوى التعليمي الأصلي، بما فيه الأسئلة والإجابات والشروحات، مرخص وفق [CC BY 4.0](LICENSE-CONTENT).
-- المصادر الخارجية المشار إليها تظل مملوكة لأصحابها وتخضع لشروطهم الأصلية.
+Pull requests from forks and topic branches are welcome. `main` is protected: contributors cannot push directly, and merging requires an approved pull request, a review from the repository owner, and passing CI checks. Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting work.
+
+## Licenses
+
+- Source code: [MIT](LICENSE)
+- Original learning content: [CC BY 4.0](LICENSE-CONTENT)
+- External references remain under their owners' terms.

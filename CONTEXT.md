@@ -70,6 +70,10 @@ publish accepted content, and restore an earlier Question Revision. Moderator
 access is separate from learner progress and contribution ownership.
 _Avoid_: Reviewer when referring to the Account role
 
+The product's administrative account is an Account with the Moderator role; it
+is not a separate identity type and must not be identified by a hard-coded email
+in the client.
+
 **Question Revision**:
 An immutable version of an Interview Question's learning material. A Revision
 may be a working draft or the version currently published in the catalogue;
