@@ -358,13 +358,20 @@ h3 { line-height: 1.45; }
 .moderator-console { display: grid; gap: 20px; }
 .moderator-toolbar { display: flex; align-items: end; justify-content: space-between; gap: 16px; }
 .moderator-toolbar label, .moderator-card label { display: grid; gap: 6px; color: var(--muted); font-weight: 800; }
-.moderator-toolbar select, .moderator-card textarea { min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
+.moderator-toolbar select, .moderator-card input, .moderator-card textarea { min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
 .moderator-list { display: grid; gap: 16px; }
 .moderator-card { display: grid; gap: 12px; }
 .moderator-card h2, .moderator-card p { margin: 0; }
 .moderator-card textarea { min-height: 84px; resize: vertical; }
 .moderator-prompt { display: grid; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: color-mix(in srgb, var(--surface) 75%, var(--brand)); }
 .moderator-prompt textarea { min-height: 220px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .8rem; direction: ltr; text-align: left; }
+.moderator-id-input, .moderator-json-input { direction: ltr; text-align: left; }
+.moderator-id-input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .02em; }
+.moderator-json-input { min-height: 240px !important; font-family: ui-monospace, SFMono-Regular, Menlo, monospace !important; font-size: .82rem; line-height: 1.6; }
+.moderator-submission-id { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: color-mix(in srgb, var(--surface) 82%, var(--brand)); color: var(--muted); font: inherit; text-align: start; cursor: copy; transition: border-color .2s ease, background .2s ease, transform .2s ease; }
+.moderator-submission-id:hover, .moderator-submission-id.is-copied { border-color: var(--brand); background: color-mix(in srgb, var(--surface) 68%, var(--brand)); }
+.moderator-submission-id:active { transform: scale(.995); }
+.moderator-submission-id code { overflow: hidden; color: var(--text); font: .78rem ui-monospace, SFMono-Regular, Menlo, monospace; text-overflow: ellipsis; white-space: nowrap; }
 .follow-up-editor fieldset { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 16px; margin: 0; padding: 14px; border: 1px solid var(--border); border-radius: 12px; }
 .follow-up-editor select { min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
 .submission-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
