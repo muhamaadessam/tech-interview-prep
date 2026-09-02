@@ -63,5 +63,7 @@ test("submission prompt contains no private identity", () => {
   const prompt = buildSubmissionPrompt(validateSubmission({ ...valid, topicIds: ["dart"], shortAnswer: "A", explanation: "B", difficulty: "Junior", sources: ["https://dart.dev"], displayName: "Mina" }));
   assert.match(prompt, /Mina/);
   assert.match(prompt, /contributorUsername/);
+  assert.match(prompt, /question catalogue and database context/);
+  assert.match(prompt, /followUpQuestions/);
   assert.doesNotMatch(prompt, /email|clerk|token/i);
 });
