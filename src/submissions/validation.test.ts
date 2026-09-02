@@ -52,7 +52,7 @@ test("duplicate advisory normalization is stable", () => {
 });
 
 test("imported bilingual question accepts the catalogue contract and rejects unsafe values", () => {
-  const value = { trackId: "flutter", topicIds: ["dart"], difficulty: "Junior", translations: { ar: { question: "ما هو final؟", shortAnswer: "ثابت", explanation: "شرح", codeExample: null, commonMistakes: [], followUpQuestions: [], sources: ["https://dart.dev"] }, en: { question: "What is final?", shortAnswer: "A constant", explanation: "Explanation", codeExample: null, commonMistakes: [], followUpQuestions: [], sources: ["https://dart.dev"] } } };
+  const value = { trackId: "flutter", topicIds: ["dart"], difficulty: "Junior", translations: { ar: { question: "ما هو final؟", shortAnswer: "ثابت", explanation: "شرح", codeExample: null, commonMistakes: [], followUpQuestions: [], sources: [{ title: "Dart docs", url: "https://dart.dev" }] }, en: { question: "What is final?", shortAnswer: "A constant", explanation: "Explanation", codeExample: null, commonMistakes: [], followUpQuestions: [], sources: [{ title: "Dart docs", url: "https://dart.dev" }] } } };
   assert.deepEqual(validateImportedQuestion(value), value);
   assert.deepEqual(validateImportedQuestion({ ...value, topicIds: [] }).topicIds, []);
   assert.equal(validateImportedQuestion({ ...value, contributorUsername: "Mina" }).contributorUsername, "Mina");
