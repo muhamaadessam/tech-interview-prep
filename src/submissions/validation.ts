@@ -128,7 +128,7 @@ export function validateImportedQuestion(value: unknown): ImportedQuestion {
   const contributorUsername = item.contributorUsername === undefined ? undefined : optionalText(item.contributorUsername, submissionLimits.displayName, "import_username");
   const trackId = text(item.trackId, 80, "import_track");
   const topicIds = list(item.topicIds, 20, "import_topics");
-  if (!topicIds.length || new Set(topicIds).size !== topicIds.length) throw new Error("import_topics_invalid");
+  if (new Set(topicIds).size !== topicIds.length) throw new Error("import_topics_invalid");
   const difficulty = item.difficulty;
   if (difficulty !== "Junior" && difficulty !== "Mid" && difficulty !== "Senior") throw new Error("import_difficulty_invalid");
   const translations = item.translations;
