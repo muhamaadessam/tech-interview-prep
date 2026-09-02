@@ -112,7 +112,7 @@ function AuthenticatedModeratorConsole({ locale }: { locale: Locale }) {
     setError("");
     try {
       const result = await moderationRequest<{ question?: unknown }>({ getToken, body: { action: "import_submission", mode, submissionId: importSubmissionId, document: importDocument } });
-      if (mode === "preview") setImportPreview(result.question ?? null); else { setImportPreview(null); setImportDocument(""); await load(); }
+      if (mode === "preview") setImportPreview(result.question ?? null); else { setImportPreview(null); setImportDocument(""); setStatus("approved"); }
     } catch (caught) { setError(caught instanceof ModerationError ? caught.code : "moderation_unavailable"); }
   }
 
