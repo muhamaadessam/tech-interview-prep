@@ -56,7 +56,7 @@ function AuthenticatedSubmissionForm({ locale, topics }: { locale: Locale; topic
           codeExample: form.codeExample || undefined,
           commonMistakes: form.commonMistakes.split("\n").map((item) => item.trim()).filter(Boolean),
           followUpQuestions: form.followUpQuestions.split("\n").map((item) => item.trim()).filter(Boolean),
-          displayName: user?.username || user?.fullName || undefined,
+          displayName: user?.username || undefined,
           licenseConsent: form.licenseConsent,
           idempotencyKey,
         },
@@ -87,7 +87,7 @@ function AuthenticatedSubmissionForm({ locale, topics }: { locale: Locale; topic
         <label>{copy.submitCode}<textarea maxLength={10000} value={form.codeExample} onChange={(event) => update("codeExample", event.target.value)} /></label>
         <label>{copy.submitMistakes}<textarea value={form.commonMistakes} onChange={(event) => update("commonMistakes", event.target.value)} /></label>
         <label>{copy.submitFollowups}<textarea value={form.followUpQuestions} onChange={(event) => update("followUpQuestions", event.target.value)} /></label>
-        <label>{copy.submitDisplayName}<input readOnly value={user?.username || user?.fullName || "Community contributor"} /></label>
+        <label>{copy.submitDisplayName}<input readOnly value={user?.username || "Community contributor"} /></label>
       </div>
       <label className="consent-checkbox"><input type="checkbox" checked={form.licenseConsent} onChange={(event) => update("licenseConsent", event.target.checked)} required />{copy.submitConsent}</label>
       {error && <p className="form-error" role="alert">{errorMessage(error, copy)}</p>}
