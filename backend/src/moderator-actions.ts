@@ -74,12 +74,12 @@ export async function handleModerator(request: Request, fetchImpl: FetchLike = f
       if (mode === "preview") return response({ ok: true, mode, question: imported });
       if (submission.status === "published") return response({ error: "submission_already_published" }, 409);
       const payload = { ...imported, contributorUsername: submission.display_name ?? "Community contributor" };
-      if (submission.status === "in_review" && JSON.stringify(submission.payload) === JSON.stringify(payload)) return response({ ok: true, mode, submissionId, revisionNumber: submission.revision_number ?? 1, question: imported });
+      if (["in_review", "approved"].includes(submission.status) && JSON.stringify(submission.payload) === JSON.stringify(payload)) return response({ ok: true, mode, submissionId, revisionNumber: submission.revision_number ?? 1, question: imported });
       const latest = await (await query(`/rest/v1/submission_revisions?select=revision_number&submission_id=eq.${encodeURIComponent(submissionId)}&order=revision_number.desc&limit=1`, key)).json() as Array<{ revision_number?: number }>;
       const revisionNumber = (latest[0]?.revision_number ?? 0) + 1;
       const revision = await (await query("/rest/v1/submission_revisions", key, { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify([{ submission_id: submissionId, revision_number: revisionNumber, submitted_by: submission.submitted_by, track_id: imported.trackId, topic_ids: imported.topicIds, difficulty: imported.difficulty, payload }]) })).json() as Array<{ id?: string }>;
       if (!revision[0]?.id) return response({ error: "revision_create_failed" }, 503);
-      await query(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "in_review", track_id: imported.trackId, topic_ids: imported.topicIds, difficulty: imported.difficulty, payload, revision_number: revisionNumber, review_notes: null, last_error: null, reviewed_by: actor, reviewed_at: new Date().toISOString() }) });
+      await query(`/rest/v1/submissions?id=eq.${encodeURIComponent(submissionId)}`, key, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "approved", track_id: imported.trackId, topic_ids: imported.topicIds, difficulty: imported.difficulty, payload, revision_number: revisionNumber, review_notes: null, last_error: null, reviewed_by: actor, reviewed_at: new Date().toISOString() }) });
       await audit(key, actor, action, "submission", submissionId, null, { revision_number: revisionNumber }, fetchImpl);
       return response({ ok: true, mode, submissionId, revisionNumber, question: imported });
     }
