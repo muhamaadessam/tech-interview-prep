@@ -43,7 +43,7 @@ export type QuestionLocale = {
   codeExample: string | null;
   commonMistakes: string[];
   followUpQuestions: string[];
-  sources: string[];
+  sources: { title: string; url: string }[];
 };
 
 export type ImportedQuestion = {
@@ -72,6 +72,17 @@ function optionalText(value: unknown, max: number, field: string): string | null
 function list(value: unknown, maxItems: number, field: string): string[] {
   if (!Array.isArray(value) || value.length > maxItems) throw new Error(`${field}_invalid`);
   return value.map((item) => text(item, submissionLimits.item, field));
+}
+
+function sourceList(value: unknown, maxItems: number, field: string): { title: string; url: string }[] {
+  if (!Array.isArray(value) || value.length > maxItems) throw new Error(`${field}_invalid`);
+  const sources = value.map((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error(`${field}_invalid`);
+    const source = item as Record<string, unknown>;
+    return { title: text(source.title, submissionLimits.item, field), url: text(source.url, submissionLimits.item, field) };
+  });
+  if (!sources.every((source) => { try { return new URL(source.url).protocol === "https:"; } catch { return false; } })) throw new Error(`${field}_invalid`);
+  return sources;
 }
 
 export function validateSubmission(value: unknown): ValidatedSubmission {
@@ -116,8 +127,7 @@ function locale(value: unknown, name: string): QuestionLocale {
   if (codeExample?.includes("```")) throw new Error(`${name}_code_invalid`);
   const commonMistakes = item.commonMistakes === undefined ? [] : list(item.commonMistakes, submissionLimits.items, `${name}_mistakes`);
   const followUpQuestions = item.followUpQuestions === undefined ? [] : list(item.followUpQuestions, submissionLimits.items, `${name}_followups`);
-  const sources = list(item.sources, submissionLimits.sources, `${name}_sources`);
-  if (!sources.every((source) => { try { return new URL(source).protocol === "https:"; } catch { return false; } })) throw new Error(`${name}_sources_invalid`);
+  const sources = sourceList(item.sources, submissionLimits.sources, `${name}_sources`);
   return { question, shortAnswer, explanation, codeExample, commonMistakes, followUpQuestions, sources };
 }
 
