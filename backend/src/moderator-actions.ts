@@ -73,7 +73,7 @@ export async function handleModerator(request: Request, fetchImpl: FetchLike = f
       if (submission.track_id !== imported.trackId || JSON.stringify(submission.topic_ids) !== JSON.stringify(imported.topicIds)) return response({ error: "import_taxonomy_mismatch" }, 409);
       if (mode === "preview") return response({ ok: true, mode, question: imported });
       if (submission.status === "published") return response({ error: "submission_already_published" }, 409);
-      const payload = { ...imported, contributorDisplayName: submission.display_name ?? "Community contributor" };
+      const payload = { ...imported, contributorUsername: submission.display_name ?? "Community contributor" };
       if (submission.status === "in_review" && JSON.stringify(submission.payload) === JSON.stringify(payload)) return response({ ok: true, mode, submissionId, revisionNumber: submission.revision_number ?? 1, question: imported });
       const latest = await (await query(`/rest/v1/submission_revisions?select=revision_number&submission_id=eq.${encodeURIComponent(submissionId)}&order=revision_number.desc&limit=1`, key)).json() as Array<{ revision_number?: number }>;
       const revisionNumber = (latest[0]?.revision_number ?? 0) + 1;

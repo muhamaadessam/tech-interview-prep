@@ -61,5 +61,6 @@ test("imported bilingual question accepts the catalogue contract and rejects uns
 test("submission prompt contains no private identity", () => {
   const prompt = buildSubmissionPrompt(validateSubmission({ ...valid, topicIds: ["dart"], shortAnswer: "A", explanation: "B", difficulty: "Junior", sources: ["https://dart.dev"], displayName: "Mina" }));
   assert.match(prompt, /Mina/);
+  assert.match(prompt, /contributorUsername/);
   assert.doesNotMatch(prompt, /email|clerk|token/i);
 });
